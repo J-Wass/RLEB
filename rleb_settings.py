@@ -23,7 +23,7 @@ queues = {}
 
 # OS (Either windows or linux)
 # TODO: Automatically get the running environment
-RUNNING_ENVIRONMENT = "windows"
+RUNNING_ENVIRONMENT = "linux"
 
 RUNNING_MODE = os.environ.get('RUNNING_MODE') or secrets.RUNNING_MODE
 
@@ -52,18 +52,6 @@ thread_restart_interval_seconds = 30
 # CALENDAR
 GOOGLE_CALENDAR_ID = os.environ.get('CALENDAR_ID') or secrets.CALENDAR_ID
 GOOGLE_CREDENTIALS_JSON = os.environ.get('GOOGLE_CREDENTIALS_JSON') or secrets.GOOGLE_CREDENTIALS_JSON
-#= {
-#  "type": "service_account",
-#  "project_id": os.environ.get('GOOGLE_PROJECT_ID') or secrets.GOOGLE_PROJECT_ID,
-#  "private_key_id": os.environ.get('GOOGLE_PRIVATE_KEY_ID') or secrets.GOOGLE_PRIVATE_KEY_ID,
-#  "private_key": os.environ.get('GOOGLE_PRIVATE_KEY') or secrets.GOOGLE_PRIVATE_KEY,
-#  "client_email": os.environ.get('GOOGLE_CLIENT_EMAIL') or secrets.GOOGLE_CLIENT_EMAIL,
-#  "client_id": os.environ.get('GOOGLE_CLIENT_ID') or secrets.GOOGLE_CLIENT_ID,
-#  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-#  "token_uri": "https://oauth2.googleapis.com/token",
-#  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-#  "client_x509_cert_url": os.environ.get('GOOGLE_CERT_URL') or secrets.GOOGLE_CERT_URL
-#}
 
 # DISCORD
 discord_enabled = True
