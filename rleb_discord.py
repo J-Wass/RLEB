@@ -485,7 +485,7 @@ class RLEsportsBot(discord.Client):
             seconds = await handle_team_lookup(url, message.channel, message.author)
             await self.add_response(message)
 
-        elif message.content.startswith("!e") and is_staff(message.author):
+        elif message.content.startswith("!events") and is_staff(message.author):
             rleb_settings.rleb_log_info("DISCORD: Starting event lookup.")
             tokens = message.content.split()
             formatter = 'reddit'
