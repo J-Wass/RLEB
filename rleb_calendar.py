@@ -29,7 +29,7 @@ TABLE_HEADER = """
 # {day-name}, {month-name} {day-number}
 |Scroll to view start times / links >>|**EST**|**CET**|**AEDT**|**Streams**|**Matches**|
 |:-|:-|:-|:-|:-|:-|"""
-TABLE_ROW = """|[**{title}**]({link}) |[**{EST}**](https://www.google.com/search?q={EST}+EST) |{CET} |{AEDT} |**Stream** |**Bracket**|"""
+TABLE_ROW = """|[**{title}**]({link}) |[**{EST}**](https://www.google.com/search?q={EST}+EST) |{CET} |{AEDT} |[**Stream**]({STREAM}) |**Bracket**|"""
 
 BOTTOM_SECTION = """
 # Sidebar Schedule
@@ -55,9 +55,10 @@ Every Monday we will pin 1 quality piece of Original Content from the previous w
 * [**Community Spotlights**](https://www.reddit.com/r/RocketLeagueEsports/wiki/community_spotlight)"""
 
 class CalendarEvent:
-    def __init__(self, rawtext, start_timestamp):
+    def __init__(self, rawtext, start_timestamp, stream):
         self.rawtext = rawtext
         self.start_timestamp = start_timestamp
+        self.stream = stream
 
     def __repr__(self):
         return f" {self.title} {self.link} {self.est_datetime} {self.cet_datetime} {self.aedt_datetime} {self.day_name} {self.month_name} {self.day_number}"
@@ -96,7 +97,7 @@ def formatted_calendar_events(calendar_events, formatter):
     elif formatter == 'sheets':
         return sheets_formatted_calendar_events(calendar_events)
     else:
-        return "I didn't understand formatter '{0}', I can only recognize 'reddit' and 'sheets' as a formatter. Try '!events reddit 7'.".format(renderer)
+        return "I didn't understand formatter '{0}', I can only recognize 'reddit' and 'sheets' as a formatter. Try '!events reddit 7'.".format(formatter)
 
 def sheets_formatted_calendar_events(calendar_events):
     """Returns tab separated calendar events for google sheets (or other spreadsheet software)."""
@@ -136,7 +137,16 @@ def reddit_formatted_calendar_events(calendar_events):
         event_list = events
         event_list.sort(key=lambda x: x.utc_datetime)
         for event in event_list:
-            rows.append(TABLE_ROW.replace("{title}", event.title).replace("{link}", event.link).replace("{EST}", timestring(event.est_datetime, event.est_datetime)).replace("{CET}", timestring(event.cet_datetime, event.est_datetime)).replace("{AEDT}", timestring(event.aedt_datetime, event.est_datetime)))
+            tr = TABLE_ROW.replace("{title}", event.title)
+            tr = tr.replace("{link}", event.link)
+            tr = tr.replace("{EST}", timestring(event.est_datetime, event.est_datetime))
+            tr = tr.replace("{CET}", timestring(event.cet_datetime, event.est_datetime))
+            tr = tr.replace("{AEDT}", timestring(event.aedt_datetime, event.est_datetime))
+            stream = event.stream
+            if 'https://www.' not in stream:
+                stream = 'https://www.' + stream
+            tr = tr.replace("{STREAM}", stream)
+            rows.append(tr)
         table = [header]
         table.extend(rows)
         reddit_submission += "\n".join(table)
@@ -163,7 +173,8 @@ async def handle_calendar_lookup(channel, formatter='reddit', days_in_advance = 
         for event_item in event_items:
             rawtext = event_item['summary'] if 'summary' in event_item else ''
             start_timestamp = event_item['start']['dateTime'] if ('start' in event_item and 'dateTime' in event_item['start'])  else ''
-            calendar_event = CalendarEvent(rawtext, start_timestamp)
+            stream = event_item['location']
+            calendar_event = CalendarEvent(rawtext, start_timestamp, stream)
             process_calendar_events(calendar_event)
             calendar_events.append(calendar_event)
 
