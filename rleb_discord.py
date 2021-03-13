@@ -12,6 +12,7 @@ import rleb_settings
 from rleb_settings import sub
 from rleb_postmatch import handle_postmatch
 from rleb_team_lookup import handle_team_lookup
+from rleb_group_lookup import handle_group_lookup
 from rleb_census import handle_flair_census
 from rleb_calendar import handle_calendar_lookup
 
@@ -483,6 +484,19 @@ class RLEsportsBot(discord.Client):
                 await message.channel.send("Couldn't understand that. Expected '!teams liquipedia-url'.")
                 return
             seconds = await handle_team_lookup(url, message.channel, message.author)
+            await self.add_response(message)
+
+        elif message.content.startswith("!groups") and is_staff(message.author):
+            rleb_settings.rleb_log_info("DISCORD: Starting group generation.")
+            await message.channel.send("Starting group lookup, this may take a minute...")
+            tokens = message.content.split()
+            url = 10
+            try:
+                url = tokens[1]
+            except Exception:
+                await message.channel.send("Couldn't understand that. Expected '!groups liquipedia-url'.")
+                return
+            seconds = await handle_group_lookup(url, message.channel, message.author)
             await self.add_response(message)
 
         elif message.content.startswith("!events") and is_staff(message.author):
