@@ -24,12 +24,13 @@ ABOUT_SECTION = """
 
  The table below features upcoming streams of S-Tier, A-Tier and the bigger B-Tier events including their streamed qualifiers[.](https://reddit-stream.com/comments/b6vu2e/) For a full list of all upcoming RLEsports events check [**Liquipedia**](https://liquipedia.net/rocketleague/Main_Page)."""
 
- # todo: you pytz to get the timezone abbreviations (EST, CET, etc) dynamically
+ # todo: use pytz to get the timezone abbreviations (EST vs EDT, AEST vs AEDT) dynamically
 TABLE_HEADER = """
 # {day-name}, {month-name} {day-number}
-|Scroll to view start times / links >>|**EST**|**CET**|**AEDT**|**Streams**|**Matches**|
+|Scroll to view start times / links >>|**EDT**|**CET**|**AEDT**|**Streams**|**Matches**|
 |:-|:-|:-|:-|:-|:-|"""
-TABLE_ROW = """|[**{title}**]({link}) |[**{EST}**](https://www.google.com/search?q={EST}+EST) |{CET} |{AEDT} |[**Stream**]({STREAM}) |**Bracket**|"""
+
+TABLE_ROW = """|[**{title}**]({link}) |[**{ET}**](https://www.google.com/search?q={EST}+EST) |{CET} |{AET} | {STREAM} |[**Bracket**]({BRACKET})|"""
 
 BOTTOM_SECTION = """
 # Sidebar Schedule
@@ -50,9 +51,7 @@ If you are on the official **Reddit App**, you will find the schedule under the 
 
 Every Monday we will pin 1 quality piece of Original Content from the previous week or earlier.
 
-# Subreddit Content
-
-* [**Community Spotlights**](https://www.reddit.com/r/RocketLeagueEsports/wiki/community_spotlight)"""
+* [**Past Community Spotlights**](https://www.reddit.com/r/RocketLeagueEsports/wiki/community_spotlight)"""
 
 class CalendarEvent:
     def __init__(self, rawtext, start_timestamp, stream):
@@ -61,7 +60,7 @@ class CalendarEvent:
         self.stream = stream
 
     def __repr__(self):
-        return f" {self.title} {self.link} {self.est_datetime} {self.cet_datetime} {self.aedt_datetime} {self.day_name} {self.month_name} {self.day_number}"
+        return f" {self.title} {self.link} {self.bracket_link} {self.et_datetime} {self.cet_datetime} {self.aet_datetime} {self.day_name} {self.month_name} {self.day_number}"
 
 def timestring(datetime, relative_datetime, offset_hours = 0):
     """Human readable time string from datetime. Will italicize the string if the datetime is on a different day from relative_datetime."""
@@ -78,18 +77,19 @@ def process_calendar_events(calendar_event):
     """Builds the list of calendar event objects from the google calendar api response."""
     calendar_event.title = calendar_event.rawtext.split("**")[1].replace("|", "-")
     calendar_event.link = calendar_event.rawtext.split("(")[1].split(")")[0]
+    calendar_event.bracket_link = calendar_event.link + "#Results"
 
     calendar_event.start_datetime = datetime.datetime.fromisoformat(calendar_event.start_timestamp)
     calendar_event.utc_datetime = calendar_event.start_datetime.astimezone(pytz.timezone("Etc/UTC"))
-    calendar_event.est_datetime = calendar_event.start_datetime.astimezone(pytz.timezone("America/New_York"))
+    calendar_event.et_datetime = calendar_event.start_datetime.astimezone(pytz.timezone("America/New_York"))
     calendar_event.cet_datetime = calendar_event.start_datetime.astimezone(pytz.timezone("Europe/Paris"))
-    calendar_event.aedt_datetime = calendar_event.start_datetime.astimezone(pytz.timezone("Australia/Melbourne"))
+    calendar_event.aet_datetime = calendar_event.start_datetime.astimezone(pytz.timezone("Australia/Melbourne"))
 
    
-    calendar_event.day_number = calendar_event.est_datetime.day
-    calendar_event.day_name =  rleb_settings.DAYS[calendar_event.est_datetime.weekday()]
-    calendar_event.month_number = calendar_event.est_datetime.month
-    calendar_event.month_name = rleb_settings.MONTHS[calendar_event.est_datetime.month - 1]
+    calendar_event.day_number = calendar_event.et_datetime.day
+    calendar_event.day_name =  rleb_settings.DAYS[calendar_event.et_datetime.weekday()]
+    calendar_event.month_number = calendar_event.et_datetime.month
+    calendar_event.month_name = rleb_settings.MONTHS[calendar_event.et_datetime.month - 1]
 
 def formatted_calendar_events(calendar_events, formatter):
     if formatter == 'reddit':
@@ -139,13 +139,20 @@ def reddit_formatted_calendar_events(calendar_events):
         for event in event_list:
             tr = TABLE_ROW.replace("{title}", event.title)
             tr = tr.replace("{link}", event.link)
-            tr = tr.replace("{EST}", timestring(event.est_datetime, event.est_datetime))
-            tr = tr.replace("{CET}", timestring(event.cet_datetime, event.est_datetime))
-            tr = tr.replace("{AEDT}", timestring(event.aedt_datetime, event.est_datetime))
-            stream = event.stream
-            if 'https://www.' not in stream:
-                stream = 'https://www.' + stream
-            tr = tr.replace("{STREAM}", stream)
+            tr = tr.replace("{BRACKET}", event.bracket_link)
+            tr = tr.replace("{ET}", timestring(event.et_datetime, event.et_datetime))
+            tr = tr.replace("{CET}", timestring(event.cet_datetime, event.et_datetime))
+            tr = tr.replace("{AET}", timestring(event.aet_datetime, event.et_datetime))
+
+            # Make sure that all http links start with https://www
+            if '.' in event.stream:
+                stream = event.stream
+                if 'https://www.' not in stream:
+                    stream = 'https://www.' + stream
+                tr = tr.replace("{STREAM}", "[**Stream**]({0})".format(stream))
+            else:
+                tr = tr.replace("{STREAM}", event.stream)
+            
             rows.append(tr)
         table = [header]
         table.extend(rows)

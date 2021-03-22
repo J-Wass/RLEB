@@ -55,6 +55,8 @@ class RLEsportsBot(discord.Client):
         self.modmail_channel = self.get_channel(rleb_settings.MODMAIL_CHANNEL_ID)
         self.bot_command_channel = self.get_channel(rleb_settings.BOT_COMMANDS_CHANNEL_ID)
 
+        await self.bot_command_channel.send("Bot is online, running in {0} under {1} mode.".format(rleb_settings.RUNNING_ENVIRONMENT, rleb_settings.RUNNING_MODE))
+
     async def check_new_submissions(self):
         """Check submissions queue to post in 'new posts' discord channel."""
         while(True):
