@@ -72,6 +72,12 @@ colors = [
 ]
 developer_name = 'Voices'
 developer_discriminator = '6380'
+hooks = [
+    "Hot and ready",
+    "Fresh outa the oven",
+    "This one was made with love",
+    "Enjoy",
+]
 
 # THREADING
 # Mapping of each asyncio thread to the last time it sent a heartbeat out. Used to determine if an asnycio thread has crashed.
@@ -150,3 +156,6 @@ DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sun
 
 # PASTEBIN
 PASTEBIN_API_KEY = os.environ.get('PASTEBIN_API_KEY') or secrets.PASTEBIN_API_KEY
+PASTEBIN_API_USER_KEY = os.environ.get('PASTEBIN_API_USER_KEY') or secrets.PASTEBIN_API_USER_KEY
+PASTEBIN_USER_NAME = os.environ.get('PASTEBIN_USER_NAME') or secrets.PASTEBIN_USER_NAME
+PASTEBIN_USER_PASS = os.environ.get('PASTEBIN_USER_PASS') or secrets.PASTEBIN_USER_PASS

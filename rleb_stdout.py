@@ -1,4 +1,5 @@
 import requests
+import random
 import traceback
 
 import rleb_settings
@@ -6,13 +7,12 @@ import rleb_settings
 async def create_paste(content, title=None):
     """Creates a pastebin of with the given content."""
 
-    #TODO - add api login token so we can make posts from rlesportsbot account
-
     request = "https://pastebin.com/api/api_post.php"
     arguments = {
         'api_dev_key': rleb_settings.PASTEBIN_API_KEY,
+        'api_user_key': rleb_settings.PASTEBIN_API_USER_KEY,
         'api_paste_code': content,
-        'api_paste_expire_date' : '10M',
+        'api_paste_expire_date' : '1W',
         'api_option': 'paste',
         'api_paste_private': '0',
         'api_paste_name': ('Untitled' if title is None else title)
@@ -27,7 +27,8 @@ async def print_to_channel(channel, content, title=None):
     """Prints either a pastebin link, or the raw text to the passed channel."""
     try:
         response = await create_paste(content, title)
-        message = await channel.send(response)
+        hook = random.choice(rleb_settings.hooks)
+        message = await channel.send("**{0}**: {1}".format(hook, response))
         await message.edit(suppress=True) # remove those annoying embeds
     except Exception as e:
         rleb_settings.rleb_log_error(traceback.format_exc())
