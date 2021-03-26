@@ -116,7 +116,7 @@ groups.forEach((g) => {
         placement++;
     });
 
-    finalMarkdown += ".SEP..DIVIDER..SEP." + groupMarkdown
+    finalMarkdown += ".SEP..SEP..DIVIDER..SEP..SEP." + groupMarkdown
 });
 
 console.log(finalMarkdown);
