@@ -80,7 +80,7 @@ async def handle_team_lookup(url, channel, discord_user):
 
             # IMPORTANT: The above script puts the table markdown into div#team_table.
             # Split table markdown by the separate .SEP. and join it with newlines.
-            teams = "\n".join(driver.find_element_by_id("team_table").text.split(".SEP."))
+            teams = driver.find_element_by_id("team_table").text.replace(".SEP.", "\n")
             await rleb_stdout.print_to_channel(channel, teams, title="Teams")
 
         except Exception as e:

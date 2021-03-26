@@ -112,11 +112,11 @@ groups.forEach((g) => {
         row = row.replace("{MATCH_RECORD}", t.matchRecord);
         row = row.replace("{GAME_RECORD}", t.gameRecord);
         row = row.replace("{PLUS_MINUS}", t.plusMinus);
-        groupMarkdown += ".SEP. &#x200B; .SEP." + row
+        groupMarkdown += ".SEP." + row
         placement++;
     });
 
-    finalMarkdown += ".SEP..SEP." + groupMarkdown
+    finalMarkdown += ".SEP..DIVIDER..SEP." + groupMarkdown
 });
 
 console.log(finalMarkdown);
@@ -129,8 +129,9 @@ document.body.append(new_div);
             driver.execute_script(JS)
 
             # IMPORTANT: The above script puts the table markdown into div#groups_table.
-            group_tables = "\n".join(driver.find_element_by_id("groups_table").text.split(".SEP."))
+            group_tables = driver.find_element_by_id("groups_table").text.replace(".SEP.", "\n")
             group_tables = group_tables.replace(".NBSP.", "&nbsp;")
+            group_tables = group_tables.replace(".DIVIDER.", "&#x200B;")
             await rleb_stdout.print_to_channel(channel, group_tables, title="Groups")
 
         except Exception as e:
