@@ -180,7 +180,11 @@ async def handle_calendar_lookup(channel, formatter='reddit', days_in_advance = 
         for event_item in event_items:
             rawtext = event_item['summary'] if 'summary' in event_item else ''
             start_timestamp = event_item['start']['dateTime'] if ('start' in event_item and 'dateTime' in event_item['start'])  else ''
-            stream = event_item['location']
+            stream = "None"
+            if 'location' in event_item:
+                stream = event_item['location']
+            else:
+                await channel.send("Warning: No location for \"{0}\" was put in the calendar, using \"None\" instead.".format(rawtext))
             calendar_event = CalendarEvent(rawtext, start_timestamp, stream)
             process_calendar_events(calendar_event)
             calendar_events.append(calendar_event)
