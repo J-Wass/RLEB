@@ -112,7 +112,7 @@ groups.forEach((g) => {
         row = row.replace("{MATCH_RECORD}", t.matchRecord);
         row = row.replace("{GAME_RECORD}", t.gameRecord);
         row = row.replace("{PLUS_MINUS}", t.plusMinus);
-        groupMarkdown += ".SEP." + row
+        groupMarkdown += ".SEP. &#x200B; .SEP." + row
         placement++;
     });
 
