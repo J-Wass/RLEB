@@ -27,7 +27,7 @@ ABOUT_SECTION = """
  # todo: use pytz to get the timezone abbreviations (EST vs EDT, AEST vs AEDT) dynamically
 TABLE_HEADER = """
 # {day-name}, {month-name} {day-number}
-|Scroll to view start times / links >>|**EDT**|**CET**|**AEDT**|**Streams**|**Matches**|
+|Scroll to view start times / links >>|**EDT**|**CET**|**AEST**|**Streams**|**Matches**|
 |:-|:-|:-|:-|:-|:-|"""
 
 TABLE_ROW = """|[**{title}**]({link}) |[**{ET}**](https://www.google.com/search?q={ET}+ET) |{CET} |{AET} | {STREAM} |[**Bracket**]({BRACKET})|"""
@@ -40,8 +40,9 @@ If you are on the official **Reddit App**, you will find the schedule under the 
 # Guides / FAQs
 
 * [**Intro to RL Esports**](https://www.reddit.com/r/RocketLeagueEsports/wiki/guide)
-* [**What is RLCS X? A Guide**](https://www.reddit.com/r/RocketLeagueEsports/comments/ic6mq3/what_is_rlcs_x_a_guide/)
-* [**RLCS X Winter - Beginner's Guide**](https://esports.rocketleague.com/news/rlcs-x-winter-split-beginners-guide/)
+* [**RLCS NA Grid Viewer Guide**](https://www.reddit.com/r/RocketLeagueEsports/wiki/guide/thegridna)
+* [**RLCS EU Grid Viewer Guide*](https://www.reddit.com/r/RocketLeagueEsports/wiki/guide/thegrideu)
+* [**RLCS X Spring - Beginner's Guide**](https://www.reddit.com/r/RocketLeagueEsports/comments/m222mt/what_is_rlcs_x_a_guide_spring_split_edition/)
 * [**Fan Rewards FAQ**](https://www.reddit.com/r/RocketLeagueEsports/wiki/rewards)
 
 &nbsp;
