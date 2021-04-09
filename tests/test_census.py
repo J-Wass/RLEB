@@ -12,8 +12,6 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 
 from rleb_census import handle_flair_census
 
-
-
 class TestFlairCensus(unittest.TestCase):
 
     def test_handle_flair_census(self):
