@@ -13,6 +13,7 @@ import rleb_settings
 from rleb_settings import rleb_log_error, rleb_log_info
 from rleb_trello import read_new_trello_actions
 
+
 # Monitors health of other threads.
 def healthCheck(threads):
     """Every minute, check if all threads are still running and restart if needed."""
@@ -22,17 +23,28 @@ def healthCheck(threads):
         # Monitor Threads
         for t in threads:
             if not t.is_alive():
-                rleb_log_error("HEALTH: Thread has died: {0} ({1} crashes)".format(t.name, rleb_settings.thread_crashes['thread']))
-                rleb_settings.queues['alerts'].put("Thread has died: {0} ({1} crashes)".format(t.name, rleb_settings.thread_crashes['thread']))
+                rleb_log_error(
+                    "HEALTH: Thread has died: {0} ({1} crashes)".format(
+                        t.name, rleb_settings.thread_crashes['thread']))
+                rleb_settings.queues['alerts'].put(
+                    "Thread has died: {0} ({1} crashes)".format(
+                        t.name, rleb_settings.thread_crashes['thread']))
                 threads.remove(t)
 
         # Monitor Asyncio Threads
         dead_asyncio_threads = []
-        for asyncio_thread, update_time in rleb_settings.asyncio_threads.items():
+        for asyncio_thread, update_time in rleb_settings.asyncio_threads.items(
+        ):
             # Can't check if an asyncio thread is alive, check heartbeat instead.
             if (datetime.now() - update_time).total_seconds() > 300:
-                rleb_log_error("HEALTH: {0} asyncio thread has stopped responding! ({1} crashes)".format(asyncio_thread, rleb_settings.thread_crashes['asyncio']))
-                rleb_settings.queues['alerts'].put("{0} asyncio thread has stopped responding! ({1} crashes)".format(asyncio_thread, rleb_settings.thread_crashes['asyncio']))
+                rleb_log_error(
+                    "HEALTH: {0} asyncio thread has stopped responding! ({1} crashes)"
+                    .format(asyncio_thread,
+                            rleb_settings.thread_crashes['asyncio']))
+                rleb_settings.queues['alerts'].put(
+                    "{0} asyncio thread has stopped responding! ({1} crashes)".
+                    format(asyncio_thread,
+                           rleb_settings.thread_crashes['asyncio']))
                 dead_asyncio_threads.append(asyncio_thread)
         for dead_asyncio_thread in dead_asyncio_threads:
             del rleb_settings.asyncio_threads[dead_asyncio_thread]
@@ -40,18 +52,29 @@ def healthCheck(threads):
         # Monitor Chrome, if a version mistmatch was already found, don't alert again.
         if not chrome_version_mismatch and rleb_settings.RUNNING_ENVIRONMENT == "linux":
             try:
-                chrome_version = subprocess.check_output(['google-chrome', '--version']).decode("ASCII")
-                chromedriver_version = subprocess.check_output(['./chromedriver', '--version']).decode("ASCII")
+                chrome_version = subprocess.check_output(
+                    ['google-chrome', '--version']).decode("ASCII")
+                chromedriver_version = subprocess.check_output(
+                    ['./chromedriver', '--version']).decode("ASCII")
                 chrome_major_version = chrome_version.split()[2].split('.')[0]
-                chromedriver_major_version = chromedriver_version.split()[1].split('.')[0]
+                chromedriver_major_version = chromedriver_version.split(
+                )[1].split('.')[0]
                 if chrome_major_version != chromedriver_major_version:
-                    rleb_log_error("HEALTH: The chromedriver version ({0}) does not match chrome version ({1})!".format(chromedriver_major_version, chrome_major_version))
-                    rleb_settings.queues['alerts'].put("The chromedriver version ({0}) does not match chrome version ({1})!".format(chromedriver_major_version, chrome_major_version))
+                    rleb_log_error(
+                        "HEALTH: The chromedriver version ({0}) does not match chrome version ({1})!"
+                        .format(chromedriver_major_version,
+                                chrome_major_version))
+                    rleb_settings.queues['alerts'].put(
+                        "The chromedriver version ({0}) does not match chrome version ({1})!"
+                        .format(chromedriver_major_version,
+                                chrome_major_version))
                     chrome_version_mismatch = True
             except Exception as e:
-                rleb_log_error("HEALTH: Couldn't get chrome version - {0}".format(e))
+                rleb_log_error(
+                    "HEALTH: Couldn't get chrome version - {0}".format(e))
                 rleb_log_error(traceback.format_exc())
         time.sleep(30)
+
 
 def start():
     # Allows discord bot to read from queues while running.
@@ -75,19 +98,28 @@ def start():
     threads = []
 
     # Initialize all threads.
-    submissions_thread = Thread(target=read_new_submissions, name="Submissions thread")
+    submissions_thread = Thread(target=read_new_submissions,
+                                name="Submissions thread")
     submissions_thread.setDaemon(True)
-    subreddit_thread = Thread(target=monitor_subreddit, name="Subreddit thread")
+    subreddit_thread = Thread(target=monitor_subreddit,
+                              name="Subreddit thread")
     subreddit_thread.setDaemon(True)
-    health_thread = Thread(target=healthCheck, args=(threads,), name="Health thread")
+    health_thread = Thread(target=healthCheck,
+                           args=(threads, ),
+                           name="Health thread")
     health_thread.setDaemon(True)
-    trello_thread = Thread(target=read_new_trello_actions, name="Trello thread")
+    trello_thread = Thread(target=read_new_trello_actions,
+                           name="Trello thread")
     trello_thread.setDaemon(True)
     modmail_thread = Thread(target=monitor_modmail, name="Modmail thread")
     modmail_thread.setDaemon(True)
-    threads = [modmail_thread, trello_thread, subreddit_thread, submissions_thread, health_thread]
+    threads = [
+        modmail_thread, trello_thread, subreddit_thread, submissions_thread,
+        health_thread
+    ]
 
-    rleb_log_info("Starting RLEB. Running under {0} in {1} mode.".format(rleb_settings.RUNNING_ENVIRONMENT, rleb_settings.RUNNING_MODE))
+    rleb_log_info("Starting RLEB. Running under {0} in {1} mode.".format(
+        rleb_settings.RUNNING_ENVIRONMENT, rleb_settings.RUNNING_MODE))
 
     # Start up first threads for streaming submissions and reading reddit PMs.
     if rleb_settings.reddit_enabled:
@@ -114,6 +146,7 @@ def start():
     # Start the discord thread, running on main thread.
     rleb_log_info("Starting discord thread.")
     rleb_discord.start(threads)
+
 
 if __name__ == "__main__":
     start()
