@@ -13,7 +13,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     env:
       # Reddit
       REDDIT_CLIENT_ID : 'fake_id'
