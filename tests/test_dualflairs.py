@@ -60,6 +60,18 @@ class TestDualFlairs(unittest.TestCase):
 
         mock_sub_flair.set.assert_called_once_with(mock_redditor, text=":NRG:", css_class="")
 
+    def test_handle_three_flairs(self):
+        mock_sub = mock.Mock(spec=praw.models.Subreddit)
+        mock_sub_flair = mock.Mock(spec=praw.models.reddit.subreddit.SubredditFlair)
+        mock_sub.flair = mock_sub_flair
+
+        mock_redditor = mock.Mock(spec=praw.models.Redditor)
+        mock_redditor.name = "user name"
+
+        handle_dualflair(mock_sub, mock_redditor, ":NRG: :G2: C9:", [])
+
+        mock_sub_flair.set.assert_called_once_with(mock_redditor, text=":NRG: :G2:", css_class="")
+
 
 if __name__ == '__main__':
     unittest.main()
