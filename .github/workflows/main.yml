@@ -68,8 +68,7 @@ jobs:
           pip install -r requirements.txt
  
       - name: Print ENV
-        run: python -c "import os
-             print(os.environ)" 
+        run: python -c "import os; print(os.environ)" 
               
       - name: Run Tests
         run: python -m unittest -f --locals -v
