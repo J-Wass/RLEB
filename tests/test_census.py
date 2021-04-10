@@ -1,15 +1,16 @@
-import unittest
-import unittest.mock as mock
-
-import discord
-import praw
-import asyncio
-
 # Dumb hack to be able to access source code files on both windows and linux
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 
+import unittest
+import unittest.mock as mock
+
+from tests.common.rleb_test_case import RLEBTestCase
+
+import discord
+import praw
+import asyncio
 from rleb_census import handle_flair_census
 
 class TestFlairCensus(unittest.TestCase):
