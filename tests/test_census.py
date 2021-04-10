@@ -13,7 +13,7 @@ import praw
 import asyncio
 from rleb_census import handle_flair_census
 
-class TestFlairCensus(unittest.TestCase):
+class TestFlairCensus(RLEBTestCase):
 
     def test_handle_flair_census(self):
         mock_sub = mock.Mock(spec=praw.models.Subreddit)
