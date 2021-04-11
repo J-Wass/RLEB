@@ -55,7 +55,7 @@ async def handle_group_lookup(url, channel, discord_user):
         # Super hacky js solution.
         JS = """
 // Iterate all teams in participants table.
-GROUP_TEMPLATE_HEADER = `||||||.SEP.|:-|:-|:-|:-|:-|.SEP.|**#**|**{GROUP_NAME}** .NBSP. .NBSP. .NBSP. .NBSP. .NBSP. .NBSP. .NBSP. .NBSP. .NBSP. .NBSP. .NBSP. .NBSP. .NBSP. |**W-L** |**W-L**|**GD** .NBSP. |`
+GROUP_TEMPLATE_HEADER = `||||||.SEP.|:-|:-|:-|:-|:-|.SEP.|**#**|**{GROUP_NAME}** .NBSP. .NBSP. .NBSP. .NBSP. .NBSP. .NBSP. .NBSP. .NBSP. .NBSP. .NBSP. .NBSP. .NBSP. .NBSP. |**Matches** |**Games**|**GD** .NBSP. |`
 
 GROUP_TEMPLATE_ROW = `|{PLACEMENT}|[**{NAME}**]({LINK})|{MATCH_RECORD}|{GAME_RECORD}|{PLUS_MINUS}|`
 

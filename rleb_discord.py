@@ -272,10 +272,9 @@ class RLEsportsBot(discord.Client):
 
         await self.remove_old_responses()
 
-        if str(message.channel) == 'approve-remove':
+        if str(message.channel) == 'voting':
             rleb_settings.rleb_log_info(
-                "DISCORD: New approve-remove message: {0}".format(
-                    message.content))
+                "DISCORD: New voting message: {0}".format(message.content))
             await message.add_reaction('👍')
             await message.add_reaction('👎')
             await message.add_reaction('🤷')
@@ -288,6 +287,7 @@ class RLEsportsBot(discord.Client):
             await message.add_reaction('2️⃣')
             await message.add_reaction('3️⃣')
             await message.add_reaction('💀')
+            await message.add_reaction('⚠️')
             return
 
         if message.content.startswith("!postmatch"):
