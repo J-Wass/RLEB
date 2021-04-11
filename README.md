@@ -1,7 +1,7 @@
 [![Python Tests](https://github.com/J-Wass/RLEB/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/J-Wass/RLEB/actions/workflows/main.yml)
 
 # License
-	The author(s) disclaims copyright to this source code. 
+	The authors disclaim copyright to this source code. 
 
 	In place of a legal notice, here is a blessing:
 
