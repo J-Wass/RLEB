@@ -26,17 +26,16 @@ allowed = [
 ]
 
 
-def handle_dualflair(sub, user, body, moderators):
+def handle_dualflair(sub, user, body):
     """Read, verify, and act of dualflair messages.
 
     Args:
         sub (praw.models.Subreddit): Subreddit to change user flairs in.
         user (praw.models.Redditor): Redditor requesting flair change.
         body (str): Text of user-sent message.
-        moderators (list of str): List of sub moderator usernames.
     """
     # mods can set it to anything so they can add text such as "moderator" to flair
-    if user in list(map(lambda x: x.name, moderators)):
+    if user.name in list(map(lambda x: x.name, rleb_settings.moderators)):
         sub.flair.set(user, text=body, css_class="")
         rleb_log_info("REDDIT: Set mod flair for {0} to {1}".format(
             user.name, body))

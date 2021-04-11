@@ -5,7 +5,7 @@ from datetime import datetime
 
 from rleb_dualflairs import handle_dualflair
 import rleb_settings
-from rleb_settings import sub, r, moderators, rleb_log_info
+from rleb_settings import sub, r, rleb_log_info
 
 
 # Create stream to add new posts to submissions queue
@@ -47,7 +47,7 @@ def monitor_subreddit():
                 user = unread_message.author
                 # if message is a flair request
                 if subject == "flair" or subject == "flairrequest" or subject == "flairs" or subject == "dualflairs" or subject == "dualflair":
-                    handle_dualflair(sub, user, body, moderators)
+                    handle_dualflair(sub, user, body)
         except Exception as e:
             if rleb_settings.thread_crashes['thread'] > 5:
                 break
