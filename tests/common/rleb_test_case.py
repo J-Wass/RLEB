@@ -5,50 +5,36 @@ from unittest.mock import patch
 import psycopg2
 import praw
 
+
 class RLEBTestCase(unittest.TestCase):
     """RLEB Test Case."""
-
     def setUp(self):
-        # Patchers.
-        reddit_init_patcher = patch("praw.Reddit")
-        psycopg2_connect_patcher = patch("psycopg2.connect")
-        psycopg2_extras_execute_values_patcher = patch("psycopg2.extras.execute_values")
-        mock_reddit_init = reddit_init_patcher.start()
-        mock_psycopg2_connect = psycopg2_connect_patcher.start()
-        mock_psycopg2_extras_execute_values = psycopg2_extras_execute_values_patcher.start()
-        self.addCleanup(reddit_init_patcher.stop)
-        self.addCleanup(psycopg2_connect_patcher.stop)
-        self.addCleanup(psycopg2_extras_execute_values_patcher.stop)
+        super().setUp()
 
-        # Build some mock objects.
-        self.mock_db = mock.Mock()
-        self.mock_reddit = mock.Mock(spec=praw.Reddit)
-
-        # Send mocks through patches.
-        mock_psycopg2_connect.return_value = self.mock_db
-        mock_reddit_init.return_value = self.mock_reddit
-        mock_psycopg2_extras_execute_values.return_value = mock.Mock()
+        # Patchers everything.
+        self.mock_reddit = patch("praw.Reddit").start()
+        self.mock_db = patch("psycopg2.connect").start()
+        self.addCleanup(self.mock_reddit.stop)
+        self.addCleanup(self.mock_db)
 
         # Stub everything.
         self.stub_psycopg2()
         self.stub_praw()
-        return super().setUp()
 
     def stub_psycopg2(self):
         """Mock postgreSQL to return certain values."""
         mock_cursor = mock.Mock()
-        self.mock_db.cursor.return_value = mock_cursor
-        self.mock_db.commit.return_value = ""
-
         mock_cursor.execute.return_value = ""
-        mock_cursor.fetchall.return_value = [(":NRG:",), (":G2:",), (":C9:",)]
+        mock_cursor.fetchall.return_value = [(":NRG:", ), (":G2:", ),
+                                             (":C9:", )]
+
+        self.mock_db.return_value.cursor.return_value = mock_cursor
 
     def stub_praw(self):
+        mock_moderator = mock.Mock(auto_spec=praw.models.Redditor)
+        mock_moderator.name = "mr_mod"
+
         mock_sub = mock.Mock(spec=praw.models.Subreddit)
+        mock_sub.return_value.moderator.return_value = [mock_moderator]
+
         self.mock_reddit.return_value.subreddit = mock_sub
-
-        mock_moderator = mock.Mock()
-        mock_sub.moderator.return_value = [mock_moderator]
-        mock_moderator.name.return_value = "These_Voices"
-        
-

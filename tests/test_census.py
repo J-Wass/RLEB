@@ -1,6 +1,7 @@
 # Dumb hack to be able to access source code files on both windows and linux
 import sys
 import os
+
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 
 import unittest
@@ -13,11 +14,11 @@ import praw
 import asyncio
 from rleb_census import handle_flair_census
 
-class TestFlairCensus(RLEBTestCase):
 
+class TestFlairCensus(RLEBTestCase):
     def test_handle_flair_census(self):
         mock_sub = mock.Mock(spec=praw.models.Subreddit)
-        mock_sub.flair.return_value =  [
+        mock_sub.flair.return_value = [
             {
                 "flair_text": ":NRG: :G2:"
             },
@@ -50,7 +51,8 @@ class TestFlairCensus(RLEBTestCase):
         loop.run_until_complete(handle_flair_census(mock_sub, 3, mock_channel))
         loop.close()
 
-        mock_channel.send.assert_awaited_once_with('Verified, 3\nG2, 3\nNRG, 2\n')
+        mock_channel.send.assert_awaited_once_with(
+            'Verified, 3\nG2, 3\nNRG, 2\n')
 
 
 if __name__ == '__main__':
