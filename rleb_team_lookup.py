@@ -14,7 +14,7 @@ async def handle_team_lookup(url, channel, discord_user):
     """Handle team lookup message.
 
         Args:
-            channel (discord.Channel): Channel the lookup is being used in.
+            channel (discord.channel.TextChannel): Channel the lookup is being used in.
             url (str): Liquipedia URL string to look for teams.
             discord_user (discord.User): User requesting lookup.
         """
