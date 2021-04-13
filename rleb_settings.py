@@ -155,8 +155,13 @@ def get_trello_actions(date):
 
 
 # MONITORING
+logging_enabled = True
+
+
 def rleb_log(message, should_flush=False):
     """Log a message to memory (thread safe)."""
+    if (not logging_enabled):
+        return
     with log_lock:
         print("{0}UTC {1}".format(datetime.utcnow(), message))
         memory_log.append("{0}UTC {1}".format(datetime.utcnow(), message))

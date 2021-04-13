@@ -7,9 +7,9 @@ import psycopg2
 import praw
 
 
-class RLEBTestCase(unittest.TestCase):
+class RLEBAsyncTestCase(IsolatedAsyncioTestCase):
     """RLEB Test Case."""
-    def setUp(self):
+    async def asyncSetUp(self):
         super().setUp()
 
         # Patch praw and postgreSQL.

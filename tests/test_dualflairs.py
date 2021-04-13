@@ -27,6 +27,10 @@ class TestDualFlairs(RLEBTestCase):
         # import rleb_dualflairs after setUp is done so that rleb_settings loads with mocks/patches
         global handle_dualflair
         from rleb_dualflairs import handle_dualflair
+        import rleb_settings
+
+        # Dualflairs spams the console so much.
+        rleb_settings.logging_enabled = False
 
     def test_handle_two_flairs(self):
         handle_dualflair(self.mock_sub, self.mock_redditor, ":NRG: :G2:")
