@@ -24,7 +24,15 @@ queues = {}
 
 # OS (Either windows or linux)
 # TODO: Automatically get the running environment
-RUNNING_ENVIRONMENT = platform 
+ENVIRONMENT_DICT = {
+        'aix': 'aix',
+        'linux': 'linux',
+        'win32': 'windows',
+        'cygwin': 'cygwin',
+        'darwin': 'mac'
+}
+
+RUNNING_ENVIRONMENT = ENVIRONMENT_DICT[platform]
 
 RUNNING_MODE = os.environ.get('RUNNING_MODE') or secrets.RUNNING_MODE
 
