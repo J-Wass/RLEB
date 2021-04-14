@@ -23,7 +23,6 @@ except Exception as e:
 queues = {}
 
 # OS (Either windows or linux)
-# TODO: Automatically get the running environment
 ENVIRONMENT_DICT = {
         'aix': 'aix',
         'linux': 'linux',
@@ -35,6 +34,15 @@ ENVIRONMENT_DICT = {
 RUNNING_ENVIRONMENT = ENVIRONMENT_DICT[platform]
 
 RUNNING_MODE = os.environ.get('RUNNING_MODE') or secrets.RUNNING_MODE
+
+# CHROME
+chrome_settings = {
+        'aix': { 'path': 'google-chrome', 'driver': './chromedriver'  },
+        'linux': { 'path': 'google-chrome', 'driver': './chromedriver'  },
+        'win32': { 'path': 'google-chrome', 'driver': './chromedriver' },
+        'cygwin': { 'path': 'google-chrome', 'driver': './chromedriver'  },
+        'darwin': { 'path': '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', 'driver': './chromedriver-mac'  }
+}
 
 # REDDIT
 reddit_enabled = True
