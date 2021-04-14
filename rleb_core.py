@@ -53,9 +53,9 @@ def healthCheck(threads):
         if not chrome_version_mismatch and rleb_settings.RUNNING_ENVIRONMENT == "linux":
             try:
                 chrome_version = subprocess.check_output(
-                    ['google-chrome', '--version']).decode("ASCII")
+                    ['/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '--version']).decode("ASCII")
                 chromedriver_version = subprocess.check_output(
-                    ['./chromedriver', '--version']).decode("ASCII")
+                    ['./chromedriver-mac', '--version']).decode("ASCII")
                 chrome_major_version = chrome_version.split()[2].split('.')[0]
                 chromedriver_major_version = chromedriver_version.split(
                 )[1].split('.')[0]

@@ -78,6 +78,7 @@ class RLEsportsBot(discord.Client):
                     rleb_settings.rleb_log_info(
                         "DISCORD: Received submission id {0}: {1}".format(
                             submission, submission.title))
+                    print(submission)
                     embed = discord.Embed(
                         title=submission.title,
                         url="https://www.reddit.com{0}".format(

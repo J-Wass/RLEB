@@ -29,7 +29,7 @@ RUNNING_MODE = os.environ.get('RUNNING_MODE') or secrets.RUNNING_MODE
 
 # REDDIT
 reddit_enabled = True
-target_sub = 'rocketleagueesports'
+target_sub = 'RLCSnewsTest'
 r = praw.Reddit(client_id=os.environ.get('REDDIT_CLIENT_ID')
                 or secrets.REDDIT_CLIENT_ID,
                 client_secret=os.environ.get('REDDIT_CLIENT_SECRET')
