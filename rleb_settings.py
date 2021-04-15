@@ -36,13 +36,23 @@ RUNNING_ENVIRONMENT = ENVIRONMENT_DICT[platform]
 RUNNING_MODE = os.environ.get('RUNNING_MODE') or secrets.RUNNING_MODE
 
 # CHROME
-chrome_settings = {
-        'aix': { 'path': 'google-chrome', 'driver': './chromedriver'  },
-        'linux': { 'path': 'google-chrome', 'driver': './chromedriver'  },
-        'win32': { 'path': 'google-chrome', 'driver': './chromedriver' },
-        'cygwin': { 'path': 'google-chrome', 'driver': './chromedriver'  },
-        'darwin': { 'path': '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', 'driver': './chromedriver-mac'  }
+path = {
+    'aix': 'google-chrome',
+    'linux': 'google-chrome',
+    'windows': 'google-chrome',
+    'cygwin': 'google-chrome',
+    'mac': '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
 }
+driver = {
+    'aix': './chromedriver',
+    'linux': './chromedriver',
+    'windows': './chromedriver.exe',
+    'cygwin': './chromedriver',
+    'mac': './chromedriver-mac'
+}
+
+def get_chrome_settings(running_environment):
+    return { 'path': path[running_environment], 'driver': driver[running_environment] };
 
 # REDDIT
 reddit_enabled = True
