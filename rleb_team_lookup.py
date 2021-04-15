@@ -32,8 +32,8 @@ async def handle_team_lookup(url, channel, discord_user):
     driver = None
     try:
         try:
-            chromedriver_file = "./chromedriver" if rleb_settings.RUNNING_ENVIRONMENT == "linux" else "./chromedriver.exe"
-            driver = webdriver.Chrome(chromedriver_file,
+            chrome_settings = rleb_settings.get_chrome_settings(rleb_settings.RUNNING_ENVIRONMENT)
+            driver = webdriver.Chrome(chrome_settings['driver'],
                                       chrome_options=chrome_options)
         except WebDriverException as e:
             await channel.send("Chrome can't start!")
