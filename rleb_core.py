@@ -46,10 +46,12 @@ def healthCheck(threads):
                     format(asyncio_thread,
                            rleb_settings.thread_crashes['asyncio']))
                 dead_asyncio_threads.append(asyncio_thread)
+
+        # Don't warn about this asyncio thread again.
         for dead_asyncio_thread in dead_asyncio_threads:
             del rleb_settings.asyncio_threads[dead_asyncio_thread]
 
-        # Monitor Chrome, if a version mistmatch was already found, don't alert again.
+        # Monitor Chrome, if a version mismatch was already found, don't alert again.
         if not chrome_version_mismatch and rleb_settings.RUNNING_ENVIRONMENT == "linux":
             try:
                 chrome_version = subprocess.check_output(

@@ -10,6 +10,12 @@ import praw
 class RLEBTestCase(unittest.TestCase):
     """RLEB Test Case."""
     def setUp(self):
+        """Sets up common patches for RLEB unit tests. 
+        Patches the following:
+        
+        Praw (via praw.Reddit)
+        PostgreSQL (via psycopg2.connect)
+        """
         super().setUp()
 
         # Patch praw and postgreSQL.
