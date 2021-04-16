@@ -21,7 +21,7 @@ except Exception as e:
 
 
 
-# OS (Either windows or linux)
+# OS
 ENVIRONMENT_DICT = {
         'aix': 'aix',
         'linux': 'linux',
@@ -49,6 +49,9 @@ driver = {
     'cygwin': './chromedriver',
     'mac': './chromedriver-mac'
 }
+
+# This is why no one takes windows seriously.
+window_get_chrome_version = "reg query \"HKEY_CURRENT_USER\Software\Google\Chrome\BLBeacon\" /v version"
 
 def get_chrome_settings(running_environment):
     return { 'path': path[running_environment], 'driver': driver[running_environment] };

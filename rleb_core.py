@@ -34,6 +34,9 @@ def health_check(threads):
                         t.name, rleb_settings.thread_crashes['thread']))
                 threads.remove(t)
 
+                if not rleb_settings.health_enabled:
+                    break
+
         # Monitor Asyncio Threads
         dead_asyncio_threads = []
         for asyncio_thread, update_time in rleb_settings.asyncio_threads.items(
@@ -55,8 +58,9 @@ def health_check(threads):
             del rleb_settings.asyncio_threads[dead_asyncio_thread]
 
         # Monitor Chrome, if a version mismatch was already found, don't alert again.
-        if not chrome_version_mismatch and rleb_settings.RUNNING_ENVIRONMENT == "linux":
+        if not chrome_version_mismatch and rleb_settings.RUNNING_ENVIRONMENT != "windows":
             try:
+                # todo, use window_get_chrome_version to query for window chrome version
                 chrome_version = subprocess.check_output(
                     [chrome_settings['path'], '--version']).decode("ASCII")
                 chromedriver_version = subprocess.check_output(
