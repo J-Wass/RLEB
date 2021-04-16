@@ -15,14 +15,16 @@ from rleb_trello import read_new_trello_actions
 
 
 # Monitors health of other threads.
-def healthCheck(threads):
+def health_check(threads):
     """Every minute, check if all threads are still running and restart if needed."""
-    time.sleep(60)
+    time.sleep(rleb_settings.health_check_startup_latency)
     chrome_version_mismatch = False
     chrome_settings = rleb_settings.get_chrome_settings(rleb_settings.RUNNING_ENVIRONMENT)
     while True:
         # Monitor Threads
         for t in threads:
+            if (not rleb_settings.thread_health_check_enabled):
+                break
             if not t.is_alive():
                 rleb_log_error(
                     "HEALTH: Thread has died: {0} ({1} crashes)".format(
@@ -34,8 +36,10 @@ def healthCheck(threads):
 
         # Monitor Asyncio Threads
         dead_asyncio_threads = []
-        for asyncio_thread, update_time in rleb_settings.asyncio_threads.items(
-        ):
+        for asyncio_thread, update_time in rleb_settings.asyncio_threads.items():
+            if (not rleb_settings.asyncio_health_check_enabled):
+                break
+
             # Can't check if an asyncio thread is alive, check heartbeat instead.
             if (datetime.now() - update_time).total_seconds() > 300:
                 rleb_log_error(
@@ -47,12 +51,15 @@ def healthCheck(threads):
                     format(asyncio_thread,
                            rleb_settings.thread_crashes['asyncio']))
                 dead_asyncio_threads.append(asyncio_thread)
+
+        # Don't warn about this asyncio thread again.
         for dead_asyncio_thread in dead_asyncio_threads:
             del rleb_settings.asyncio_threads[dead_asyncio_thread]
 
-        # Monitor Chrome, if a version mistmatch was already found, don't alert again.
-        if not chrome_version_mismatch and rleb_settings.RUNNING_ENVIRONMENT == "linux":
+        # Monitor Chrome, if a version mismatch was already found, don't alert again.
+        if not chrome_version_mismatch and rleb_settings.RUNNING_ENVIRONMENT != "windows" and rleb_settings.chrome_health_check_enabled:
             try:
+                # todo, use window_get_chrome_version to query for window chrome version
                 chrome_version = subprocess.check_output(
                     [chrome_settings['path'], '--version']).decode("ASCII")
                 chromedriver_version = subprocess.check_output(
@@ -74,6 +81,10 @@ def healthCheck(threads):
                 rleb_log_error(
                     "HEALTH: Couldn't get chrome version - {0}".format(e))
                 rleb_log_error(traceback.format_exc())
+
+        # Break before waiting for the interval.
+        if not rleb_settings.health_enabled:
+            break
         time.sleep(30)
 
 
@@ -105,7 +116,7 @@ def start():
     subreddit_thread = Thread(target=monitor_subreddit,
                               name="Subreddit thread")
     subreddit_thread.setDaemon(True)
-    health_thread = Thread(target=healthCheck,
+    health_thread = Thread(target=health_check,
                            args=(threads, ),
                            name="Health thread")
     health_thread.setDaemon(True)
@@ -141,8 +152,9 @@ def start():
         trello_thread.start()
 
     # Start up the health thread.
-    rleb_log_info("Starting health thread.")
-    health_thread.start()
+    if rleb_settings.health_enabled:
+        rleb_log_info("Starting health thread.")
+        health_thread.start()
 
     # Start the discord thread, running on main thread.
     rleb_log_info("Starting discord thread.")
