@@ -11,6 +11,7 @@ from datetime import datetime
 from threading import Lock
 from queue import Queue
 import os
+from sys import platform
 
 try:
     import secrets
@@ -18,16 +19,44 @@ except Exception as e:
     secrets = {}
     print("secrets.py not found, usings keys in environment settings.")
 
+
+
 # OS (Either windows or linux)
-# TODO: Automatically get the running environment
-RUNNING_ENVIRONMENT = "linux"
+ENVIRONMENT_DICT = {
+        'aix': 'aix',
+        'linux': 'linux',
+        'win32': 'windows',
+        'cygwin': 'cygwin',
+        'darwin': 'mac'
+}
+
+RUNNING_ENVIRONMENT = ENVIRONMENT_DICT[platform]
 
 RUNNING_MODE = os.environ.get('RUNNING_MODE') or secrets.RUNNING_MODE
 
+# CHROME
+path = {
+    'aix': 'google-chrome',
+    'linux': 'google-chrome',
+    'windows': 'google-chrome',
+    'cygwin': 'google-chrome',
+    'mac': '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+}
+driver = {
+    'aix': './chromedriver',
+    'linux': './chromedriver',
+    'windows': './chromedriver.exe',
+    'cygwin': './chromedriver',
+    'mac': './chromedriver-mac'
+}
+
+def get_chrome_settings(running_environment):
+    return { 'path': path[running_environment], 'driver': driver[running_environment] };
+
 # CORE
 health_enabled = True
-queues = {} # Global queue dictionary for various things in RLEB.
 health_check_startup_latency = 30 # seconds to wait before health thread starts
+queues = {} # Global queue dictionary for various things in RLEB.
 
 # REDDIT
 reddit_enabled = True
