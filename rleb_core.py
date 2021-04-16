@@ -15,13 +15,15 @@ from rleb_trello import read_new_trello_actions
 
 
 # Monitors health of other threads.
-def healthCheck(threads):
+def health_check(threads):
     """Every minute, check if all threads are still running and restart if needed."""
-    time.sleep(60)
+    time.sleep(rleb_settings.health_check_startup_latency)
     chrome_version_mismatch = False
     while True:
         # Monitor Threads
         for t in threads:
+            print(t)
+            print(t.is_alive())
             if not t.is_alive():
                 rleb_log_error(
                     "HEALTH: Thread has died: {0} ({1} crashes)".format(
@@ -75,6 +77,9 @@ def healthCheck(threads):
                 rleb_log_error(
                     "HEALTH: Couldn't get chrome version - {0}".format(e))
                 rleb_log_error(traceback.format_exc())
+
+        if not rleb_settings.health_enabled:
+            break
         time.sleep(30)
 
 
@@ -106,7 +111,7 @@ def start():
     subreddit_thread = Thread(target=monitor_subreddit,
                               name="Subreddit thread")
     subreddit_thread.setDaemon(True)
-    health_thread = Thread(target=healthCheck,
+    health_thread = Thread(target=health_check,
                            args=(threads, ),
                            name="Health thread")
     health_thread.setDaemon(True)
@@ -142,8 +147,9 @@ def start():
         trello_thread.start()
 
     # Start up the health thread.
-    rleb_log_info("Starting health thread.")
-    health_thread.start()
+    if rleb_settings.health_enabled:
+        rleb_log_info("Starting health thread.")
+        health_thread.start()
 
     # Start the discord thread, running on main thread.
     rleb_log_info("Starting discord thread.")

@@ -18,14 +18,16 @@ except Exception as e:
     secrets = {}
     print("secrets.py not found, usings keys in environment settings.")
 
-# Global queue dictionary for various things in RLEB.
-queues = {}
-
 # OS (Either windows or linux)
 # TODO: Automatically get the running environment
 RUNNING_ENVIRONMENT = "linux"
 
 RUNNING_MODE = os.environ.get('RUNNING_MODE') or secrets.RUNNING_MODE
+
+# CORE
+health_enabled = True
+queues = {} # Global queue dictionary for various things in RLEB.
+health_check_startup_latency = 30 # seconds to wait before health thread starts
 
 # REDDIT
 reddit_enabled = True
