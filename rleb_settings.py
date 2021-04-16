@@ -19,8 +19,6 @@ except Exception as e:
     secrets = {}
     print("secrets.py not found, usings keys in environment settings.")
 
-
-
 # OS
 ENVIRONMENT_DICT = {
         'aix': 'aix',
@@ -60,6 +58,9 @@ def get_chrome_settings(running_environment):
 health_enabled = True
 health_check_startup_latency = 30 # seconds to wait before health thread starts
 queues = {} # Global queue dictionary for various things in RLEB.
+asyncio_health_check_enabled = True
+thread_health_check_enabled = True
+chrome_health_check_enabled = True
 
 # REDDIT
 reddit_enabled = True

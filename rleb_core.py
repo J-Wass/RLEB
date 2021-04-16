@@ -23,8 +23,8 @@ def health_check(threads):
     while True:
         # Monitor Threads
         for t in threads:
-            print(t)
-            print(t.is_alive())
+            if (not rleb_settings.thread_health_check_enabled):
+                break
             if not t.is_alive():
                 rleb_log_error(
                     "HEALTH: Thread has died: {0} ({1} crashes)".format(
@@ -34,13 +34,12 @@ def health_check(threads):
                         t.name, rleb_settings.thread_crashes['thread']))
                 threads.remove(t)
 
-                if not rleb_settings.health_enabled:
-                    break
-
         # Monitor Asyncio Threads
         dead_asyncio_threads = []
-        for asyncio_thread, update_time in rleb_settings.asyncio_threads.items(
-        ):
+        for asyncio_thread, update_time in rleb_settings.asyncio_threads.items():
+            if (not rleb_settings.asyncio_health_check_enabled):
+                break
+
             # Can't check if an asyncio thread is alive, check heartbeat instead.
             if (datetime.now() - update_time).total_seconds() > 300:
                 rleb_log_error(
@@ -58,7 +57,7 @@ def health_check(threads):
             del rleb_settings.asyncio_threads[dead_asyncio_thread]
 
         # Monitor Chrome, if a version mismatch was already found, don't alert again.
-        if not chrome_version_mismatch and rleb_settings.RUNNING_ENVIRONMENT != "windows":
+        if not chrome_version_mismatch and rleb_settings.RUNNING_ENVIRONMENT != "windows" and not rleb_settings.chrome_health_check_enabled:
             try:
                 # todo, use window_get_chrome_version to query for window chrome version
                 chrome_version = subprocess.check_output(
@@ -83,6 +82,7 @@ def health_check(threads):
                     "HEALTH: Couldn't get chrome version - {0}".format(e))
                 rleb_log_error(traceback.format_exc())
 
+        # Break before waiting for the interval.
         if not rleb_settings.health_enabled:
             break
         time.sleep(30)
