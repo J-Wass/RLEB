@@ -19,10 +19,7 @@ except Exception as e:
     secrets = {}
     print("secrets.py not found, usings keys in environment settings.")
 
-# Global queue dictionary for various things in RLEB.
-queues = {}
-
-# OS (Either windows or linux)
+# OS
 ENVIRONMENT_DICT = {
         'aix': 'aix',
         'linux': 'linux',
@@ -51,8 +48,19 @@ driver = {
     'mac': './chromedriver-mac'
 }
 
+# This is why no one takes windows seriously.
+window_get_chrome_version = "reg query \"HKEY_CURRENT_USER\Software\Google\Chrome\BLBeacon\" /v version"
+
 def get_chrome_settings(running_environment):
     return { 'path': path[running_environment], 'driver': driver[running_environment] };
+
+# CORE
+health_enabled = True
+health_check_startup_latency = 30 # seconds to wait before health thread starts
+queues = {} # Global queue dictionary for various things in RLEB.
+asyncio_health_check_enabled = True
+thread_health_check_enabled = True
+chrome_health_check_enabled = True
 
 # REDDIT
 reddit_enabled = True
