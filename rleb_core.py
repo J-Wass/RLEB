@@ -19,6 +19,7 @@ def healthCheck(threads):
     """Every minute, check if all threads are still running and restart if needed."""
     time.sleep(60)
     chrome_version_mismatch = False
+    chrome_settings = rleb_settings.get_chrome_settings(rleb_settings.RUNNING_ENVIRONMENT)
     while True:
         # Monitor Threads
         for t in threads:
@@ -53,9 +54,9 @@ def healthCheck(threads):
         if not chrome_version_mismatch and rleb_settings.RUNNING_ENVIRONMENT == "linux":
             try:
                 chrome_version = subprocess.check_output(
-                    ['/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '--version']).decode("ASCII")
+                    [chrome_settings['path'], '--version']).decode("ASCII")
                 chromedriver_version = subprocess.check_output(
-                    ['./chromedriver-mac', '--version']).decode("ASCII")
+                    [chrome_settings['driver'], '--version']).decode("ASCII")
                 chrome_major_version = chrome_version.split()[2].split('.')[0]
                 chromedriver_major_version = chromedriver_version.split(
                 )[1].split('.')[0]

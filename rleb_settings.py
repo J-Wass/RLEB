@@ -11,6 +11,7 @@ from datetime import datetime
 from threading import Lock
 from queue import Queue
 import os
+from sys import platform
 
 try:
     import secrets
@@ -22,10 +23,36 @@ except Exception as e:
 queues = {}
 
 # OS (Either windows or linux)
-# TODO: Automatically get the running environment
-RUNNING_ENVIRONMENT = "linux"
+ENVIRONMENT_DICT = {
+        'aix': 'aix',
+        'linux': 'linux',
+        'win32': 'windows',
+        'cygwin': 'cygwin',
+        'darwin': 'mac'
+}
+
+RUNNING_ENVIRONMENT = ENVIRONMENT_DICT[platform]
 
 RUNNING_MODE = os.environ.get('RUNNING_MODE') or secrets.RUNNING_MODE
+
+# CHROME
+path = {
+    'aix': 'google-chrome',
+    'linux': 'google-chrome',
+    'windows': 'google-chrome',
+    'cygwin': 'google-chrome',
+    'mac': '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+}
+driver = {
+    'aix': './chromedriver',
+    'linux': './chromedriver',
+    'windows': './chromedriver.exe',
+    'cygwin': './chromedriver',
+    'mac': './chromedriver-mac'
+}
+
+def get_chrome_settings(running_environment):
+    return { 'path': path[running_environment], 'driver': driver[running_environment] };
 
 # REDDIT
 reddit_enabled = True

@@ -44,8 +44,9 @@ async def handle_postmatch(discord_user, matchid, channel):
     chrome_options.add_argument('--no-sandbox')
     driver = None
     try:
-        chromedriver_file = "./chromedriver" if rleb_settings.RUNNING_ENVIRONMENT == "linux" else "./chromedriver.exe"
-        driver = webdriver.Chrome(chromedriver_file,
+        chrome_settings = rleb_settings.get_chrome_settings(rleb_settings.RUNNING_ENVIRONMENT)
+
+        driver = webdriver.Chrome(chrome_settings['driver'],
                                   chrome_options=chrome_options)
     except WebDriverException as e:
         await discord_user.send("Chrome can't start!".format(matchid))
