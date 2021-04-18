@@ -37,8 +37,7 @@ def health_check(threads):
 
         # Monitor Asyncio Threads
         dead_asyncio_threads = []
-        for asyncio_thread, update_time in rleb_settings.asyncio_threads.items(
-        ):
+        for asyncio_thread, update_time in rleb_settings.asyncio_threads.items():
             if (not rleb_settings.asyncio_health_check_enabled):
                 break
 
