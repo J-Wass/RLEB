@@ -19,7 +19,8 @@ def health_check(threads):
     """Every minute, check if all threads are still running and restart if needed."""
     time.sleep(rleb_settings.health_check_startup_latency)
     chrome_version_mismatch = False
-    chrome_settings = rleb_settings.get_chrome_settings(rleb_settings.RUNNING_ENVIRONMENT)
+    chrome_settings = rleb_settings.get_chrome_settings(
+        rleb_settings.RUNNING_ENVIRONMENT)
     while True:
         # Monitor Threads
         for t in threads:
