@@ -44,7 +44,8 @@ async def handle_postmatch(discord_user, matchid, channel):
     chrome_options.add_argument('--no-sandbox')
     driver = None
     try:
-        chrome_settings = rleb_settings.get_chrome_settings(rleb_settings.RUNNING_ENVIRONMENT)
+        chrome_settings = rleb_settings.get_chrome_settings(
+            rleb_settings.RUNNING_ENVIRONMENT)
 
         driver = webdriver.Chrome(chrome_settings['driver'],
                                   chrome_options=chrome_options)

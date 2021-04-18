@@ -19,7 +19,8 @@ def health_check(threads):
     """Every minute, check if all threads are still running and restart if needed."""
     time.sleep(rleb_settings.health_check_startup_latency)
     chrome_version_mismatch = False
-    chrome_settings = rleb_settings.get_chrome_settings(rleb_settings.RUNNING_ENVIRONMENT)
+    chrome_settings = rleb_settings.get_chrome_settings(
+        rleb_settings.RUNNING_ENVIRONMENT)
     while True:
         # Monitor Threads
         for t in threads:
@@ -36,7 +37,8 @@ def health_check(threads):
 
         # Monitor Asyncio Threads
         dead_asyncio_threads = []
-        for asyncio_thread, update_time in rleb_settings.asyncio_threads.items():
+        for asyncio_thread, update_time in rleb_settings.asyncio_threads.items(
+        ):
             if (not rleb_settings.asyncio_health_check_enabled):
                 break
 
