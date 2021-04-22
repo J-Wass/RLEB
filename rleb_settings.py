@@ -122,6 +122,8 @@ discord_enabled = True
 TOKEN = os.environ.get('DISCORD_TOKEN') or secrets.DISCORD_TOKEN
 NEW_POSTS_CHANNEL_ID = int(
     os.environ.get('NEW_POSTS_CHANNEL_ID') or secrets.NEW_POSTS_CHANNEL_ID)
+ROSTER_NEWS_CHANNEL_ID = int(
+    os.environ.get('ROSTER_NEWS_CHANNEL_ID') or secrets.ROSTER_NEWS_CHANNEL_ID)
 TRELLO_CHANNEL_ID = int(
     os.environ.get('TRELLO_CHANNEL_ID') or secrets.TRELLO_CHANNEL_ID)
 MODMAIL_CHANNEL_ID = int(
@@ -147,6 +149,7 @@ hooks = [
     "This one was made with love",
     "Enjoy",
 ]
+NEW_POSTS_CHANNEL_ID = BOT_COMMANDS_CHANNEL_ID if RUNNING_MODE == "local" else NEW_POSTS_CHANNEL_ID
 
 
 # DATABASE

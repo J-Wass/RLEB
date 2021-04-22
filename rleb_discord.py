@@ -59,6 +59,7 @@ class RLEsportsBot(discord.Client):
                     rleb_settings.BOT_COMMANDS_CHANNEL_ID))
         self.new_post_channel = self.get_channel(
             rleb_settings.NEW_POSTS_CHANNEL_ID)
+        self.roster_news_channel = self.get_channel(rleb_settings.ROSTER_NEWS_CHANNEL_ID)
         self.trello_channel = self.get_channel(rleb_settings.TRELLO_CHANNEL_ID)
         self.modmail_channel = self.get_channel(
             rleb_settings.MODMAIL_CHANNEL_ID)
@@ -78,12 +79,16 @@ class RLEsportsBot(discord.Client):
                     rleb_settings.rleb_log_info(
                         "DISCORD: Received submission id {0}: {1}".format(
                             submission, submission.title))
-                    print(submission)
                     embed = discord.Embed(
                         title=submission.title,
                         url="https://www.reddit.com{0}".format(
                             submission.permalink),
                         color=random.choice(rleb_settings.colors))
+                    
+                    # Check Flair for 'roster news'
+                    if submission.link_flair_text.strip().lower() == ':team: roster news':
+                       await self.roster_news_channel.send(embed=embed)
+
                     embed.set_author(name=submission.author.name)
                     await self.new_post_channel.send(embed=embed)
                 rleb_settings.asyncio_threads['submissions'] = datetime.now()
