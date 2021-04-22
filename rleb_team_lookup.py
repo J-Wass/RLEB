@@ -32,7 +32,8 @@ async def handle_team_lookup(url, channel, discord_user):
     driver = None
     try:
         try:
-            chrome_settings = rleb_settings.get_chrome_settings(rleb_settings.RUNNING_ENVIRONMENT)
+            chrome_settings = rleb_settings.get_chrome_settings(
+                rleb_settings.RUNNING_ENVIRONMENT)
             driver = webdriver.Chrome(chrome_settings['driver'],
                                       chrome_options=chrome_options)
         except WebDriverException as e:
