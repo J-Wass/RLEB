@@ -19,16 +19,13 @@ except Exception as e:
     secrets = {}
     print("secrets.py not found, usings keys in environment settings.")
 
-# Global queue dictionary for various things in RLEB.
-queues = {}
-
-# OS (Either windows or linux)
+# OS
 ENVIRONMENT_DICT = {
-        'aix': 'aix',
-        'linux': 'linux',
-        'win32': 'windows',
-        'cygwin': 'cygwin',
-        'darwin': 'mac'
+    'aix': 'aix',
+    'linux': 'linux',
+    'win32': 'windows',
+    'cygwin': 'cygwin',
+    'darwin': 'mac'
 }
 
 RUNNING_ENVIRONMENT = ENVIRONMENT_DICT[platform]
@@ -51,8 +48,38 @@ driver = {
     'mac': './chromedriver-mac'
 }
 
+# This is why no one takes windows seriously.
+window_get_chrome_version = "reg query \"HKEY_CURRENT_USER\Software\Google\Chrome\BLBeacon\" /v version"
+
+
 def get_chrome_settings(running_environment):
-    return { 'path': path[running_environment], 'driver': driver[running_environment] };
+    return {
+        'path': path[running_environment],
+        'driver': driver[running_environment]
+    }
+
+
+# CORE
+health_enabled = True
+health_check_startup_latency = 30  # seconds to wait before health thread starts
+queues = {}  # Global queue dictionary for various things in RLEB.
+asyncio_health_check_enabled = True
+thread_health_check_enabled = True
+chrome_health_check_enabled = True
+
+# Mapping of each asyncio thread to the last time it sent a heartbeat out. Used to determine if an asnycio thread has crashed.
+asyncio_threads = {
+    'submissions': datetime.now(),
+    'alerts': datetime.now(),
+    'modmail': datetime.now(),
+    'trello': datetime.now()
+}
+
+# The number of times a thread or asyncio thread crashed and had to be restarted.
+thread_crashes = {'asyncio': 0, 'thread': 0}
+
+# The last time a thread or asyncio thread crashed and had to be restarted. Used for logging.
+last_datetime_crashed = {'asyncio': None, 'thread': None}
 
 # REDDIT
 reddit_enabled = True
@@ -120,21 +147,6 @@ hooks = [
     "This one was made with love",
     "Enjoy",
 ]
-
-# THREADING
-# Mapping of each asyncio thread to the last time it sent a heartbeat out. Used to determine if an asnycio thread has crashed.
-asyncio_threads = {
-    'submissions': datetime.now(),
-    'alerts': datetime.now(),
-    'modmail': datetime.now(),
-    'trello': datetime.now()
-}
-
-# The number of times a thread or asyncio thread crashed and had to be restarted.
-thread_crashes = {'asyncio': 0, 'thread': 0}
-
-# The last time a thread or asyncio thread crashed and had to be restarted. Used for logging.
-last_datetime_crashed = {'asyncio': None, 'thread': None}
 
 
 # DATABASE
