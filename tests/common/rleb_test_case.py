@@ -41,6 +41,6 @@ class RLEBTestCase(unittest.TestCase):
         mock_moderator.name = "mr_mod"
 
         mock_sub = mock.Mock(spec=praw.models.Subreddit)
-        mock_sub.return_value.moderator.return_value = [mock_moderator]
+        mock_sub.moderator.return_value = [mock_moderator]
 
-        self.mock_reddit.return_value.subreddit = mock_sub
+        self.mock_reddit.return_value.subreddit.return_value = mock_sub
