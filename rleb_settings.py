@@ -96,6 +96,12 @@ r = praw.Reddit(client_id=os.environ.get('REDDIT_CLIENT_ID')
                 or secrets.REDDIT_PASSWORD)
 sub = r.subreddit(target_sub)
 moderators = sub.moderator()
+read_new_submissions_enabled = True
+
+# the seconds to wait before reporting new submissions in #new-posts
+# praw sends a ton of garbage submissions through, so we need to wait
+# a bit before only new submissions are read
+submissions_startup_delay = 60
 
 
 def is_mod(username):
