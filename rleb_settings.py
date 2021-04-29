@@ -97,6 +97,8 @@ r = praw.Reddit(client_id=os.environ.get('REDDIT_CLIENT_ID')
 sub = r.subreddit(target_sub)
 moderators = sub.moderator()
 read_new_submissions_enabled = True
+monitor_subreddit_enabled = True
+monitor_modmail_enabled = True
 
 # the seconds to wait before reporting new submissions in #new-posts
 # praw sends a ton of garbage submissions through, so we need to wait
