@@ -56,7 +56,8 @@ class RLEsportsBot(discord.Client):
             .format(rleb_settings.NEW_POSTS_CHANNEL_ID,
                     rleb_settings.TRELLO_CHANNEL_ID,
                     rleb_settings.MODMAIL_CHANNEL_ID,
-                    rleb_settings.BOT_COMMANDS_CHANNEL_ID))
+                    rleb_settings.BOT_COMMANDS_CHANNEL_ID,
+                    rleb_settings.ROSTER_NEWS_CHANNEL_ID))
         self.new_post_channel = self.get_channel(
             rleb_settings.NEW_POSTS_CHANNEL_ID)
         self.roster_news_channel = self.get_channel(rleb_settings.ROSTER_NEWS_CHANNEL_ID)
@@ -84,12 +85,12 @@ class RLEsportsBot(discord.Client):
                         url="https://www.reddit.com{0}".format(
                             submission.permalink),
                         color=random.choice(rleb_settings.colors))
-                    
+                   
+                    embed.set_author(name=submission.author.name)
                     # Check Flair for 'roster news'
-                    if submission.link_flair_text.strip().lower() == ':team: roster news':
+                    if 'roster news' in submission.link_flair_text.strip().lower():
                        await self.roster_news_channel.send(embed=embed)
 
-                    embed.set_author(name=submission.author.name)
                     await self.new_post_channel.send(embed=embed)
                 rleb_settings.asyncio_threads['submissions'] = datetime.now()
             except Exception as e:
