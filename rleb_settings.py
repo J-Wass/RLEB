@@ -83,7 +83,7 @@ last_datetime_crashed = {'asyncio': None, 'thread': None}
 
 # REDDIT
 reddit_enabled = True
-target_sub = 'RLCSnewsTest'
+target_sub = 'RocketLeagueEsports'
 r = praw.Reddit(client_id=os.environ.get('REDDIT_CLIENT_ID')
                 or secrets.REDDIT_CLIENT_ID,
                 client_secret=os.environ.get('REDDIT_CLIENT_SECRET')
