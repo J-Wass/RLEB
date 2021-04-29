@@ -62,6 +62,8 @@ def monitor_subreddit():
             rleb_settings.rleb_log_error(traceback.format_exc())
             rleb_settings.thread_crashes['thread'] += 1
             rleb_settings.last_datetime_crashed['thread'] = datetime.now()
+        if (not rleb_settings.monitor_subreddit_enabled):
+                break
         time.sleep(rleb_settings.thread_restart_interval_seconds)
 
 
@@ -84,4 +86,6 @@ def monitor_modmail():
             rleb_settings.rleb_log_error(traceback.format_exc())
             rleb_settings.thread_crashes['thread'] += 1
             rleb_settings.last_datetime_crashed['thread'] = datetime.now()
+        if (not rleb_settings.monitor_modmail_enabled):
+            break
         time.sleep(rleb_settings.thread_restart_interval_seconds)
