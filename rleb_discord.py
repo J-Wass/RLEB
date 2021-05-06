@@ -637,8 +637,7 @@ class RLEsportsBot(discord.Client):
                     "Couldn't understand that. Expected '!teams liquipedia-url'."
                 )
                 return
-            seconds = await handle_team_lookup(url, message.channel,
-                                               message.author)
+            seconds = await handle_team_lookup(url, message.channel)
             await self.add_response(message)
 
         elif message.content.startswith("!groups") and is_staff(
