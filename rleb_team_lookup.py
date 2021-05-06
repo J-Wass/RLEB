@@ -1,7 +1,5 @@
-from selenium import webdriver
-from selenium.common.exceptions import WebDriverException
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+from bs4 import BeautifulSoup
+import requests
 import time
 import traceback
 import math
@@ -9,14 +7,12 @@ import math
 import rleb_settings
 import rleb_stdout
 
-
-async def handle_team_lookup(url, channel, discord_user):
+async def handle_team_lookup(url, channel):
     """Handle team lookup message.
 
         Args:
             channel (discord.channel.TextChannel): Channel the lookup is being used in.
             url (str): Liquipedia URL string to look for teams.
-            discord_user (discord.User): User requesting lookup.
         """
     # Variable to keep track of how many seconds the lookup took.
     seconds = 0
@@ -24,70 +20,42 @@ async def handle_team_lookup(url, channel, discord_user):
     # Webdriver setup
     start = time.time()
     rleb_settings.rleb_log_info("DISCORD: Creating lookup for {0}".format(url))
-    chrome_options = Options()
-    chrome_options.add_argument("--headless")
-    chrome_options.add_argument('--disable-dev-shm-usage')
-    chrome_options.add_argument('--no-sandbox')
 
-    driver = None
     try:
+        page = None
         try:
-            chrome_settings = rleb_settings.get_chrome_settings(
-                rleb_settings.RUNNING_ENVIRONMENT)
-            driver = webdriver.Chrome(chrome_settings['driver'],
-                                      chrome_options=chrome_options)
-        except WebDriverException as e:
-            await channel.send("Chrome can't start!")
+            page = requests.get(url).content
+        except Exception as e:
+            await channel.send("Couldn't load {0}!\nError: {1}".format(url, e))
             rleb_settings.rleb_log_info(
-                "LOOKUP: Chrome can't start! Error: {0}".format(e))
+                "TEAMS: Couldn't load {0}!\nError: {1}".format(url, e))
             rleb_settings.rleb_log_error(traceback.format_exc())
             return
 
-        try:
-            driver.get(url)
-            time.sleep(2)  # wait a few seconds for the page to load
-        except WebDriverException as e:
-            await channel.send("Couldn't load {0}. Error: {1}".format(url, e))
-            rleb_settings.rleb_log_info(
-                "LOOKUP: Couldn't load {0}. Error: {1}".format(url, e))
-            rleb_settings.rleb_log_error(traceback.format_exc())
+        html = BeautifulSoup(page, "html.parser")
 
-        # Super hacky js solution.
-        driver.execute_script("""
-                // Iterate all teams in participants table.
-                var table_rows = [];
-                document.querySelectorAll(`div.teamcard`).forEach((team) => {
-                  console.log(team)
-                  const team_name = team.querySelector(`b a`) ? team.querySelector(`b a`).text : "TBD";
-                  const team_link = team.querySelector(`b a`) ? team.querySelector(`b a`).href : "#";
-                  var players = [];
+        # The reddit markdown table to return.
+        table = '|Team|\n:--:|\n'
 
-                  // Iterate the first 3 players in the players' table.
-                  var player_list = [...team.querySelectorAll(`.teamcard-inner .list td > a`)]
-                  player_list.slice(0,3).forEach((player) =>{
-                    players.push(player.text.replaceAll('_', '-'));
-                  });
+        # Iterate each team.
+        for team in html.select('div.teamcard'):
+            team_element = team.select('b a')[0]
+            team_name = team_element.text.replace('(', '').replace(')', '') if team_element else "TBD"
+            team_link = 'https://liquipedia.net' + team_element.attrs['href'] if team_element and team_element.attrs['href'] else "#"
+            players = []
 
-                  players = players.length == 3 ? players : ['?', '?', '?'];
+            # Iterate each player on the team.
+            player_list = team.select('.teamcard-inner .list td > a')
+            for p in player_list:
+                players.append(p.text.replace('_', '-'))
+                if (len(players) >= 3):
+                    break
 
-                  table_rows.push(`|[**${team_name}**](${team_link}) \- ${players[0]}, ${players[1]}, ${players[2]}|`);
-                });
+            # If 3 players aren't found, leave the team as unknown.
+            players = players if len(players) == 3 else ['?', '?', '?']
+            table += (f'[**{team_name}**]({team_link}) - {players[0]}, {players[1]}, {players[2]}|\n')
 
-                // Use ".SEP." as a seperator to later break into newlines in python. Yes this is dumb and hacky.
-                const header = `|Team|\n.SEP.|:--:|\n.SEP.`;
-                const full_text = header + table_rows.join(`\n.SEP.`);
-                const new_div = document.createElement(`div`);
-                new_div.innerHTML = full_text;
-                new_div.id = `team_table`;
-                document.body.append(new_div);
-                console.log(full_text)
-            """)
-
-        # IMPORTANT: The above script puts the table markdown into div#team_table.
-        # Split table markdown by the separate .SEP. and join it with newlines.
-        teams = driver.find_element_by_id("team_table").text.replace(
-            ".SEP.", "\n")
-        await rleb_stdout.print_to_channel(channel, teams, title="Teams")
+        await rleb_stdout.print_to_channel(channel, table, title="Teams")
 
     except Exception as e:
         await channel.send("Couldn't find teams in {0}. Error: {1}".format(
@@ -97,6 +65,5 @@ async def handle_team_lookup(url, channel, discord_user):
         rleb_settings.rleb_log_error(traceback.format_exc())
 
     finally:
-        driver.quit()
         seconds = int(time.time() - start)
         return seconds
