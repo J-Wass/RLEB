@@ -19,8 +19,8 @@ from rleb_calendar import handle_calendar_lookup
 responses_lock = Lock()
 
 
-def is_staff(user):
-    """Return true if user has the Subreddit Moderators role."""
+def is_staff(user: discord.Member) -> bool:
+    """Return true if discord user has the Subreddit Moderators role."""
     return "Subreddit Moderators" in map(lambda x: x.name, user.roles)
 
 
@@ -291,6 +291,10 @@ class RLEsportsBot(discord.Client):
             return
 
         if message.content.startswith("!postmatch"):
+
+            if (not rleb_settings.is_discord_mod(message.author)):
+                return
+
             tokens = message.content.split()
             octane_id = None
             try:
@@ -332,6 +336,10 @@ class RLEsportsBot(discord.Client):
 
         elif message.content.startswith("!census") and is_staff(
                 message.author):
+
+            if (not rleb_settings.is_discord_mod(message.author)):
+                return
+
             rleb_settings.rleb_log_info("DISCORD: Starting flair census.")
             await message.channel.send(
                 "Starting flair census, this may take a minute...")
@@ -356,6 +364,10 @@ class RLEsportsBot(discord.Client):
 
         elif message.content.startswith("!migrate") and is_staff(
                 message.author):
+
+            if (not rleb_settings.is_discord_mod(message.author)):
+                return
+
             rleb_settings.rleb_log_info("DISCORD: Starting migration")
             tokens = message.content.split()
             from_flair = None
@@ -384,6 +396,10 @@ class RLEsportsBot(discord.Client):
 
         elif message.content == "!confirm migrate" and is_staff(
                 message.author):
+
+            if (not rleb_settings.is_discord_mod(message.author)):
+                return
+
             if ((datetime.now() - self.migrate_request_time).total_seconds() >
                     120):
                 await message.channel.send(
@@ -406,6 +422,10 @@ class RLEsportsBot(discord.Client):
             await self.add_response(message)
 
         elif message.content == "!dualflairs list":
+
+            if (not rleb_settings.is_discord_mod(message.author)):
+                return
+
             all_flairs = ""
             db = rleb_settings.postgresConnection()
             cursor = db.cursor()
@@ -419,8 +439,11 @@ class RLEsportsBot(discord.Client):
             await message.channel.send(all_flairs)
             await self.add_response(message)
 
-        elif message.content.startswith("!dualflairs remove") and is_staff(
-                message.author):
+        elif message.content.startswith("!dualflairs remove") and is_staff(message.author):
+
+            if (not rleb_settings.is_discord_mod(message.author)):
+                return
+
             tokens = message.content.split()
             flair = None
             try:
@@ -438,6 +461,10 @@ class RLEsportsBot(discord.Client):
             await self.add_response(message)
 
         elif message.content == '!confirm remove' and is_staff(message.author):
+
+            if (not rleb_settings.is_discord_mod(message.author)):
+                return
+
             if ((datetime.now() - self.remove_flair_time).total_seconds() >
                     120):
                 await message.channel.send(
@@ -462,8 +489,11 @@ class RLEsportsBot(discord.Client):
                     self.flair_to_remove))
                 await self.add_response(message)
 
-        elif message.content.startswith("!dualflairs add") and is_staff(
-                message.author):
+        elif message.content.startswith("!dualflairs add") and is_staff(message.author):
+
+            if (not rleb_settings.is_discord_mod(message.author)):
+                return
+
             tokens = message.content.split()
             flair = None
             try:
@@ -480,6 +510,10 @@ class RLEsportsBot(discord.Client):
             await self.add_response(message)
 
         elif message.content == '!confirm add' and is_staff(message.author):
+
+            if (not rleb_settings.is_discord_mod(message.author)):
+                return
+
             if ((datetime.now() - self.add_flair_time).total_seconds() > 120):
                 await message.channel.send(
                     "Addition timed out. You must confirm within 2 minutes to add flairs."
@@ -504,10 +538,18 @@ class RLEsportsBot(discord.Client):
                 await self.add_response(message)
 
         elif message.content.startswith('!flush') and is_staff(message.author):
+
+            if (not rleb_settings.is_discord_mod(message.author)):
+                return
+
             rleb_settings.flush_memory_log()
             await message.channel.send(":toilet:")
 
         elif message.content.startswith('!logs') and is_staff(message.author):
+
+            if (not rleb_settings.is_discord_mod(message.author)):
+                return
+
             tokens = message.content.split()
             datasource = 'memory'
             count = 10
@@ -547,6 +589,10 @@ class RLEsportsBot(discord.Client):
             await self.add_response(message)
 
         elif message.content == '!status' and is_staff(message.author):
+
+            if (not rleb_settings.is_discord_mod(message.author)):
+                return
+
             delta = datetime.now() - self.start_datetime
             seconds_uptime = delta.total_seconds()
             hours_uptime = round(seconds_uptime / 60 / 60, 0)
@@ -576,35 +622,14 @@ class RLEsportsBot(discord.Client):
             await self.add_response(message)
 
         elif message.content == '!reset crashes' and is_staff(message.author):
+
+            if (not rleb_settings.is_discord_mod(message.author)):
+                return
+
             rleb_settings.thread_crashes['thread'] = 0
             rleb_settings.thread_crashes['asyncio'] = 0
             await message.channel.send("Thread crash count was reset")
             rleb_settings.rleb_log_info("DISCORD: Thread count was reset.")
-            await self.add_response(message)
-
-        elif message.content.startswith("?") and is_staff(message.author):
-            if len(message.content) < 3:
-                return
-            msg = message.content
-            url = "https://www.reddit.com/r/RocketLeagueEsports/"
-            if msg == "?sub" or msg == "?subreddit" or msg == "?reddit":
-                url = "https://www.reddit.com/r/RocketLeagueEsports/"
-            elif msg == "?trello":
-                url = "https://trello.com/b/u16InUez/rl-esports-sub"
-            elif msg == "?modmail":
-                url = "https://mod.reddit.com/mail/all"
-            elif msg == "?liquipedia" or msg == "?wiki":
-                url = "https://liquipedia.net/rocketleague/Main_Page"
-            else:
-                await message.channel.send(
-                    "Try ?liquipedia/?wiki, ?trello , ?modmail, or ?sub/?reddit"
-                )
-                return
-
-            embed = discord.Embed(title=url,
-                                  url=url,
-                                  color=random.choice(rleb_settings.colors))
-            await message.channel.send(embed=embed)
             await self.add_response(message)
 
         elif message.content.startswith("!search"):
@@ -658,8 +683,7 @@ class RLEsportsBot(discord.Client):
                                                 message.author)
             await self.add_response(message)
 
-        elif message.content.startswith("!events") and is_staff(
-                message.author):
+        elif message.content.startswith("!events") and is_staff(message.author):
             rleb_settings.rleb_log_info("DISCORD: Starting event lookup.")
             tokens = message.content.split()
             formatter = 'reddit'
@@ -677,7 +701,7 @@ class RLEsportsBot(discord.Client):
 
 
 def start(threads):
-    """Spawns the various discord threads.
+    """Spawns the various discord asyncio threads.
 
     Args:
         threads (List of Thread): List of threads used for monitoring both health.

@@ -40,8 +40,7 @@ If you are on the official **Reddit App**, you will find the schedule under the 
 # Guides / FAQs
 
 * [**Intro to RL Esports**](https://www.reddit.com/r/RocketLeagueEsports/wiki/guide)
-* **RLCS X Grid Guides: [**NA**](https://www.reddit.com/r/RocketLeagueEsports/wiki/guide/thegridna)/[**EU**](https://www.reddit.com/r/RocketLeagueEsports/wiki/guide/thegrideu)**
-* [**RLCS X Spring - Beginner's Guide**](https://www.reddit.com/r/RocketLeagueEsports/comments/m222mt/what_is_rlcs_x_a_guide_spring_split_edition/)
+* [**Introducing The RLCS X Championships**](https://esports.rocketleague.com/news/introducing-the-rlcs-x-championships/)
 * [**Fan Rewards FAQ**](https://www.reddit.com/r/RocketLeagueEsports/wiki/rewards)
 
 &nbsp;

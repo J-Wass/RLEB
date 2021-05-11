@@ -12,6 +12,7 @@ from threading import Lock
 from queue import Queue
 import os
 from sys import platform
+import discord
 
 try:
     import secrets
@@ -155,6 +156,11 @@ hooks = [
     "This one was made with love",
     "Enjoy",
 ]
+verified_moderators = json.loads(os.environ.get('VERIFIED_MODERATORS') or secrets.VERIFIED_MODERATORS)
+def is_discord_mod(user: discord.Member):
+    """Returns true if the discord user a verified moderator."""
+    username = user.name.lower() + "#" + user.discriminator
+    return username in verified_moderators
 
 
 # DATABASE
