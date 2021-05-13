@@ -70,6 +70,20 @@ class RLEsportsBot(discord.Client):
             await self.bot_command_channel.send(
                 "Bot is online, running in {0} under {1} mode.".format(
                     rleb_settings.RUNNING_ENVIRONMENT, rleb_settings.RUNNING_MODE))
+        else:
+            await self.send_meme(self.bot_command_channel)
+
+    async def send_meme(self, channel):
+        dankmemes = rleb_settings.r.subreddit("dankmemes")
+        randomizer = random.randint(1, 20)
+        count = 0
+        for meme in dankmemes.top("day"):
+            if count <= randomizer:
+                count += 1
+                continue
+            link = meme.url
+            await channel.send("{0}".format(link))
+            break
 
     async def check_new_submissions(self):
         """Check submissions queue to post in 'new posts' discord channel."""
@@ -702,16 +716,7 @@ class RLEsportsBot(discord.Client):
             await self.add_response(message)
 
         elif message.content.startswith("!meme"):
-            dankmemes = rleb_settings.r.subreddit("dankmemes")
-            randomizer = random.randint(1, 20)
-            count = 0
-            for meme in dankmemes.top("day"):
-                if count <= randomizer:
-                    count += 1
-                    continue
-                link = meme.url
-                await message.channel.send("{0}".format(link))
-                break
+            await self.send_meme(message.channel)
             await self.add_response(message)
 
 
