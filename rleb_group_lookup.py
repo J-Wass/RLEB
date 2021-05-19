@@ -1,147 +1,95 @@
-from selenium import webdriver
-from selenium.common.exceptions import WebDriverException
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+from bs4 import BeautifulSoup
 import time
 import traceback
 import math
+import requests
 
 import rleb_settings
 import rleb_stdout
 
-
-async def handle_group_lookup(url, channel, discord_user):
+async def handle_group_lookup(url, channel):
     """Handle group lookup message.
 
         Args:
             channel (discord.Channel): Channel the lookup is being used in.
             url (str): Liquipedia URL string to look for groups.
-            discord_user (discord.User): User requesting lookup.
         """
-    # Variable to keep track of how many seconds the lookup took.
-    seconds = 0
 
-    # Webdriver setup
     start = time.time()
     rleb_settings.rleb_log_info(
         "DISCORD: Creating group lookup for {0}".format(url))
-    chrome_options = Options()
-    chrome_options.add_argument("--headless")
-    chrome_options.add_argument('--disable-dev-shm-usage')
-    chrome_options.add_argument('--no-sandbox')
 
-    driver = None
     try:
+        page = None
         try:
-            chrome_settings = rleb_settings.get_chrome_settings(
-                rleb_settings.RUNNING_ENVIRONMENT)
-            driver = webdriver.Chrome(chrome_settings['driver'],
-                                      chrome_options=chrome_options)
-        except WebDriverException as e:
-            await channel.send("Chrome can't start!")
+            page = requests.get(url).content
+        except Exception as e:
+            await channel.send("Couldn't load {0}!\nError: {1}".format(url, e))
             rleb_settings.rleb_log_info(
-                "LOOKUP: Chrome can't start! Error: {0}".format(e))
+                "TEAMS: Couldn't load {0}!\nError: {1}".format(url, e))
             rleb_settings.rleb_log_error(traceback.format_exc())
             return
 
-        try:
-            driver.get(url)
-            time.sleep(2)  # wait a few seconds for the page to load
-        except WebDriverException as e:
-            await channel.send("Couldn't load {0}. Error: {1}".format(url, e))
-            rleb_settings.rleb_log_info(
-                "LOOKUP: Couldn't load {0}. Error: {1}".format(url, e))
-            rleb_settings.rleb_log_error(traceback.format_exc())
+        html = BeautifulSoup(page, "html.parser")
 
-        # Super hacky js solution.
-        JS = """
-// Iterate all teams in participants table.
-GROUP_TEMPLATE_HEADER = `||||||.SEP.|:-|:-|:-|:-|:-|.SEP.|**#**|**{GROUP_NAME}** .NBSP. .NBSP. .NBSP. .NBSP. .NBSP. .NBSP. .NBSP. .NBSP. .NBSP. .NBSP. .NBSP. .NBSP. .NBSP. |**Matches** |**Games**|**GD** .NBSP. |`
+        GROUP_TEMPLATE_HEADER = '|||||\n|:-|:-|:-|:-|\n|**#**|**{GROUP_NAME}** &#x200B; &#x200B; &#x200B; &#x200B; &#x200B; &#x200B; &#x200B; &#x200B; &#x200B; &#x200B; &#x200B; &#x200B; &#x200B; |**Matches** |**Game Diff** |'
+        GROUP_TEMPLATE_ROW = '|{PLACEMENT}|[**{NAME}**]({LINK})|{MATCH_RECORD}|{PLUS_MINUS}|'
 
-GROUP_TEMPLATE_ROW = `|{PLACEMENT}|[**{NAME}**]({LINK})|{MATCH_RECORD}|{GAME_RECORD}|{PLUS_MINUS}|`
+        class Team:
+            def __init__(self, teamName, teamLink, matchRecord, plusMinus):
+                self.teamName = teamName
+                self.teamLink = teamLink
+                self.matchRecord = matchRecord
+                self.plusMinus = plusMinus
 
-class Team {
-    constructor(teamName, teamLink, matchRecord, gameRecord, plusMinus) {
-        this.teamName = teamName;
-        this.teamLink = teamLink;
-        this.matchRecord = matchRecord;
-        this.gameRecord = gameRecord;
-        this.plusMinus = plusMinus;
-    }
-}
+        class Group:
+           def __init__(self, groupName, teams):
+                self.groupName = groupName
+                self.teams = teams
 
-class Group {
-    constructor(groupName, teams) {
-        this.groupName = groupName;
-        this.teams = teams;
-    }
-}
+        # Holds all groups in the liquipedia page.
+        groups = [];
 
-// Holds all groups in the liquipedia page.
-groups = [];
+        # Iterate each table.
+        tables = html.select("table.grouptable")
+        for t in tables:
+            groupName = t.select("tr:nth-child(1) th span")[0].text
 
-// Iterate each table.
-tables = document.querySelectorAll("table.grouptable");
-tables.forEach((t) => {
-    groupName = t.querySelectorAll("tr:nth-child(1) th")[0].innerText;
+            # Hold all of the teams for the group object.
+            teams = []
 
-    // Hold all of the teams for the group object.
-    teams = [];
+            # Iterate each row.
+            rows = t.select("tr:nth-child(n+2)");
+            for r in rows:
+                name = r.select("td")[0].text.strip()
+                link = 'https://liquipedia.net' + r.select("td")[0].select(".team-template-text a")[0].attrs['href']
+                matchRecord = r.select("td")[1].text
+                plusMinus = r.select("td")[3].text
 
-    // Iterate each row.
-    rows = t.querySelectorAll("tr:nth-child(n+2)");
-    rows.forEach((r) => {
-        name = r.querySelectorAll("td")[0].innerText.trim();
-        link = r.querySelectorAll("td")[0].querySelectorAll(".team-template-text a")[0].href
-        matchRecord = r.querySelectorAll("td")[1].innerText;
-        gameRecord = r.querySelectorAll("td")[2].innerText;
-        plusMinus = r.querySelectorAll("td")[3].innerText;
+                newTeam = Team(name, link, matchRecord, plusMinus)
+                teams.append(newTeam)
 
-        newTeam = new Team(name, link, matchRecord, gameRecord, plusMinus);
-        teams.push(newTeam)
-    });
+            newGroup = Group(groupName, teams)
+            groups.append(newGroup)
 
-    newGroup = new Group(groupName, teams)
-    groups.push(newGroup);
-});
+        finalMarkdown = ''
+        for g in groups:
+            groupMarkdown = GROUP_TEMPLATE_HEADER
+            groupMarkdown = groupMarkdown.replace("{GROUP_NAME}", g.groupName if g.groupName else 'Group')
+            placement = 1
+            for t in g.teams:
+                row = GROUP_TEMPLATE_ROW;
+                row = row.replace("{PLACEMENT}", str(placement))
+                row = row.replace("{NAME}", t.teamName)
+                row = row.replace("{LINK}", t.teamLink)
+                row = row.replace("{MATCH_RECORD}", t.matchRecord)
+                row = row.replace("{PLUS_MINUS}", t.plusMinus)
+                groupMarkdown += "\n" + row
+                placement += 1
 
-finalMarkdown = '';
-groups.forEach((g) => {
-    groupMarkdown = GROUP_TEMPLATE_HEADER
-    groupMarkdown = groupMarkdown.replace("{GROUP_NAME}", g.groupName || 'Group');
-    placement = 1;
-    g.teams.forEach((t) => {
-        row = GROUP_TEMPLATE_ROW;
-        row = row.replace("{PLACEMENT}", placement);
-        row = row.replace("{NAME}", t.teamName);
-        row = row.replace("{LINK}", t.teamLink);
-        row = row.replace("{MATCH_RECORD}", t.matchRecord);
-        row = row.replace("{GAME_RECORD}", t.gameRecord);
-        row = row.replace("{PLUS_MINUS}", t.plusMinus);
-        groupMarkdown += ".SEP." + row
-        placement++;
-    });
+            finalMarkdown += groupMarkdown + "\n\n&#x200B;\n\n"
 
-    finalMarkdown += ".SEP..SEP..DIVIDER..SEP..SEP." + groupMarkdown
-});
-
-console.log(finalMarkdown);
-
-const new_div = document.createElement(`div`);
-new_div.innerHTML = finalMarkdown;
-new_div.id = `groups_table`;
-document.body.append(new_div);
-            """
-        driver.execute_script(JS)
-
-        # IMPORTANT: The above script puts the table markdown into div#groups_table.
-        group_tables = driver.find_element_by_id("groups_table").text.replace(
-            ".SEP.", "\n")
-        group_tables = group_tables.replace(".NBSP.", "&nbsp;")
-        group_tables = group_tables.replace(".DIVIDER.", "&#x200B;")
-        await rleb_stdout.print_to_channel(channel,
-                                           group_tables,
-                                           title="Groups")
+        await rleb_stdout.print_to_channel(channel, finalMarkdown, title="Groups")
 
     except Exception as e:
         await channel.send("Couldn't find groups in {0}. Error: {1}".format(
@@ -151,6 +99,4 @@ document.body.append(new_div);
         rleb_settings.rleb_log_error(traceback.format_exc())
 
     finally:
-        driver.quit()
-        seconds = int(time.time() - start)
-        return seconds
+        return int(time.time() - start)
