@@ -47,7 +47,7 @@ class TestFlairCensus(RLEBTestCase):
 
         mock_channel = mock.Mock(spec=discord.TextChannel)
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.new_event_loop()
         loop.run_until_complete(handle_flair_census(mock_sub, 3, mock_channel))
         loop.close()
 

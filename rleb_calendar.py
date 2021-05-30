@@ -199,8 +199,7 @@ async def handle_calendar_lookup(channel,
 
         service = build('calendar', 'v3', credentials=credentials)
 
-        later = datetime.datetime.now() + datetime.timedelta(
-            days=days_in_advance)
+        later = datetime.datetime.now() + datetime.timedelta(days=days_in_advance)
         upcoming_events = service.events().list(
             calendarId=rleb_settings.GOOGLE_CALENDAR_ID,
             timeMin=datetime.datetime.now().astimezone().isoformat(),
@@ -232,7 +231,7 @@ async def handle_calendar_lookup(channel,
         await rleb_stdout.print_to_channel(
             channel,
             formatted_text,
-            title='{0} calender for next {1} days'.format(
+            title='{0} calendar for next {1} days'.format(
                 formatter, days_in_advance))
     except Exception as e:
         rleb_settings.rleb_log_error(traceback.format_exc())
