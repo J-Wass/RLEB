@@ -50,8 +50,9 @@ jobs:
       PASTEBIN_USER_NAME : "fake_pastebin_username"
       PASTEBIN_USER_PASS : "fake_pastebin_password"
 
-      # Calendar
+      # Google
       CALENDAR_ID : "fake_calendar_id"
+      SHEETS_ID : "fake_sheets_id"
       GOOGLE_CREDENTIALS_JSON : "{}"
 
       # Indicator for Running Mode
