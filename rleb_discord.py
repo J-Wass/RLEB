@@ -15,9 +15,9 @@ from rleb_team_lookup import handle_team_lookup
 from rleb_group_lookup import handle_group_lookup
 from rleb_census import handle_flair_census
 from rleb_calendar import handle_calendar_lookup
+from rleb_tasks import handle_task_lookup
 
 responses_lock = Lock()
-
 
 def is_staff(user: discord.Member) -> bool:
     """Return true if discord user has the Subreddit Moderators role."""
@@ -31,7 +31,7 @@ class RLEsportsBot(discord.Client):
         Args:
             threads (List of Thread): List of threads used for monitoring both health.
         """
-        super().__init__()
+        super().__init__(intents=discord.Intents.all())
 
         # List of all threads running RLEB.
         self.threads = threads
@@ -712,6 +712,17 @@ class RLEsportsBot(discord.Client):
                 )
                 return
             await handle_calendar_lookup(message.channel, formatter, days)
+            await self.add_response(message)
+
+        elif message.content.startswith("!tasks") and is_staff(message.author):
+            rleb_settings.rleb_log_info("DISCORD: Starting task lookup.")
+            tokens = message.content.split()
+            user = message.author.name.lower() + '#' + message.author.discriminator
+            try:
+                user = tokens[1]
+            except Exception:
+                pass
+            await handle_task_lookup(message.channel, self, user)
             await self.add_response(message)
 
         elif message.content.startswith("!meme"):
