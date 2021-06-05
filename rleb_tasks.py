@@ -86,7 +86,7 @@ async def handle_task_lookup(channel: discord.TextChannel, client: discord.Clien
         sheet = service.spreadsheets()
 
         # Shnag the range from 5-11, which includes event time and updaters/creators
-        sheet_json = sheet.values().get(spreadsheetId=rleb_settings.SHEETS_ID, range='5:11').execute()
+        sheet_json = sheet.values().get(spreadsheetId=rleb_settings.SHEETS_ID, range='Current Week!5:11').execute()
         values = sheet_json['values']
 
         # Break sheet_json into useful lists.
