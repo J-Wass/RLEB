@@ -1,0 +1,13 @@
+{
+    "range": "'bot stuff ;)'!A5:AF11",
+    "majorDimension": "ROWS",
+    "values": [
+        [ "Thread Name", "cool event", "", "Weekly Schedule/Ask Questions", "", "Weekly Points Standings" ],
+        [ "Date (double click for date picker)", "2021-06-01", "Tuesday", "2021-05-03", "Monday", "2021-05-03", "Monday" ],
+        [ "Time in UTC", "Schedule", "Update", "Schedule 10:00", "", "Post 16:00" ],
+        [ "Thread Creator", "hawkkn#0408", "", "hawkkn#0408", "", "voices#6380" ],
+        [ "Thread Creation Options", "", "", "Comments: New", "First sticky", "No comment order", "No sticky" ],
+        [ "Thread is Scheduled", "FALSE", "", "FALSE", "", "FALSE" ],
+        [ "Thread Updater(s)/Monitor(s)", "ds0308#9530", "voices#6380", "No one needed", "No one needed", "No one needed", "No one needed" ]
+    ]
+}

@@ -121,10 +121,11 @@ flair_pattern = "\:\w+\:"
 modmail_polling_interval_seconds = 10
 thread_restart_interval_seconds = 30
 
-# CALENDAR
+# GOOGLE
 GOOGLE_CALENDAR_ID = os.environ.get('CALENDAR_ID') or secrets.CALENDAR_ID
 GOOGLE_CREDENTIALS_JSON = os.environ.get(
     'GOOGLE_CREDENTIALS_JSON') or secrets.GOOGLE_CREDENTIALS_JSON
+SHEETS_ID = os.environ.get('SHEETS_ID') or secrets.SHEETS_ID
 
 # DISCORD
 discord_enabled = True

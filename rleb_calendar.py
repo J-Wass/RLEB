@@ -194,8 +194,7 @@ async def handle_calendar_lookup(channel,
 
     try:
         credential_info = json.loads(rleb_settings.GOOGLE_CREDENTIALS_JSON)
-        credentials = service_account.Credentials.from_service_account_info(
-            credential_info, scopes=SCOPES)
+        credentials = service_account.Credentials.from_service_account_info(credential_info, scopes=SCOPES)
 
         service = build('calendar', 'v3', credentials=credentials)
 
