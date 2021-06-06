@@ -121,7 +121,7 @@ async def handle_task_lookup(channel: discord.TextChannel, client: discord.Clien
 
         # Send the response to discord.
         if len(relevant_tasks) == 0:
-            await channel.send(f'\"{user}\" has no tasks this week.')
+            await channel.send(f'{user} has no tasks this week.')
             return
 
         for task in relevant_tasks:
