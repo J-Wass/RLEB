@@ -121,7 +121,7 @@ async def handle_task_lookup(channel: discord.TextChannel, client: discord.Clien
 
         # Send the response to discord.
         if len(relevant_tasks) == 0:
-            await channel.send(f'No user with the username \"{user}\" had any tasks this week. (Make sure \"{user}\" is how the username is spelled on google sheets.)')
+            await channel.send(f'{user} has no tasks this week.')
             return
 
         for task in relevant_tasks:
