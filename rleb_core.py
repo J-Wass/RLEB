@@ -4,7 +4,6 @@ from queue import Queue
 from threading import Thread
 from tornado.platform.asyncio import AnyThreadEventLoopPolicy
 from datetime import datetime
-import subprocess
 import traceback
 
 import rleb_discord
@@ -18,9 +17,7 @@ from rleb_trello import read_new_trello_actions
 def health_check(threads):
     """Every minute, check if all threads are still running and restart if needed."""
     time.sleep(rleb_settings.health_check_startup_latency)
-    chrome_version_mismatch = False
-    chrome_settings = rleb_settings.get_chrome_settings(
-        rleb_settings.RUNNING_ENVIRONMENT)
+
     while True:
         # Monitor Threads
         for t in threads:
@@ -56,32 +53,6 @@ def health_check(threads):
         # Don't warn about this asyncio thread again.
         for dead_asyncio_thread in dead_asyncio_threads:
             del rleb_settings.asyncio_threads[dead_asyncio_thread]
-
-        # Monitor Chrome, if a version mismatch was already found, don't alert again.
-        if not chrome_version_mismatch and rleb_settings.RUNNING_ENVIRONMENT != "windows" and rleb_settings.chrome_health_check_enabled:
-            try:
-                # todo, use window_get_chrome_version to query for window chrome version
-                chrome_version = subprocess.check_output(
-                    [chrome_settings['path'], '--version']).decode("ASCII")
-                chromedriver_version = subprocess.check_output(
-                    [chrome_settings['driver'], '--version']).decode("ASCII")
-                chrome_major_version = chrome_version.split()[2].split('.')[0]
-                chromedriver_major_version = chromedriver_version.split(
-                )[1].split('.')[0]
-                if chrome_major_version != chromedriver_major_version:
-                    rleb_log_error(
-                        "HEALTH: The chromedriver version ({0}) does not match chrome version ({1})!"
-                        .format(chromedriver_major_version,
-                                chrome_major_version))
-                    rleb_settings.queues['alerts'].put(
-                        "The chromedriver version ({0}) does not match chrome version ({1})!"
-                        .format(chromedriver_major_version,
-                                chrome_major_version))
-                    chrome_version_mismatch = True
-            except Exception as e:
-                rleb_log_error(
-                    "HEALTH: Couldn't get chrome version - {0}".format(e))
-                rleb_log_error(traceback.format_exc())
 
         # Break before waiting for the interval.
         if not rleb_settings.health_enabled:

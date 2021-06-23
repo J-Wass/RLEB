@@ -10,7 +10,6 @@ import math
 
 import rleb_settings
 from rleb_settings import sub
-from rleb_postmatch import handle_postmatch
 from rleb_team_lookup import handle_team_lookup
 from rleb_group_lookup import handle_group_lookup
 from rleb_census import handle_flair_census
@@ -35,11 +34,6 @@ class RLEsportsBot(discord.Client):
 
         # List of all threads running RLEB.
         self.threads = threads
-
-        # Number of postmatch threads made
-        self.postmatches = 0
-        # Total seconds spent making post matches
-        self.total_speed = 0
 
         # The datetime the bot started.
         self.start_datetime = datetime.now()
@@ -305,41 +299,6 @@ class RLEsportsBot(discord.Client):
             await message.add_reaction('💀')
             await message.add_reaction('⚠️')
             return
-
-        if message.content.startswith("!postmatch"):
-
-            if (not rleb_settings.is_discord_mod(message.author)):
-                return
-
-            tokens = message.content.split()
-            octane_id = None
-            try:
-                octane_id = tokens[1]
-            except IndexError:
-                await message.channel.send(
-                    "Couldn't understand that. Expected '!postmatch octane_id'."
-                )
-                return
-            understood_responses = [
-                "you got it boss", "1 fresh post match thread, coming up",
-                "yes sir", "sure 1 sec"
-            ]
-            await message.channel.send(random.choice(understood_responses))
-            if self.postmatches > 0:
-                await message.channel.send(
-                    "My average speed is around {0}s.".format(
-                        round(self.total_speed / self.postmatches)))
-            if random.randint(0, 9) > 5:
-                await message.channel.send(
-                    "Note: Longer matches and network latency can make post match generation take longer."
-                )
-
-            speed = await handle_postmatch(message.author, octane_id,
-                                           message.channel)
-            self.postmatches += 1
-            self.total_speed += speed
-
-            await self.add_response(message)
 
         elif (message.content == "thanks" or message.content == "thank you"
               or message.content == "ty" or message.content == "thx"):

@@ -33,40 +33,12 @@ RUNNING_ENVIRONMENT = ENVIRONMENT_DICT[platform]
 
 RUNNING_MODE = os.environ.get('RUNNING_MODE') or secrets.RUNNING_MODE
 
-# CHROME
-path = {
-    'aix': 'google-chrome',
-    'linux': 'google-chrome',
-    'windows': 'google-chrome',
-    'cygwin': 'google-chrome',
-    'mac': '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-}
-driver = {
-    'aix': './chromedriver',
-    'linux': './chromedriver',
-    'windows': './chromedriver.exe',
-    'cygwin': './chromedriver',
-    'mac': './chromedriver-mac'
-}
-
-# This is why no one takes windows seriously.
-window_get_chrome_version = "reg query \"HKEY_CURRENT_USER\Software\Google\Chrome\BLBeacon\" /v version"
-
-
-def get_chrome_settings(running_environment):
-    return {
-        'path': path[running_environment],
-        'driver': driver[running_environment]
-    }
-
-
 # CORE
 health_enabled = True
 health_check_startup_latency = 30  # seconds to wait before health thread starts
 queues = {}  # Global queue dictionary for various things in RLEB.
 asyncio_health_check_enabled = True
 thread_health_check_enabled = True
-chrome_health_check_enabled = True
 
 # Mapping of each asyncio thread to the last time it sent a heartbeat out. Used to determine if an asnycio thread has crashed.
 asyncio_threads = {
@@ -105,7 +77,6 @@ monitor_modmail_enabled = True
 # praw sends a ton of garbage submissions through, so we need to wait
 # a bit before only new submissions are read
 submissions_startup_delay = 60
-
 
 def is_mod(username):
     """Return true if username belongs to a sub moderator.
