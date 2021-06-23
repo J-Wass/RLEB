@@ -75,38 +75,5 @@ class TestHealth(RLEBTestCase):
             "submissions asyncio thread has stopped responding! (2 crashes)",
             rleb_settings.queues['alerts'].get())
 
-    def test_alerts_on_chrome_mismatch(self):
-        def mock_version(args=[]):
-            """ Mock method for subprocess.checkout_output."""
-            if len(args) == 0:
-                return ""
-            path = args[0]
-            arg = args[1]
-            if path == rleb_settings.get_chrome_settings(
-                    rleb_settings.RUNNING_ENVIRONMENT)['path']:
-                return b'Google Chrome 36.0.1985.125'
-            elif path == rleb_settings.get_chrome_settings(
-                    rleb_settings.RUNNING_ENVIRONMENT)['driver']:
-                return b'Chromedriver 37.2.43'
-
-        mock_subprocess = patch.object(subprocess,
-                                       "check_output",
-                                       new=mock_version).start()
-        self.addCleanup(mock_subprocess)
-
-        rleb_settings.chrome_health_check_enabled = True
-        rleb_settings.RUNNING_ENVIRONMENT = "linux"
-
-        with patch('rleb_core.rleb_log_error') as mock_log_error:
-            rleb_core.health_check([])
-
-            mock_log_error.assert_called_with(
-                "HEALTH: The chromedriver version (37) does not match chrome version (36)!"
-            )
-        self.assertEqual(
-            "The chromedriver version (37) does not match chrome version (36)!",
-            rleb_settings.queues['alerts'].get())
-
-
 if __name__ == '__main__':
     unittest.main()

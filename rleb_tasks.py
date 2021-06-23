@@ -62,7 +62,7 @@ async def broadcast_tasks(tasks: list[Task], client: discord.ClientUser, channel
         user_tasks = await tasks_for_user(tasks, u)      
         discord_user = None if u not in user_mapping else client.get_user(user_mapping[u])
         if not discord_user:
-            await channel.send(f'Couldn\'t pm {u}! Is their name spelled correctly in the sheet?')
+            await channel.send(f'Couldn\'t dm {u}! Is their name spelled correctly in the sheet?')
             continue
         await discord_user.send("Incoming!")
         for t in user_tasks:
