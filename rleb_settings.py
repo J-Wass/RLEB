@@ -100,6 +100,7 @@ SHEETS_ID = os.environ.get('SHEETS_ID') or secrets.SHEETS_ID
 
 # DISCORD
 discord_enabled = True
+discord_check_new_submission_enabled = True
 TOKEN = os.environ.get('DISCORD_TOKEN') or secrets.DISCORD_TOKEN
 NEW_POSTS_CHANNEL_ID = int(
     os.environ.get('NEW_POSTS_CHANNEL_ID') or secrets.NEW_POSTS_CHANNEL_ID)
@@ -133,6 +134,7 @@ def is_discord_mod(user: discord.Member):
     """Returns true if the discord user a verified moderator."""
     username = user.name.lower() + "#" + user.discriminator
     return username in verified_moderators
+discord_async_interval_seconds = 20
 
 
 # DATABASE

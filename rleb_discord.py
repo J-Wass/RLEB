@@ -96,6 +96,8 @@ class RLEsportsBot(discord.Client):
                     embed.set_author(name=submission.author.name)
                     await self.new_post_channel.send(embed=embed)
                 rleb_settings.asyncio_threads['submissions'] = datetime.now()
+                if not rleb_settings.discord_check_new_submission_enabled:
+                    break
             except Exception as e:
                 if rleb_settings.thread_crashes['asyncio'] > 5:
                     await self.bot_command_channel.send(
@@ -114,7 +116,7 @@ class RLEsportsBot(discord.Client):
                 rleb_settings.rleb_log_error(traceback.format_exc())
                 rleb_settings.thread_crashes['asyncio'] += 1
                 rleb_settings.last_datetime_crashed['asyncio'] = datetime.now()
-            await asyncio.sleep(20)
+            await asyncio.sleep(rleb_settings.discord_async_interval_seconds)
 
     async def check_new_alerts(self):
         """Check alerts queue to post in 'bot commands' discord channel."""
