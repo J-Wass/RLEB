@@ -18,6 +18,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 import discord
 
+
 class TestTasks(RLEBAsyncTestCase):
     async def asyncSetUp(self):
         await super().asyncSetUp()
@@ -34,7 +35,7 @@ class TestTasks(RLEBAsyncTestCase):
         self.mock_values = mock.Mock()
         self.mock_sheet = mock.Mock()
         with open('tests/resources/google_sheets_response.json', 'r') as f:
-           self.mock_sheet_query.execute.return_value = json.load(f)
+            self.mock_sheet_query.execute.return_value = json.load(f)
 
         self.mock_values.get.return_value = self.mock_sheet_query
         self.mock_sheet.values.return_value = self.mock_values
@@ -44,17 +45,17 @@ class TestTasks(RLEBAsyncTestCase):
             return self.mock_service
 
         self.mock_credentials = mock.Mock()
+
         def mock_from_service_account_info(args=[], scopes=None):
             return self.mock_credentials
 
         # Patch google sheet apis with the mocks.
         credentials = patch.object(google.oauth2.service_account.Credentials,
-                                       "from_service_account_info",
-                                       new=mock_from_service_account_info).start()
+                                   "from_service_account_info",
+                                   new=mock_from_service_account_info).start()
         self.addCleanup(credentials)
 
-        build = patch.object(rleb_tasks,"build",
-                                       new=mock_build).start()
+        build = patch.object(rleb_tasks, "build", new=mock_build).start()
         self.addCleanup(build)
 
     async def test_tasks(self):
@@ -66,7 +67,8 @@ class TestTasks(RLEBAsyncTestCase):
         event1_discord_markup = '**cool event** (Tuesday 2021-06-01)\nCreator/Scheduler (Schedule UTC): **hawkkn#0408**\nUpdaters/Monitors: **ds0308#9530**, **voices#6380**\n\n-----------------------------------------------------------\n\n'
         event2_discord_markup = '**Weekly Points Standings** (Monday 2021-05-03)\nCreator/Scheduler (Post 16:00 UTC): **voices#6380**\nUpdaters/Monitors: **No one needed**, **No one needed**\n\n-----------------------------------------------------------\n\n'
         mock_channel.send.assert_has_awaits(
-            [call(event1_discord_markup), call(event2_discord_markup)])
+            [call(event1_discord_markup),
+             call(event2_discord_markup)])
 
     async def test_task_all(self):
         mock_channel = mock.AsyncMock(spec=discord.TextChannel)
@@ -77,8 +79,11 @@ class TestTasks(RLEBAsyncTestCase):
         event1_discord_markup = '**cool event** (Tuesday 2021-06-01)\nCreator/Scheduler (Schedule UTC): **hawkkn#0408**\nUpdaters/Monitors: **ds0308#9530**, **voices#6380**\n\n-----------------------------------------------------------\n\n'
         event2_discord_markup = '**Weekly Points Standings** (Monday 2021-05-03)\nCreator/Scheduler (Post 16:00 UTC): **voices#6380**\nUpdaters/Monitors: **No one needed**, **No one needed**\n\n-----------------------------------------------------------\n\n'
         event3_discord_markup = '**Weekly Schedule/Ask Questions** (Monday 2021-05-03)\nCreator/Scheduler (Schedule 10:00 UTC): **hawkkn#0408**\nUpdaters/Monitors: **No one needed**, **No one needed**\n\n-----------------------------------------------------------\n\n'
-        mock_channel.send.assert_has_awaits(
-            [call(event1_discord_markup), call(event3_discord_markup), call(event2_discord_markup)])
+        mock_channel.send.assert_has_awaits([
+            call(event1_discord_markup),
+            call(event3_discord_markup),
+            call(event2_discord_markup)
+        ])
 
     async def test_task_broadcast(self):
         mock_channel = mock.AsyncMock(spec=discord.TextChannel)
@@ -99,6 +104,7 @@ class TestTasks(RLEBAsyncTestCase):
         # Set up mocked discord users to broadcast to.
         mock_voices = mock.AsyncMock(spec=discord.User)
         mock_hawkkn = mock.AsyncMock(spec=discord.User)
+
         def mock_get_user(id):
             if id == 364941319296253954:
                 return mock_hawkkn
@@ -114,8 +120,13 @@ class TestTasks(RLEBAsyncTestCase):
         event1_discord_markup = '**cool event** (Tuesday 2021-06-01)\nCreator/Scheduler (Schedule UTC): **hawkkn#0408**\nUpdaters/Monitors: **ds0308#9530**, **voices#6380**\n\n-----------------------------------------------------------\n\n'
         event2_discord_markup = '**Weekly Points Standings** (Monday 2021-05-03)\nCreator/Scheduler (Post 16:00 UTC): **voices#6380**\nUpdaters/Monitors: **No one needed**, **No one needed**\n\n-----------------------------------------------------------\n\n'
         event3_discord_markup = '**Weekly Schedule/Ask Questions** (Monday 2021-05-03)\nCreator/Scheduler (Schedule 10:00 UTC): **hawkkn#0408**\nUpdaters/Monitors: **No one needed**, **No one needed**\n\n-----------------------------------------------------------\n\n'
-        mock_voices.send.assert_has_awaits([call(event1_discord_markup),call(event2_discord_markup)])
-        mock_hawkkn.send.assert_has_awaits([call(event1_discord_markup),call(event3_discord_markup)])
-      
+        mock_voices.send.assert_has_awaits(
+            [call(event1_discord_markup),
+             call(event2_discord_markup)])
+        mock_hawkkn.send.assert_has_awaits(
+            [call(event1_discord_markup),
+             call(event3_discord_markup)])
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -15,6 +15,7 @@ import discord
 from threading import Thread
 from queue import Queue
 
+
 class TestDiscord(RLEBAsyncTestCase):
     async def asyncSetUp(self):
         await super().asyncSetUp()
@@ -27,8 +28,10 @@ class TestDiscord(RLEBAsyncTestCase):
 
         self.discord_client = rleb_discord.RLEsportsBot([])
         self.discord_client.new_post_channel = mock.AsyncMock()
-        
-         # Used for passing reddit submissions from reddit to discord.
+        self.discord_client.modmail_channel = mock.AsyncMock()
+        self.discord_client.bot_command_channel = mock.AsyncMock()
+
+        # Used for passing reddit submissions from reddit to discord.
         submissions_queue = Queue()
         # Used for passing trello actions from reddit to discord.
         trello_queue = Queue()
@@ -62,11 +65,52 @@ class TestDiscord(RLEBAsyncTestCase):
 
         # Add the submission to the queue.
         rleb_settings.queues['submissions'].put(mock_submission)
-        
+
         rleb_settings.discord_check_new_submission_enabled = False
 
         await self.discord_client.check_new_submissions()
-        self.discord_client.new_post_channel.send.assert_awaited_once_with(embed=self.mock_embedded_object)
-  
+        self.discord_client.new_post_channel.send.assert_awaited_once_with(
+            embed=self.mock_embedded_object)
+
+    async def test_reads_new_modmail(self):
+        # Build a mock embed.
+        self.mock_embed = patch("discord.Embed").start()
+        self.addCleanup(self.mock_embed)
+
+        self.mock_embedded_object = mock.Mock(autospec=discord.Embed)
+        self.mock_embed.return_value = self.mock_embedded_object
+
+        # Build a mock reddit modmail.
+        mock_modmail = mock.Mock()
+        mock_modmail.id = "title"
+        mock_modmail.subject = "modmail subject"
+        mock_modmail.body = "modmail body"
+        mock_modmail.author.name = "author"
+
+        # Add the modmail to the queue.
+        rleb_settings.queues['modmail'].put(mock_modmail)
+
+        rleb_settings.discord_check_new_modmail_enabled = False
+
+        await self.discord_client.check_new_modmail()
+
+        self.discord_client.modmail_channel.send.assert_has_awaits([
+            call(embed=self.mock_embedded_object),
+            call('author: "modmail body"'),
+            call('--------------------------------------------------------')
+        ])
+
+    async def test_reads_new_alerts(self):
+        # Add the alert to the queue.
+        rleb_settings.queues['alerts'].put('this is a test alert')
+
+        rleb_settings.discord_check_new_alerts_enabled = False
+
+        await self.discord_client.check_new_alerts()
+
+        self.discord_client.bot_command_channel.send.assert_awaited_with(
+            'ALERT: this is a test alert')
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -7,18 +7,20 @@ from rleb_dualflairs import handle_dualflair
 import rleb_settings
 from rleb_settings import sub, r, rleb_log_info
 
+
 # Create stream to add new posts to submissions queue
 def read_new_submissions():
     """Stream subreddit submissions into the submissions queue."""
     while True:
         started = datetime.now()
         try:
-             # webhook for reddit submissions
+            # webhook for reddit submissions
             for submission in sub.stream.submissions():
 
                 # for some reason, when opening a new submission connection, a bunch of garbage is sent through
                 # wait 60 seconds until the garbage is gone and then start queueing up submissions
-                if (datetime.now() - started).total_seconds() < rleb_settings.submissions_startup_delay:
+                if (datetime.now() - started).total_seconds(
+                ) < rleb_settings.submissions_startup_delay:
                     continue
                 rleb_settings.rleb_log_info(
                     "REDDIT: Submission - {0}".format(submission))
@@ -34,7 +36,7 @@ def read_new_submissions():
             rleb_settings.thread_crashes['thread'] += 1
             rleb_settings.last_datetime_crashed['thread'] = datetime.now()
         if (not rleb_settings.read_new_submissions_enabled):
-                break
+            break
         time.sleep(rleb_settings.thread_restart_interval_seconds)
 
 
@@ -63,7 +65,7 @@ def monitor_subreddit():
             rleb_settings.thread_crashes['thread'] += 1
             rleb_settings.last_datetime_crashed['thread'] = datetime.now()
         if (not rleb_settings.monitor_subreddit_enabled):
-                break
+            break
         time.sleep(rleb_settings.thread_restart_interval_seconds)
 
 

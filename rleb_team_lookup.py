@@ -7,6 +7,7 @@ import math
 import rleb_settings
 import rleb_stdout
 
+
 async def handle_team_lookup(url, channel):
     """Handle team lookup message.
 
@@ -40,8 +41,10 @@ async def handle_team_lookup(url, channel):
         # Iterate each team.
         for team in html.select('div.teamcard'):
             team_element = team.select('b a')[0]
-            team_name = team_element.text.replace('(', '').replace(')', '') if team_element else "TBD"
-            team_link = 'https://liquipedia.net' + team_element.attrs['href'] if team_element and team_element.attrs['href'] else "#"
+            team_name = team_element.text.replace('(', '').replace(
+                ')', '') if team_element else "TBD"
+            team_link = 'https://liquipedia.net' + team_element.attrs[
+                'href'] if team_element and team_element.attrs['href'] else "#"
             players = []
 
             # Iterate each player on the team.
@@ -53,7 +56,9 @@ async def handle_team_lookup(url, channel):
 
             # If 3 players aren't found, leave the team as unknown.
             players = players if len(players) == 3 else ['?', '?', '?']
-            table += (f'[**{team_name}**]({team_link}) - {players[0]}, {players[1]}, {players[2]}|\n')
+            table += (
+                f'[**{team_name}**]({team_link}) - {players[0]}, {players[1]}, {players[2]}|\n'
+            )
 
         await rleb_stdout.print_to_channel(channel, table, title="Teams")
 

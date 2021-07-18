@@ -12,6 +12,7 @@ from tests.common.rleb_test_case import RLEBTestCase
 from queue import Queue
 import praw
 
+
 class TestReddit(RLEBTestCase):
     def setUp(self):
         super().setUp()
@@ -26,21 +27,21 @@ class TestReddit(RLEBTestCase):
         rleb_settings.queues['submissions'] = Queue()
         rleb_settings.queues['modmail'] = Queue()
         rleb_settings.thread_restart_interval_seconds = 0
-        
 
     def test_read_new_submissions(self):
         rleb_settings.submissions_startup_delay = 0
         rleb_settings.read_new_submissions_enabled = False
 
         mock_submission = mock.Mock(spec=praw.models.Submission)
+
         def mock_submissions(args=[]):
             """ Mock method for sub.stream.submissions()."""
             return [mock_submission]
 
         # Mock the new submissions stream to be an array of 1.
         mock_sub = patch.object(rleb_reddit.sub.stream,
-                                       "submissions",
-                                       new=mock_submissions).start()
+                                "submissions",
+                                new=mock_submissions).start()
         self.addCleanup(mock_sub)
 
         # Assert that the new submissions is in the submissions queue after the method.
@@ -65,15 +66,16 @@ class TestReddit(RLEBTestCase):
 
         # Mock the inbox stream to be an array of 1.
         inbox_stream = patch.object(rleb_reddit.r.inbox,
-                                       "stream",
-                                       new=mock_inbox_stream).start()
+                                    "stream",
+                                    new=mock_inbox_stream).start()
         self.addCleanup(inbox_stream)
 
         # Assert that dualflairs was called.
         mock_dualflairs = patch.object(rleb_reddit, "handle_dualflair").start()
         self.addCleanup(mock_dualflairs)
         rleb_reddit.monitor_subreddit()
-        mock_dualflairs.assert_called_once_with(rleb_settings.sub, "some_user", "flair request body")
+        mock_dualflairs.assert_called_once_with(rleb_settings.sub, "some_user",
+                                                "flair request body")
 
     def test_monitor_modmail(self):
         rleb_settings.monitor_modmail_enabled = False
@@ -88,8 +90,8 @@ class TestReddit(RLEBTestCase):
 
         # Mock the modmail stream to be an array of 1.
         modmail_stream = patch.object(rleb_reddit.sub.mod,
-                                       "unread",
-                                       new=mock_modmail_stream).start()
+                                      "unread",
+                                      new=mock_modmail_stream).start()
         self.addCleanup(modmail_stream)
 
         # Assert that the new modmail is in the modmail queue after the method.
@@ -98,7 +100,8 @@ class TestReddit(RLEBTestCase):
         self.assertEqual(rleb_settings.queues["modmail"].qsize(), 1)
 
         modmail_from_queue = rleb_settings.queues["modmail"].get()
-        self.assertEqual(modmail_from_queue, mock_modmail_item) 
+        self.assertEqual(modmail_from_queue, mock_modmail_item)
+
 
 if __name__ == '__main__':
     unittest.main()
