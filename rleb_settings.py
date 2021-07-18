@@ -78,6 +78,7 @@ monitor_modmail_enabled = True
 # a bit before only new submissions are read
 submissions_startup_delay = 60
 
+
 def is_mod(username):
     """Return true if username belongs to a sub moderator.
 
@@ -101,6 +102,8 @@ SHEETS_ID = os.environ.get('SHEETS_ID') or secrets.SHEETS_ID
 # DISCORD
 discord_enabled = True
 discord_check_new_submission_enabled = True
+discord_check_new_modmail_enabled = True
+discord_check_new_alerts_enabled = True
 TOKEN = os.environ.get('DISCORD_TOKEN') or secrets.DISCORD_TOKEN
 NEW_POSTS_CHANNEL_ID = int(
     os.environ.get('NEW_POSTS_CHANNEL_ID') or secrets.NEW_POSTS_CHANNEL_ID)
@@ -129,11 +132,16 @@ hooks = [
     "This one was made with love",
     "Enjoy",
 ]
-verified_moderators = json.loads(os.environ.get('VERIFIED_MODERATORS') or secrets.VERIFIED_MODERATORS)
+verified_moderators = json.loads(
+    os.environ.get('VERIFIED_MODERATORS') or secrets.VERIFIED_MODERATORS)
+
+
 def is_discord_mod(user: discord.Member):
     """Returns true if the discord user a verified moderator."""
     username = user.name.lower() + "#" + user.discriminator
     return username in verified_moderators
+
+
 discord_async_interval_seconds = 20
 
 

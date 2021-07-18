@@ -10,6 +10,7 @@ from tests.common.rleb_test_case import RLEBTestCase
 
 import discord
 
+
 class TestVerifiedModerators(RLEBTestCase):
     def setUp(self):
         super().setUp()
@@ -35,6 +36,7 @@ class TestVerifiedModerators(RLEBTestCase):
         mock_author.discriminator = '2031'
 
         self.assertFalse(rleb_settings.is_discord_mod(mock_author))
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -7,14 +7,16 @@ import traceback
 
 import rleb_settings
 
+
 class Task:
     """Encapsulation of a task from the google sheet."""
-    def __init__(self, event_name, event_creator, event_updater1, event_updater2, event_day, event_date, event_schedule_time):
+    def __init__(self, event_name, event_creator, event_updater1,
+                 event_updater2, event_day, event_date, event_schedule_time):
         """Initialize a new task. """
         self.event_name = event_name
         self.event_creator = event_creator
         self.event_updater1 = event_updater1
-        self.event_updater2 = event_updater2 
+        self.event_updater2 = event_updater2
         self.event_day = event_day
         self.event_date = event_date
         self.event_schedule_time = event_schedule_time
@@ -29,20 +31,26 @@ class Task:
 
     def contains_user(self, user):
         """Returns true if user is involved in this task."""
-        return user.lower() == self.event_creator.lower() or user.lower() == self.event_updater1.lower() or user.lower() == self.event_updater2.lower()
+        return user.lower() == self.event_creator.lower() or user.lower(
+        ) == self.event_updater1.lower() or user.lower(
+        ) == self.event_updater2.lower()
+
 
 async def user_names_to_ids(channel: discord.TextChannel) -> dict[str, int]:
     """Returns a mapping of discord staff usernames to their ids."""
     user_mappings = {}
     for m in channel.members:
-        user_mappings[m.name.lower()+'#'+m.discriminator] = m.id
+        user_mappings[m.name.lower() + '#' + m.discriminator] = m.id
     return user_mappings
+
 
 async def tasks_for_user(tasks: list[Task], user: str) -> list[Task]:
     """Returns a list of tasks for the given username."""
     return list(filter(lambda x: x.contains_user(user.lower()), tasks))
 
-async def broadcast_tasks(tasks: list[Task], client: discord.ClientUser, channel: discord.TextChannel) -> None:
+
+async def broadcast_tasks(tasks: list[Task], client: discord.ClientUser,
+                          channel: discord.TextChannel) -> None:
     """Broadcasts the tasks to each user."""
 
     # Get the list of all unique users in the list.
@@ -59,16 +67,22 @@ async def broadcast_tasks(tasks: list[Task], client: discord.ClientUser, channel
     user_mapping = await user_names_to_ids(channel)
     for u in users:
         # Fetch the user id from mappings, and their tasks.
-        user_tasks = await tasks_for_user(tasks, u)      
-        discord_user = None if u not in user_mapping else client.get_user(user_mapping[u])
+        user_tasks = await tasks_for_user(tasks, u)
+        discord_user = None if u not in user_mapping else client.get_user(
+            user_mapping[u])
         if not discord_user:
-            await channel.send(f'Couldn\'t dm {u}! Is their name spelled correctly in the sheet?')
+            await channel.send(
+                f'Couldn\'t dm {u}! Is their name spelled correctly in the sheet?'
+            )
             continue
         await discord_user.send("Incoming!")
         for t in user_tasks:
             await discord_user.send(t.pretty_print())
 
-async def handle_task_lookup(channel: discord.TextChannel, client: discord.ClientUser, user: str = 'all'):
+
+async def handle_task_lookup(channel: discord.TextChannel,
+                             client: discord.ClientUser,
+                             user: str = 'all'):
     """
     Looks up tasks in the google calendar for the provided user. 
     Not providing a user argument returns tasks for the requester.
@@ -81,12 +95,14 @@ async def handle_task_lookup(channel: discord.TextChannel, client: discord.Clien
     try:
         SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
         credential_info = json.loads(rleb_settings.GOOGLE_CREDENTIALS_JSON)
-        credentials = service_account.Credentials.from_service_account_info(credential_info, scopes=SCOPES)
+        credentials = service_account.Credentials.from_service_account_info(
+            credential_info, scopes=SCOPES)
         service = build('sheets', 'v4', credentials=credentials)
         sheet = service.spreadsheets()
 
         # Shnag the range from 5-11, which includes event time and updaters/creators
-        sheet_json = sheet.values().get(spreadsheetId=rleb_settings.SHEETS_ID, range='Current Week!5:11').execute()
+        sheet_json = sheet.values().get(spreadsheetId=rleb_settings.SHEETS_ID,
+                                        range='Current Week!5:11').execute()
         values = sheet_json['values']
 
         # Break sheet_json into useful lists.
@@ -102,11 +118,13 @@ async def handle_task_lookup(channel: discord.TextChannel, client: discord.Clien
             event_name = event_names[i]
             event_creator = creators[i]
             event_updater1 = updaters[i]
-            event_updater2 = updaters[i+1]
-            event_day = event_dates[i+1]
+            event_updater2 = updaters[i + 1]
+            event_day = event_dates[i + 1]
             event_date = event_dates[i]
             event_schedule_time = event_times[i]
-            new_task = Task(event_name, event_creator, event_updater1, event_updater2, event_day, event_date, event_schedule_time)
+            new_task = Task(event_name, event_creator, event_updater1,
+                            event_updater2, event_day, event_date,
+                            event_schedule_time)
             tasks.append(new_task)
 
         # Determine which tasks should be returned.

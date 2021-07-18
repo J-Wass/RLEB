@@ -18,6 +18,7 @@ from rleb_tasks import handle_task_lookup
 
 responses_lock = Lock()
 
+
 def is_staff(user: discord.Member) -> bool:
     """Return true if discord user has the Subreddit Moderators role."""
     return "Subreddit Moderators" in map(lambda x: x.name, user.roles)
@@ -63,7 +64,8 @@ class RLEsportsBot(discord.Client):
         if rleb_settings.RUNNING_MODE != "production":
             await self.bot_command_channel.send(
                 "Bot is online, running in {0} under {1} mode.".format(
-                    rleb_settings.RUNNING_ENVIRONMENT, rleb_settings.RUNNING_MODE))
+                    rleb_settings.RUNNING_ENVIRONMENT,
+                    rleb_settings.RUNNING_MODE))
         else:
             await self.send_meme(self.bot_command_channel)
 
@@ -128,6 +130,8 @@ class RLEsportsBot(discord.Client):
                         "DISCORD: Received alert '{0}'".format(alert))
                     await self.bot_command_channel.send('ALERT: ' + alert)
                 rleb_settings.asyncio_threads['alerts'] = datetime.now()
+                if not rleb_settings.discord_check_new_alerts_enabled:
+                    break
             except Exception as e:
                 if rleb_settings.thread_crashes['asyncio'] > 5:
                     await self.bot_command_channel.send(
@@ -185,6 +189,8 @@ class RLEsportsBot(discord.Client):
                         "--------------------------------------------------------"
                     )
                 rleb_settings.asyncio_threads['modmail'] = datetime.now()
+                if not rleb_settings.discord_check_new_modmail_enabled:
+                    break
             except Exception as e:
                 if rleb_settings.thread_crashes['asyncio'] > 5:
                     await self.bot_command_channel.send(
@@ -416,7 +422,8 @@ class RLEsportsBot(discord.Client):
             await message.channel.send(all_flairs)
             await self.add_response(message)
 
-        elif message.content.startswith("!dualflairs remove") and is_staff(message.author):
+        elif message.content.startswith("!dualflairs remove") and is_staff(
+                message.author):
 
             if (not rleb_settings.is_discord_mod(message.author)):
                 return
@@ -466,7 +473,8 @@ class RLEsportsBot(discord.Client):
                     self.flair_to_remove))
                 await self.add_response(message)
 
-        elif message.content.startswith("!dualflairs add") and is_staff(message.author):
+        elif message.content.startswith("!dualflairs add") and is_staff(
+                message.author):
 
             if (not rleb_settings.is_discord_mod(message.author)):
                 return
@@ -659,7 +667,8 @@ class RLEsportsBot(discord.Client):
             seconds = await handle_group_lookup(url, message.channel)
             await self.add_response(message)
 
-        elif message.content.startswith("!events") and is_staff(message.author):
+        elif message.content.startswith("!events") and is_staff(
+                message.author):
             rleb_settings.rleb_log_info("DISCORD: Starting event lookup.")
             tokens = message.content.split()
             formatter = 'reddit'
@@ -678,7 +687,8 @@ class RLEsportsBot(discord.Client):
         elif message.content.startswith("!tasks") and is_staff(message.author):
             rleb_settings.rleb_log_info("DISCORD: Starting task lookup.")
             tokens = message.content.split()
-            user = message.author.name.lower() + '#' + message.author.discriminator
+            user = message.author.name.lower(
+            ) + '#' + message.author.discriminator
             try:
                 user = tokens[1]
             except Exception:

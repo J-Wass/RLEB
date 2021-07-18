@@ -75,5 +75,6 @@ class TestHealth(RLEBTestCase):
             "submissions asyncio thread has stopped responding! (2 crashes)",
             rleb_settings.queues['alerts'].get())
 
+
 if __name__ == '__main__':
     unittest.main()

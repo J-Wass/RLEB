@@ -7,6 +7,7 @@ import requests
 import rleb_settings
 import rleb_stdout
 
+
 async def handle_group_lookup(url, channel):
     """Handle group lookup message.
 
@@ -43,12 +44,12 @@ async def handle_group_lookup(url, channel):
                 self.plusMinus = plusMinus
 
         class Group:
-           def __init__(self, groupName, teams):
+            def __init__(self, groupName, teams):
                 self.groupName = groupName
                 self.teams = teams
 
         # Holds all groups in the liquipedia page.
-        groups = [];
+        groups = []
 
         # Iterate each table.
         tables = html.select("table.grouptable")
@@ -59,10 +60,11 @@ async def handle_group_lookup(url, channel):
             teams = []
 
             # Iterate each row.
-            rows = t.select("tr:nth-child(n+2)");
+            rows = t.select("tr:nth-child(n+2)")
             for r in rows:
                 name = r.select("td")[0].text.strip()
-                link = 'https://liquipedia.net' + r.select("td")[0].select(".team-template-text a")[0].attrs['href']
+                link = 'https://liquipedia.net' + r.select("td")[0].select(
+                    ".team-template-text a")[0].attrs['href']
                 matchRecord = r.select("td")[1].text
                 plusMinus = r.select("td")[3].text
 
@@ -75,10 +77,11 @@ async def handle_group_lookup(url, channel):
         finalMarkdown = ''
         for g in groups:
             groupMarkdown = GROUP_TEMPLATE_HEADER
-            groupMarkdown = groupMarkdown.replace("{GROUP_NAME}", g.groupName if g.groupName else 'Group')
+            groupMarkdown = groupMarkdown.replace(
+                "{GROUP_NAME}", g.groupName if g.groupName else 'Group')
             placement = 1
             for t in g.teams:
-                row = GROUP_TEMPLATE_ROW;
+                row = GROUP_TEMPLATE_ROW
                 row = row.replace("{PLACEMENT}", str(placement))
                 row = row.replace("{NAME}", t.teamName)
                 row = row.replace("{LINK}", t.teamLink)
@@ -89,7 +92,9 @@ async def handle_group_lookup(url, channel):
 
             finalMarkdown += groupMarkdown + "\n\n&#x200B;\n\n"
 
-        await rleb_stdout.print_to_channel(channel, finalMarkdown, title="Groups")
+        await rleb_stdout.print_to_channel(channel,
+                                           finalMarkdown,
+                                           title="Groups")
 
     except Exception as e:
         await channel.send("Couldn't find groups in {0}. Error: {1}".format(
