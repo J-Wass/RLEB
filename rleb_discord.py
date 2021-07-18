@@ -70,7 +70,7 @@ class RLEsportsBot(discord.Client):
             await self.send_meme(self.bot_command_channel)
 
     async def send_meme(self, channel):
-        dankmemes = rleb_settings.r.subreddit("wholesomememes")
+        dankmemes = rleb_settings.r.subreddit("EarthPorn")
         randomizer = random.randint(1, 20)
         count = 0
         for meme in dankmemes.top("day"):
