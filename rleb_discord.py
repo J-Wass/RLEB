@@ -42,6 +42,9 @@ class RLEsportsBot(discord.Client):
         # Stores map of username->datetime of users who have recently pinged.
         self.responses = {}
 
+        # The subreddit of memes or images to flood into #bot-commands.
+        self.meme_subreddit = 'EarthPorn'
+
     async def on_ready(self):
         """Indicate bot has joined the discord."""
         rleb_settings.rleb_log_info('DISCORD: Logged on as {0}'.format(
@@ -70,7 +73,7 @@ class RLEsportsBot(discord.Client):
             await self.send_meme(self.bot_command_channel)
 
     async def send_meme(self, channel):
-        dankmemes = rleb_settings.r.subreddit("EarthPorn")
+        dankmemes = rleb_settings.r.subreddit(self.meme_subreddit)
         randomizer = random.randint(1, 20)
         count = 0
         for meme in dankmemes.top("day"):
@@ -285,6 +288,7 @@ class RLEsportsBot(discord.Client):
         Args:
             message (discord.Message): Discord message being handled.
         """
+        # Don't response to messages from yourself, lol.
         if "RLesports" in str(message.author):
             return
 
@@ -306,6 +310,7 @@ class RLEsportsBot(discord.Client):
             await message.add_reaction('3️⃣')
             await message.add_reaction('💀')
             await message.add_reaction('⚠️')
+            await message.add_reaction('🤷')
             return
 
         elif (message.content == "thanks" or message.content == "thank you"
@@ -698,6 +703,25 @@ class RLEsportsBot(discord.Client):
 
         elif message.content.startswith("!meme"):
             await self.send_meme(message.channel)
+            await self.add_response(message)
+
+        elif message.content.startswith("!setmeme"):
+            tokens = message.content.split()
+            subreddit = ''
+            try:
+                subreddit = tokens[1]
+            except Exception:
+                pass
+            
+            original_meme_subreddit = self.meme_subreddit
+            try:
+                rleb_settings.r.subreddit(self.meme_subreddit)
+                self.meme_subreddit = subreddit
+                await self.send_meme(message.channel)
+            except:
+                await message.channel("That isn't a real place!")
+                self.meme_subreddit = original_meme_subreddit
+
             await self.add_response(message)
 
 

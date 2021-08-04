@@ -40,7 +40,6 @@ If you are on the official **Reddit App**, you will find the schedule under the 
 # Guides / FAQs
 
 * [**Intro to RL Esports**](https://www.reddit.com/r/RocketLeagueEsports/wiki/guide)
-* [**Introducing The RLCS X Championships**](https://esports.rocketleague.com/news/introducing-the-rlcs-x-championships/)
 * [**Fan Rewards FAQ**](https://www.reddit.com/r/RocketLeagueEsports/wiki/rewards)
 
 &nbsp;
@@ -213,9 +212,8 @@ async def handle_calendar_lookup(channel,
         event_items = upcoming_events['items']
         for event_item in event_items:
             rawtext = event_item['summary'] if 'summary' in event_item else ''
-            start_timestamp = event_item['start']['dateTime'] if (
-                'start' in event_item
-                and 'dateTime' in event_item['start']) else ''
+            is_start_time_available = ('start' in event_item) and ('dateTime' in event_item['start'])
+            start_timestamp = event_item['start']['dateTime'] if (is_start_time_available) else ''
             stream = "None"
             if 'location' in event_item:
                 stream = event_item['location']
