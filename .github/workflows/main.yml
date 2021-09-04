@@ -28,6 +28,7 @@ jobs:
       MODMAIL_CHANNEL_ID : 3
       BOT_COMMANDS_CHANNEL_ID : 4
       ROSTER_NEWS_CHANNEL_ID : 5
+      SCHEDULE_CHAT_CHANNEL_ID : 6
       developer_name : 'fake_name'
       developer_discriminator : 'fake_discriminator'
       VERIFIED_MODERATORS : "[]"
