@@ -35,17 +35,22 @@ RUNNING_MODE = os.environ.get('RUNNING_MODE') or secrets.RUNNING_MODE
 
 # CORE
 health_enabled = True
+task_alerts_enabled = True
 health_check_startup_latency = 30  # seconds to wait before health thread starts
+task_alerts_startup_latency = 1  # seconds to wait before task alert thread starts
 queues = {}  # Global queue dictionary for various things in RLEB.
 asyncio_health_check_enabled = True
 thread_health_check_enabled = True
+task_alert_check_enabled = True
 
 # Mapping of each asyncio thread to the last time it sent a heartbeat out. Used to determine if an asnycio thread has crashed.
 asyncio_threads = {
     'submissions': datetime.now(),
     'alerts': datetime.now(),
     'modmail': datetime.now(),
-    'trello': datetime.now()
+    'trello': datetime.now(),
+    'direct_messages': datetime.now(),
+    'schedule_chat': datetime.now(),
 }
 
 # The number of times a thread or asyncio thread crashed and had to be restarted.
@@ -99,11 +104,15 @@ GOOGLE_CREDENTIALS_JSON = os.environ.get(
     'GOOGLE_CREDENTIALS_JSON') or secrets.GOOGLE_CREDENTIALS_JSON
 SHEETS_ID = os.environ.get('SHEETS_ID') or secrets.SHEETS_ID
 
+weekly_schedule_sheets_range = 'Current Week!5:11' if RUNNING_MODE == "production" else 'Bot Development!5:11'
+
 # DISCORD
 discord_enabled = True
 discord_check_new_submission_enabled = True
 discord_check_new_modmail_enabled = True
 discord_check_new_alerts_enabled = True
+discord_check_direct_messages_enabled = True
+discord_check_new_schedule_chat_enabled = True
 TOKEN = os.environ.get('DISCORD_TOKEN') or secrets.DISCORD_TOKEN
 NEW_POSTS_CHANNEL_ID = int(
     os.environ.get('NEW_POSTS_CHANNEL_ID') or secrets.NEW_POSTS_CHANNEL_ID)
@@ -114,6 +123,9 @@ MODMAIL_CHANNEL_ID = int(
 BOT_COMMANDS_CHANNEL_ID = int(
     os.environ.get('BOT_COMMANDS_CHANNEL_ID')
     or secrets.BOT_COMMANDS_CHANNEL_ID)
+SCHEDULE_CHAT_CHANNEL_ID = int(
+    os.environ.get('SCHEDULE_CHAT_CHANNEL_ID')
+    or secrets.SCHEDULE_CHAT_CHANNEL_ID)
 colors = [
     0x2644ce,
     0x000000,
@@ -131,6 +143,11 @@ hooks = [
     "Fresh outa the oven",
     "This one was made with love",
     "Enjoy",
+]
+greetings = [
+    "Incoming!",
+    "Why hello there.",
+    "Hot and ready"
 ]
 verified_moderators = json.loads(
     os.environ.get('VERIFIED_MODERATORS') or secrets.VERIFIED_MODERATORS)
