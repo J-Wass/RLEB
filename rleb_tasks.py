@@ -36,7 +36,7 @@ class Task:
         ) == self.event_updater2.lower()
 
 
-async def user_names_to_ids(channel: discord.TextChannel) -> dict[str, int]:
+def user_names_to_ids(channel: discord.TextChannel) -> dict[str, int]:
     """Returns a mapping of discord staff usernames to their ids."""
     user_mappings = {}
     for m in channel.members:
@@ -64,7 +64,7 @@ async def broadcast_tasks(tasks: list[Task], client: discord.ClientUser,
     users.discard('No one needed')
 
     # Iterate each user, and pm them their tasks.
-    user_mapping = await user_names_to_ids(channel)
+    user_mapping = user_names_to_ids(channel)
     for u in users:
         # Fetch the user id from mappings, and their tasks.
         user_tasks = await tasks_for_user(tasks, u)
@@ -75,9 +75,47 @@ async def broadcast_tasks(tasks: list[Task], client: discord.ClientUser,
                 f'Couldn\'t dm {u}! Is their name spelled correctly in the sheet?'
             )
             continue
-        await discord_user.send("Incoming!")
+        await discord_user.send("Incoming!\n\n")
         for t in user_tasks:
             await discord_user.send(t.pretty_print())
+
+def get_tasks() -> list[Task]:
+    """Gets all tasks from the Spreadsheet tab named "Current Week". """
+    SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
+    credential_info = json.loads(rleb_settings.GOOGLE_CREDENTIALS_JSON)
+    credentials = service_account.Credentials.from_service_account_info(
+        credential_info, scopes=SCOPES)
+    service = build('sheets', 'v4', credentials=credentials)
+    sheet = service.spreadsheets()
+
+    # Shnag the range from 5-11, which includes event time and updaters/creators
+    sheet_json = sheet.values().get(spreadsheetId=rleb_settings.SHEETS_ID,
+                                    range=rleb_settings.weekly_schedule_sheets_range).execute()
+    values = sheet_json['values']
+
+    # Break sheet_json into useful lists.
+    tasks = []
+    event_names = values[0]
+    event_dates = values[1]
+    event_times = values[2]
+    creators = values[3]
+    updaters = values[6]
+
+    # Iterate each event, build a new task for each.
+    for i in range(1, len(event_names), 2):
+        event_name = event_names[i]
+        event_creator = creators[i]
+        event_updater1 = updaters[i]
+        event_updater2 = updaters[i + 1] #updaters and date tab take up 2 spaces on spreadsheet
+        event_day = event_dates[i + 1]
+        event_date = event_dates[i]
+        event_schedule_time = event_times[i]
+        new_task = Task(event_name, event_creator, event_updater1,
+                        event_updater2, event_day, event_date,
+                        event_schedule_time)
+        tasks.append(new_task)
+
+    return tasks
 
 
 async def handle_task_lookup(channel: discord.TextChannel,
@@ -93,39 +131,7 @@ async def handle_task_lookup(channel: discord.TextChannel,
         user (str): The optional username, defined in the google sheet, to return weekly tasks for.
     """
     try:
-        SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
-        credential_info = json.loads(rleb_settings.GOOGLE_CREDENTIALS_JSON)
-        credentials = service_account.Credentials.from_service_account_info(
-            credential_info, scopes=SCOPES)
-        service = build('sheets', 'v4', credentials=credentials)
-        sheet = service.spreadsheets()
-
-        # Shnag the range from 5-11, which includes event time and updaters/creators
-        sheet_json = sheet.values().get(spreadsheetId=rleb_settings.SHEETS_ID,
-                                        range='Current Week!5:11').execute()
-        values = sheet_json['values']
-
-        # Break sheet_json into useful lists.
-        tasks = []
-        event_names = values[0]
-        event_dates = values[1]
-        event_times = values[2]
-        creators = values[3]
-        updaters = values[6]
-
-        # Iterate each event, build a new task for each.
-        for i in range(1, len(event_names), 2):
-            event_name = event_names[i]
-            event_creator = creators[i]
-            event_updater1 = updaters[i]
-            event_updater2 = updaters[i + 1]
-            event_day = event_dates[i + 1]
-            event_date = event_dates[i]
-            event_schedule_time = event_times[i]
-            new_task = Task(event_name, event_creator, event_updater1,
-                            event_updater2, event_day, event_date,
-                            event_schedule_time)
-            tasks.append(new_task)
+        tasks = get_tasks()
 
         # Determine which tasks should be returned.
         relevant_tasks = []

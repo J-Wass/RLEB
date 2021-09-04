@@ -14,7 +14,7 @@ from rleb_team_lookup import handle_team_lookup
 from rleb_group_lookup import handle_group_lookup
 from rleb_census import handle_flair_census
 from rleb_calendar import handle_calendar_lookup
-from rleb_tasks import handle_task_lookup
+from rleb_tasks import handle_task_lookup, user_names_to_ids
 
 responses_lock = Lock()
 
@@ -62,6 +62,8 @@ class RLEsportsBot(discord.Client):
             rleb_settings.MODMAIL_CHANNEL_ID)
         self.bot_command_channel = self.get_channel(
             rleb_settings.BOT_COMMANDS_CHANNEL_ID)
+        self.schedule_chat_channel = self.get_channel(
+            rleb_settings.SCHEDULE_CHAT_CHANNEL_ID)
 
         # If testing, ping the discord channel.
         if rleb_settings.RUNNING_MODE != "production":
@@ -123,6 +125,79 @@ class RLEsportsBot(discord.Client):
                 rleb_settings.last_datetime_crashed['asyncio'] = datetime.now()
             await asyncio.sleep(rleb_settings.discord_async_interval_seconds)
 
+    async def check_new_schedule_chat(self):
+        """Checks schedule_chat queue to send warnings into #schedule_chat."""
+        while (True):
+            try:
+                while not rleb_settings.queues['schedule_chat'].empty():
+                    message = rleb_settings.queues['schedule_chat'].get()
+                    rleb_settings.rleb_log_info(
+                        "DISCORD: Received schedule chat '{0}'".format(message))
+                    schedule_chat_message = await self.schedule_chat_channel.send(message)
+                    await schedule_chat_message.edit(suppress=True)
+
+                rleb_settings.asyncio_threads['schedule_chat'] = datetime.now()
+                if not rleb_settings.discord_check_new_schedule_chat_enabled:
+                    break
+            except Exception as e:
+                if rleb_settings.thread_crashes['asyncio'] > 5:
+                    await self.bot_command_channel.send(
+                        'ALERT: Asyncio thread has crashed more than 5 times.')
+                    developer = discord.utils.get(
+                        self.get_all_members(),
+                        name=rleb_settings.developer_name,
+                        discriminator=rleb_settings.developer_discriminator)
+                    await self.bot_command_channel.send("^ " +
+                                                        developer.mention +
+                                                        " fyi")
+                    break
+                rleb_settings.rleb_log_error(
+                    "DISCORD: Alert asyncio thread failed - {0}".format(e))
+                rleb_settings.rleb_log_error(traceback.format_exc())
+                rleb_settings.thread_crashes['asyncio'] += 1
+                rleb_settings.last_datetime_crashed['asyncio'] = datetime.now()
+            await asyncio.sleep(rleb_settings.discord_async_interval_seconds)
+
+    async def check_new_direct_messages(self):
+        """Checks direct_messages queue to send DMs to discord users."""
+        while (True):
+            try:
+                while not rleb_settings.queues['direct_messages'].empty():
+                    author_message_tuple = rleb_settings.queues['direct_messages'].get()
+                    rleb_settings.rleb_log_info(
+                        "DISCORD: Received DM '{0}'".format(author_message_tuple))
+                    author = author_message_tuple[0]
+                    message = author_message_tuple[1]
+                    user_mapping = user_names_to_ids(self.bot_command_channel)
+                    discord_user = self.get_user(user_mapping[author])
+                    await discord_user.send("\n\n----------\n\n")
+                    await discord_user.send(random.choice(rleb_settings.greetings))
+                    await discord_user.send("\n\n----------\n\n")
+                    DM = await discord_user.send(message)
+                    await DM.edit(suppress=True)
+
+                rleb_settings.asyncio_threads['direct_messages'] = datetime.now()
+                if not rleb_settings.discord_check_direct_messages_enabled:
+                    break
+            except Exception as e:
+                if rleb_settings.thread_crashes['asyncio'] > 5:
+                    await self.bot_command_channel.send(
+                        'ALERT: Asyncio thread has crashed more than 5 times.')
+                    developer = discord.utils.get(
+                        self.get_all_members(),
+                        name=rleb_settings.developer_name,
+                        discriminator=rleb_settings.developer_discriminator)
+                    await self.bot_command_channel.send("^ " +
+                                                        developer.mention +
+                                                        " fyi")
+                    break
+                rleb_settings.rleb_log_error(
+                    "DISCORD: Alert asyncio thread failed - {0}".format(e))
+                rleb_settings.rleb_log_error(traceback.format_exc())
+                rleb_settings.thread_crashes['asyncio'] += 1
+                rleb_settings.last_datetime_crashed['asyncio'] = datetime.now()
+            await asyncio.sleep(rleb_settings.discord_async_interval_seconds)
+
     async def check_new_alerts(self):
         """Check alerts queue to post in 'bot commands' discord channel."""
         while (True):
@@ -152,7 +227,7 @@ class RLEsportsBot(discord.Client):
                 rleb_settings.rleb_log_error(traceback.format_exc())
                 rleb_settings.thread_crashes['asyncio'] += 1
                 rleb_settings.last_datetime_crashed['asyncio'] = datetime.now()
-            await asyncio.sleep(20)
+            await asyncio.sleep(rleb_settings.discord_async_interval_seconds)
 
     async def check_new_modmail(self):
         """Check modmail queue to post in 'modmail' discord channel."""
@@ -211,7 +286,7 @@ class RLEsportsBot(discord.Client):
                 rleb_settings.rleb_log_error(traceback.format_exc())
                 rleb_settings.thread_crashes['asyncio'] += 1
                 rleb_settings.last_datetime_crashed['asyncio'] = datetime.now()
-            await asyncio.sleep(20)
+            await asyncio.sleep(rleb_settings.discord_async_interval_seconds)
 
     async def check_new_trello_actions(self):
         """Check trello queue to post in discord."""
@@ -246,7 +321,7 @@ class RLEsportsBot(discord.Client):
                 rleb_settings.rleb_log_error(traceback.format_exc())
                 rleb_settings.thread_crashes['asyncio'] += 1
                 rleb_settings.last_datetime_crashed['asyncio'] = datetime.now()
-            await asyncio.sleep(20)
+            await asyncio.sleep(rleb_settings.discord_async_interval_seconds)
 
     async def post_removed(self, item):
         """Take in a modmail item and return either a comment if this modmail
@@ -738,6 +813,8 @@ def start(threads):
     client.loop.create_task(client.check_new_trello_actions())
     client.loop.create_task(client.check_new_modmail())
     client.loop.create_task(client.check_new_alerts())
+    client.loop.create_task(client.check_new_direct_messages())
+    client.loop.create_task(client.check_new_schedule_chat())
 
     # Start listening to discord commands.
     client.run(rleb_settings.TOKEN)

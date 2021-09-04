@@ -3,14 +3,117 @@ import asyncio
 from queue import Queue
 from threading import Thread
 from tornado.platform.asyncio import AnyThreadEventLoopPolicy
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import traceback
+import math
 
 import rleb_discord
 from rleb_reddit import read_new_submissions, monitor_subreddit, monitor_modmail
 import rleb_settings
 from rleb_settings import rleb_log_error, rleb_log_info
 from rleb_trello import read_new_trello_actions
+import rleb_tasks
+
+
+def task_alert_check():
+    time.sleep(rleb_settings.task_alerts_startup_latency)
+
+    # Key is (task.event_name, task.event_date), Value is # of times warned.
+    task_warns = {}
+
+    # List of a scheduled post ids that aren't in UTC.
+    malformed_schedule_posts = []
+
+    while True:
+        # Get the last 20 scheduled posts from mod log.
+        scheduled_posts = []
+        for log in rleb_settings.sub.mod.log(action="create_scheduled_post", limit=20):
+            scheduled_posts.append(log)
+
+        # Iterate all tasks from the current week, make sure they are scheduled.
+        weekly_tasks = rleb_tasks.get_tasks()
+        for task in weekly_tasks:
+            if (task.event_name, task.event_date) not in task_warns.keys():
+                task_warns[(task.event_name, task.event_date)] = 0
+
+            # If we've already warned twice, just ignore.
+            if task_warns[(task.event_name, task.event_date)] == 2:
+                continue
+
+            timestring = task.event_schedule_time.replace('Schedule ','')
+            datestring = task.event_date
+            date_time_str = f"{datestring} {timestring} +0000" # 0 hours and 0 minutes from UTC
+
+            task_datetime = datetime.strptime(date_time_str, '%Y-%m-%d %H:%M %z').replace(tzinfo=None)
+
+            now = datetime.utcnow()
+            seconds_remaining = (task_datetime - now).total_seconds()
+            
+            # If the post is due in more than 8 hours, don't warn.
+            if seconds_remaining > 60*60*8:
+                continue
+
+            # If the post was due more than 8 hours ago, don't warn.
+            if seconds_remaining < -60*60*8:
+                continue
+
+            task_warnings = task_warns[(task.event_name, task.event_date)]
+              
+            # Don't warn twice.
+            if task_warnings > 1:
+               continue  
+            
+            # Check if task is correctly scheduled.
+            task_is_scheduled = False
+            for scheduled_post in scheduled_posts:
+                # if post was schedule >7 days ago, ignore
+                if (datetime.now() - datetime.fromtimestamp(scheduled_post.created_utc)).total_seconds() > 60*60*24*7:
+                    continue
+
+                # If the post is malformed, ignore it.
+                if scheduled_post.id in malformed_schedule_posts:
+                    continue
+
+                try:
+                    # If post has the same time as the task, then the task is correctly scheduled.
+                    description = scheduled_post.description # description looks like 'scheduled for Tue, 31 Aug 2021 08:30 AM UTC'
+                    scheduled_datetime = datetime.strptime(description, 'scheduled for %a, %d %b %Y %H:%M %p %Z').replace(tzinfo=None)
+                    if abs((task_datetime - scheduled_datetime).total_seconds()) < 61: #give a minute cushion
+                        task_is_scheduled = True
+                        break
+                except Exception as e:
+                    message = f"**WARNING:** \"{task.event_name}\" {description} wasn't scheduled correctly! Make sure the event is in UTC!\n\nScheduled posts: https://new.reddit.com/r/RocketLeagueEsports/about/scheduledposts\n\nINTERNAL ERROR: {e} "
+                    rleb_settings.queues["schedule_chat"].put(message)
+                    rleb_log_info(f"CORE: {message}")
+                    malformed_schedule_posts.append(scheduled_post.id)
+
+            # If the post is due in 8 hours, warn the user.
+            if not task_is_scheduled:
+                
+                # Warn that the task needs immediate attention.
+                if seconds_remaining < 60*60:
+                   task_warns[(task.event_name, task.event_date)] += 1
+                   message = f"**WARNING:** \"{task.event_name}\" is due in {math.floor(seconds_remaining / 3600)} hour(s) and {round((seconds_remaining / 60) % 60, 0)} minute(s).\n\nDouble-check that the task is scheduled for **exactly** {timestring} UTC on {datestring}.\n\nScheduled posts: https://new.reddit.com/r/RocketLeagueEsports/about/scheduledposts"
+                   rleb_log_info(f"CORE: {message}")
+                   rleb_settings.queues["schedule_chat"].put(message)
+                   continue
+
+                # No need to warn in DMs again, wait until 1 hour and then warn schedule_chat.
+                if task_warns[(task.event_name, task.event_date)] == 1:
+                   continue
+
+                # If the task still has plenty of time left, DM the user responsible.
+                task_warns[(task.event_name, task.event_date)] += 1
+                message = f"**WARNING:** \"{task.event_name}\" is due in {math.floor(seconds_remaining / 3600)} hour(s) and {round((seconds_remaining / 60) % 60, 0)} minute(s).\n\nDouble-check that the task is scheduled for **exactly** {timestring} UTC on {datestring}.\n\nScheduled posts: https://new.reddit.com/r/RocketLeagueEsports/about/scheduledposts"
+                rleb_settings.queues["direct_messages"].put((task.event_creator, message))
+            else:
+                task_warns[(task.event_name, task.event_date)] += 0
+
+
+        # Break before waiting for the interval.
+        if not rleb_settings.task_alert_check_enabled:
+            break
+        time.sleep(60*10) # 60 seconds * 10 minutes
 
 
 # Monitors health of other threads.
@@ -34,8 +137,7 @@ def health_check(threads):
 
         # Monitor Asyncio Threads
         dead_asyncio_threads = []
-        for asyncio_thread, update_time in rleb_settings.asyncio_threads.items(
-        ):
+        for asyncio_thread, update_time in rleb_settings.asyncio_threads.items():
             if (not rleb_settings.asyncio_health_check_enabled):
                 break
 
@@ -73,11 +175,17 @@ def start():
     modmail_queue = Queue()
     # Used for passing alerts from reddit to discord.
     alert_queue = Queue()
+    # Used for discord DMs from reddit to discord.
+    direct_message_queue = Queue()
+    # Used to send messages to #schedule_chat on discord.
+    schedule_chat_queue = Queue()
 
     rleb_settings.queues['submissions'] = submissions_queue
     rleb_settings.queues['trello'] = trello_queue
     rleb_settings.queues['modmail'] = modmail_queue
     rleb_settings.queues['alerts'] = alert_queue
+    rleb_settings.queues["direct_messages"] = direct_message_queue
+    rleb_settings.queues["schedule_chat"] = schedule_chat_queue
 
     # Stores all threads used to run the bot.
     threads = []
@@ -98,9 +206,11 @@ def start():
     trello_thread.setDaemon(True)
     modmail_thread = Thread(target=monitor_modmail, name="Modmail thread")
     modmail_thread.setDaemon(True)
+    task_alert_thread = Thread(target=task_alert_check, name="`Task alert thread")
+    task_alert_thread.setDaemon(True)
     threads = [
         modmail_thread, trello_thread, subreddit_thread, submissions_thread,
-        health_thread
+        health_thread, task_alert_thread
     ]
 
     rleb_log_info("Starting RLEB. Running under {0} in {1} mode.".format(
@@ -128,6 +238,10 @@ def start():
     if rleb_settings.health_enabled:
         rleb_log_info("Starting health thread.")
         health_thread.start()
+
+    if rleb_settings.task_alerts_enabled:
+        rleb_log_info("Starting task alert thread.")
+        task_alert_thread.start()
 
     # Start the discord thread, running on main thread.
     rleb_log_info("Starting discord thread.")
