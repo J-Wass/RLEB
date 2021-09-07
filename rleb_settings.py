@@ -206,10 +206,10 @@ logging_enabled = True
 
 def rleb_log(message, should_flush=False):
     """Log a message to memory (thread safe)."""
+    print("{0}UTC {1}".format(datetime.utcnow(), message))
     if (not logging_enabled):
         return
     with log_lock:
-        print("{0}UTC {1}".format(datetime.utcnow(), message))
         memory_log.append("{0}UTC {1}".format(datetime.utcnow(), message))
         if len(memory_log) > 100 or should_flush:
             flush_memory_log()
@@ -227,7 +227,7 @@ def rleb_log_error(message):
 
 # DATES
 MONTHS = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct",
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct",
     "Nov", "Dec"
 ]
 DAYS = [

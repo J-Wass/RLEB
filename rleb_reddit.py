@@ -16,7 +16,6 @@ def read_new_submissions():
         try:
             # webhook for reddit submissions
             for submission in sub.stream.submissions():
-
                 # Sometimes, submission stream gives us old posts. Only accept posts that are within 2m of now.
                 submission_datetime = datetime.fromtimestamp(submission.created_utc)
                 if abs((datetime.now() - submission_datetime).total_seconds()) > 60*2:
