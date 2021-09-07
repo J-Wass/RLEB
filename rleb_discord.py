@@ -169,7 +169,11 @@ class RLEsportsBot(discord.Client):
                     author = author_message_tuple[0]
                     message = author_message_tuple[1]
                     user_mapping = user_names_to_ids(self.bot_command_channel)
+                    if user_mapping == None or len(user_mapping) == 0:
+                        continue
                     discord_user = self.get_user(user_mapping[author])
+                    if discord_user == None:
+                        continue
                     await discord_user.send("\n\n----------\n\n")
                     await discord_user.send(random.choice(rleb_settings.greetings))
                     await discord_user.send("\n\n----------\n\n")

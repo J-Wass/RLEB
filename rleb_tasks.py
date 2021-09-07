@@ -37,12 +37,18 @@ class Task:
 
 
 def user_names_to_ids(channel: discord.TextChannel) -> dict[str, int]:
-    """Returns a mapping of discord staff usernames to their ids."""
+    """Returns a mapping of discord staff usernames to their ids.
+    
+       Args:
+           channel (discord.channel.TextChannel): Discord channel to make mapping from.
+
+       Returns:
+           dict[str,int]: Mapping from discord username (user#tag) to their discord ids.
+    """
     user_mappings = {}
     for m in channel.members:
         user_mappings[m.name.lower() + '#' + m.discriminator] = m.id
     return user_mappings
-
 
 async def tasks_for_user(tasks: list[Task], user: str) -> list[Task]:
     """Returns a list of tasks for the given username."""
