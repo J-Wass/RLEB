@@ -29,7 +29,6 @@ class TestReddit(RLEBTestCase):
         rleb_settings.thread_restart_interval_seconds = 0
 
     def test_read_new_submissions(self):
-        rleb_settings.submissions_startup_delay = 0
         rleb_settings.read_new_submissions_enabled = False
 
         mock_submission = mock.Mock(spec=praw.models.Submission)
