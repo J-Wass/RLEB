@@ -16,12 +16,11 @@ def read_new_submissions():
         try:
             # webhook for reddit submissions
             for submission in sub.stream.submissions():
+                # Sometimes, submission stream gives us old posts. Only accept posts that are within 2m of now.
+                submission_datetime = datetime.fromtimestamp(submission.created_utc)
+                if abs((datetime.now() - submission_datetime).total_seconds()) > 60*2:
+                       continue
 
-                # for some reason, when opening a new submission connection, a bunch of garbage is sent through
-                # wait 60 seconds until the garbage is gone and then start queueing up submissions
-                if (datetime.now() - started).total_seconds(
-                ) < rleb_settings.submissions_startup_delay:
-                    continue
                 rleb_settings.rleb_log_info(
                     "REDDIT: Submission - {0}".format(submission))
                 rleb_settings.queues["submissions"].put(submission)

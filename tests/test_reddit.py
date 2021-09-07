@@ -11,6 +11,7 @@ from tests.common.rleb_test_case import RLEBTestCase
 
 from queue import Queue
 import praw
+from datetime import datetime
 
 
 class TestReddit(RLEBTestCase):
@@ -29,10 +30,10 @@ class TestReddit(RLEBTestCase):
         rleb_settings.thread_restart_interval_seconds = 0
 
     def test_read_new_submissions(self):
-        rleb_settings.submissions_startup_delay = 0
         rleb_settings.read_new_submissions_enabled = False
 
         mock_submission = mock.Mock(spec=praw.models.Submission)
+        mock_submission.created_utc = datetime.now().timestamp()
 
         def mock_submissions(args=[]):
             """ Mock method for sub.stream.submissions()."""

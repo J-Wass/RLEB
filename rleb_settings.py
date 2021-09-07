@@ -61,7 +61,7 @@ last_datetime_crashed = {'asyncio': None, 'thread': None}
 
 # REDDIT
 reddit_enabled = True
-target_sub = 'rocketleagueesports'
+target_sub =  'rocketleagueesports' if RUNNING_MODE == 'production' else 'rlcsnewstest'
 r = praw.Reddit(client_id=os.environ.get('REDDIT_CLIENT_ID')
                 or secrets.REDDIT_CLIENT_ID,
                 client_secret=os.environ.get('REDDIT_CLIENT_SECRET')
@@ -77,12 +77,6 @@ moderators = sub.moderator()
 read_new_submissions_enabled = True
 monitor_subreddit_enabled = True
 monitor_modmail_enabled = True
-
-# the seconds to wait before reporting new submissions in #new-posts
-# praw sends a ton of garbage submissions through, so we need to wait
-# a bit before only new submissions are read
-submissions_startup_delay = 60
-
 
 def is_mod(username):
     """Return true if username belongs to a sub moderator.
@@ -212,10 +206,10 @@ logging_enabled = True
 
 def rleb_log(message, should_flush=False):
     """Log a message to memory (thread safe)."""
+    print("{0}UTC {1}".format(datetime.utcnow(), message))
     if (not logging_enabled):
         return
     with log_lock:
-        print("{0}UTC {1}".format(datetime.utcnow(), message))
         memory_log.append("{0}UTC {1}".format(datetime.utcnow(), message))
         if len(memory_log) > 100 or should_flush:
             flush_memory_log()
@@ -233,7 +227,7 @@ def rleb_log_error(message):
 
 # DATES
 MONTHS = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct",
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct",
     "Nov", "Dec"
 ]
 DAYS = [
