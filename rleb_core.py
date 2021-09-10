@@ -33,6 +33,11 @@ def task_alert_check():
         # Iterate all tasks from the current week, make sure they are scheduled.
         weekly_tasks = rleb_tasks.get_tasks()
         for task in weekly_tasks:
+
+            # Don't worry about tasks that don't have an assigned creator.
+            if task.event_creator == None or len(task.event_creator) == 0:
+                continue
+
             if (task.event_name, task.event_date) not in task_warns.keys():
                 task_warns[(task.event_name, task.event_date)] = 0
 
@@ -88,13 +93,15 @@ def task_alert_check():
                     if scheduled_post.id in malformed_schedule_posts:
                         continue
 
-                    message = f"**WARNING:** \"{task.event_name}\" {description} wasn't scheduled correctly! Make sure the event is in UTC!\n\nScheduled posts: https://new.reddit.com/r/RocketLeagueEsports/about/scheduledposts\n\nINTERNAL ERROR: {e} "
+                    message = f"**WARNING:** \"{scheduled_post.details}\" {description} wasn't scheduled correctly! Make sure the event is in UTC!\n\nScheduled posts: https://new.reddit.com/r/RocketLeagueEsports/about/scheduledposts\n\nINTERNAL ERROR: {e} "
                     rleb_settings.queues["schedule_chat"].put(message)
                     rleb_log_info(f"CORE: {message}")
                     malformed_schedule_posts.append(scheduled_post.id)
 
             # If the post is due in 8 hours, warn the user.
             if not task_is_scheduled:
+
+                rleb_log_info(f"CORE: Task isn't scheduled: {task.event_name} | {task_datetime.timestamp()}")
                 
                 # Warn that the task needs immediate attention.
                 if seconds_remaining < 60*60:
