@@ -70,18 +70,24 @@ def task_alert_check():
                 if (datetime.now() - datetime.fromtimestamp(scheduled_post.created_utc)).total_seconds() > 60*60*24*7:
                     continue
 
-                # If the post is malformed, ignore it.
-                if scheduled_post.id in malformed_schedule_posts:
-                    continue
-
                 try:
                     # If post has the same time as the task, then the task is correctly scheduled.
                     description = scheduled_post.description # description looks like 'scheduled for Tue, 31 Aug 2021 08:30 AM UTC'
                     scheduled_datetime = datetime.strptime(description, 'scheduled for %a, %d %b %Y %H:%M %p %Z').replace(tzinfo=None)
+
+                    # If the post was previously malformed but worked this time, remove it from the list of malformed posts.
+                    if scheduled_post.id in malformed_schedule_posts:
+                        malformed_schedule_posts.remove(scheduled_post)
+
                     if abs((task_datetime - scheduled_datetime).total_seconds()) < 61: #give a minute cushion
                         task_is_scheduled = True
                         break
                 except Exception as e:
+
+                    # If the post is already malformed, no reason to warn again.
+                    if scheduled_post.id in malformed_schedule_posts:
+                        continue
+
                     message = f"**WARNING:** \"{task.event_name}\" {description} wasn't scheduled correctly! Make sure the event is in UTC!\n\nScheduled posts: https://new.reddit.com/r/RocketLeagueEsports/about/scheduledposts\n\nINTERNAL ERROR: {e} "
                     rleb_settings.queues["schedule_chat"].put(message)
                     rleb_log_info(f"CORE: {message}")
