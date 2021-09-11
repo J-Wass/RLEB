@@ -89,7 +89,7 @@ def task_alert_check():
                     description = scheduled_post.description # description looks like 'scheduled for Tue, 31 Aug 2021 08:30 AM UTC'
                     description.replace('UTC', '+0000')
                     scheduled_datetime = datetime.strptime(description, 'scheduled for %a, %d %b %Y %H:%M %p %z').replace(tzinfo=pytz.UTC)
-                    rleb_log_info(f"CORE: Scheduled post: scheduled_post.details} | {scheduled_datetime.timestamp()}")
+                    rleb_log_info(f"CORE: Scheduled post: {scheduled_post.details} | {scheduled_datetime.timestamp()}")
 
                     # If the post was previously malformed but worked this time, remove it from the list of malformed posts.
                     if scheduled_post.id in malformed_schedule_posts:
