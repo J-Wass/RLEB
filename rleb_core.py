@@ -60,7 +60,7 @@ def task_alert_check():
 
             task_datetime = datetime.strptime(date_time_str, '%Y-%m-%d %H:%M %z').replace(tzinfo=pytz.UTC)
 
-            now = datetime.utcnow()
+            now = datetime.utcnow().replace(tzinfo=pytz.UTC)
             seconds_remaining = (task_datetime - now).total_seconds()
             
             # If the post is due in more than 8 hours, don't warn.
