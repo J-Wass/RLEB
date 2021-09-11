@@ -6,6 +6,7 @@ from tornado.platform.asyncio import AnyThreadEventLoopPolicy
 from datetime import datetime, timedelta, timezone
 import traceback
 import math
+import pytz
 
 import rleb_discord
 from rleb_reddit import read_new_submissions, monitor_subreddit, monitor_modmail
@@ -24,6 +25,9 @@ def task_alert_check():
     # List of a scheduled post ids that aren't in UTC.
     malformed_schedule_posts = []
 
+    # List of schedule tasks in (task.event_name, task.event_date) form.
+    scheduled_tasks = []
+
     while True:
         # Get the last 20 scheduled posts from mod log.
         scheduled_posts = []
@@ -38,6 +42,7 @@ def task_alert_check():
             if task.event_creator == None or len(task.event_creator) == 0:
                 continue
 
+            # Created a key for task warnings.
             if (task.event_name, task.event_date) not in task_warns.keys():
                 task_warns[(task.event_name, task.event_date)] = 0
 
@@ -45,11 +50,15 @@ def task_alert_check():
             if task_warns[(task.event_name, task.event_date)] == 2:
                 continue
 
+            # If task is already scheduled, skip.
+            if (task.event_name, task.event_date) in scheduled_tasks:
+                continue
+
             timestring = task.event_schedule_time.replace('Schedule ','')
             datestring = task.event_date
             date_time_str = f"{datestring} {timestring} +0000" # 0 hours and 0 minutes from UTC
 
-            task_datetime = datetime.strptime(date_time_str, '%Y-%m-%d %H:%M %z').replace(tzinfo=None)
+            task_datetime = datetime.strptime(date_time_str, '%Y-%m-%d %H:%M %z').replace(tzinfo=pytz.UTC)
 
             now = datetime.utcnow()
             seconds_remaining = (task_datetime - now).total_seconds()
@@ -78,7 +87,7 @@ def task_alert_check():
                 try:
                     # If post has the same time as the task, then the task is correctly scheduled.
                     description = scheduled_post.description # description looks like 'scheduled for Tue, 31 Aug 2021 08:30 AM UTC'
-                    scheduled_datetime = datetime.strptime(description, 'scheduled for %a, %d %b %Y %H:%M %p %Z').replace(tzinfo=None)
+                    scheduled_datetime = datetime.strptime(description, 'scheduled for %a, %d %b %Y %H:%M %p %Z').replace(tzinfo=pytz.UTC)
 
                     # If the post was previously malformed but worked this time, remove it from the list of malformed posts.
                     if scheduled_post.id in malformed_schedule_posts:
@@ -103,7 +112,7 @@ def task_alert_check():
 
                 rleb_log_info(f"CORE: Task isn't scheduled: {task.event_name} | {task_datetime.timestamp()}")
                 
-                # Warn that the task needs immediate attention.
+                # If less than an hour remains, ping the schedule chat about the unscheduled post.
                 if seconds_remaining < 60*60:
                    task_warns[(task.event_name, task.event_date)] += 1
                    message = f"**WARNING:** \"{task.event_name}\" is due in {math.floor(seconds_remaining / 3600)} hour(s) and {round((seconds_remaining / 60) % 60, 0)} minute(s).\n\nDouble-check that the task is scheduled for **exactly** {timestring} UTC on {datestring}.\n\nScheduled posts: https://new.reddit.com/r/RocketLeagueEsports/about/scheduledposts"
@@ -111,16 +120,22 @@ def task_alert_check():
                    rleb_settings.queues["schedule_chat"].put(message)
                    continue
 
-                # No need to warn in DMs again, wait until 1 hour and then warn schedule_chat.
+                # If already warned in DMs, don't warn again.
                 if task_warns[(task.event_name, task.event_date)] == 1:
                    continue
 
-                # If the task still has plenty of time left, DM the user responsible.
+                # If the task isn't scheduled AND the task is due in > 1hr AND the user hasn't been DMd yet, DM the user.
                 task_warns[(task.event_name, task.event_date)] += 1
                 message = f"**WARNING:** \"{task.event_name}\" is due in {math.floor(seconds_remaining / 3600)} hour(s) and {round((seconds_remaining / 60) % 60, 0)} minute(s).\n\nDouble-check that the task is scheduled for **exactly** {timestring} UTC on {datestring}.\n\nScheduled posts: https://new.reddit.com/r/RocketLeagueEsports/about/scheduledposts"
-                rleb_settings.queues["direct_messages"].put((task.event_creator, message))
+
+                #TODO dont dm until this feature is working fine
+                #rleb_settings.queues["direct_messages"].put((task.event_creator, message))
+                rleb_settings.queues["schedule_chat"].put(message)
             else:
                 task_warns[(task.event_name, task.event_date)] += 0
+                scheduled_tasks.append((task.event_name, task.event_date))
+                message = f"Post is scheduled: {task.event_name} -> {timestring} UTC on {datestring}"
+                rleb_settings.queues["schedule_chat"].put(message)
 
 
         # Break before waiting for the interval.
