@@ -36,8 +36,8 @@ RUNNING_MODE = os.environ.get('RUNNING_MODE') or secrets.RUNNING_MODE
 # CORE
 health_enabled = True
 task_alerts_enabled = True
-health_check_startup_latency = 30  # seconds to wait before health thread starts
-task_alerts_startup_latency = 1  # seconds to wait before task alert thread starts
+health_check_startup_latency = 10  # seconds to wait before health thread starts
+task_alerts_startup_latency = 10  # seconds to wait before task alert thread starts
 queues = {}  # Global queue dictionary for various things in RLEB.
 asyncio_health_check_enabled = True
 thread_health_check_enabled = True
@@ -206,11 +206,11 @@ logging_enabled = True
 
 def rleb_log(message, should_flush=False):
     """Log a message to memory (thread safe)."""
-    print("{0}UTC {1}".format(datetime.utcnow(), message))
+    print("{0} UTC {1}".format(datetime.utcnow(), message))
     if (not logging_enabled):
         return
     with log_lock:
-        memory_log.append("{0}UTC {1}".format(datetime.utcnow(), message))
+        memory_log.append("{0} UTC {1}".format(datetime.utcnow(), message))
         if len(memory_log) > 100 or should_flush:
             flush_memory_log()
 

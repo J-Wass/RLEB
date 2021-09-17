@@ -7,7 +7,6 @@ import traceback
 
 import rleb_settings
 
-
 class Task:
     """Encapsulation of a task from the google sheet."""
     def __init__(self, event_name, event_creator, event_updater1,

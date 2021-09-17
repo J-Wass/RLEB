@@ -1,5 +1,4 @@
 import discord
-from discord.utils import get
 import random
 from datetime import datetime
 import time
@@ -8,6 +7,7 @@ from threading import Lock
 import traceback
 import math
 
+import rleb_health
 import rleb_settings
 from rleb_settings import sub
 from rleb_team_lookup import handle_team_lookup
@@ -75,10 +75,14 @@ class RLEsportsBot(discord.Client):
             await self.send_meme(self.bot_command_channel)
 
     async def send_meme(self, channel):
-        dankmemes = rleb_settings.r.subreddit(self.meme_subreddit)
+        meme_sub = rleb_settings.r.subreddit(self.meme_subreddit)
+        if meme_sub.over18:
+            return
         randomizer = random.randint(1, 20)
         count = 0
-        for meme in dankmemes.top("day"):
+        for meme in meme_sub.top("day"):
+            if meme.over_18:
+                continue
             if count <= randomizer:
                 count += 1
                 continue
@@ -614,6 +618,19 @@ class RLEsportsBot(discord.Client):
             rleb_settings.flush_memory_log()
             await message.channel.send(":toilet:")
 
+        elif message.content.startswith('!schedule') and is_staff(message.author):
+            await message.channel.send("**Found the following scheduled posts on reddit:**")
+            scheduled_posts = rleb_health.get_scheduled_posts()
+            for s in scheduled_posts:
+                await message.channel.send(s)
+
+            await message.channel.send("**Found the following tasks on the weekly sheet:**")
+            weekly_tasks = rleb_health.get_weekly_tasks()
+            for t in weekly_tasks:
+                await message.channel.send(t)
+
+            await self.add_response(message)
+
         elif message.content.startswith('!logs') and is_staff(message.author):
 
             if (not rleb_settings.is_discord_mod(message.author)):
@@ -685,7 +702,7 @@ class RLEsportsBot(discord.Client):
                         thread_type, last_crash_string))
 
             await message.channel.send(
-                "Found {0} out of 5 threads running: {1}".format(
+                "Found {0} out of 6 threads running: {1}".format(
                     len(self.threads), list(map(lambda x: x.name,
                                                 self.threads))))
             await self.add_response(message)
