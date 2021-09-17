@@ -1,5 +1,4 @@
 import discord
-from discord.utils import get
 import random
 from datetime import datetime
 import time
@@ -7,7 +6,6 @@ import asyncio
 from threading import Lock
 import traceback
 import math
-import pytz
 
 import rleb_health
 import rleb_settings
@@ -16,7 +14,7 @@ from rleb_team_lookup import handle_team_lookup
 from rleb_group_lookup import handle_group_lookup
 from rleb_census import handle_flair_census
 from rleb_calendar import handle_calendar_lookup
-from rleb_tasks import handle_task_lookup, user_names_to_ids, get_tasks
+from rleb_tasks import handle_task_lookup, user_names_to_ids
 
 responses_lock = Lock()
 
