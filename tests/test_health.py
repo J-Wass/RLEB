@@ -23,10 +23,10 @@ class TestHealth(RLEBTestCase):
     def setUp(self):
         super().setUp()
 
-        # import rleb_core after setUp is done so that rleb_settings loads with mocks/patches
-        global rleb_core
+        # import rleb_health after setUp is done so that rleb_settings loads with mocks/patches
+        global rleb_health
         global rleb_settings
-        import rleb_core
+        import rleb_health
         import rleb_settings
 
         # Turn off the health thread so that it only runs once and exits.
@@ -44,10 +44,10 @@ class TestHealth(RLEBTestCase):
     def test_alerts_on_dead_thread(self):
         rleb_settings.thread_health_check_enabled = True
         rleb_settings.thread_crashes['thread'] = 3
-        with patch('rleb_core.rleb_log_error') as mock_log_error:
+        with patch('rleb_health.rleb_log_error') as mock_log_error:
             bad_thread = Thread(target=instantly_crash, name="Bad thread")
             bad_thread.start()
-            rleb_core.health_check([bad_thread])
+            rleb_health.health_check([bad_thread])
             bad_thread.join()
 
             mock_log_error.assert_called_with(
@@ -65,8 +65,8 @@ class TestHealth(RLEBTestCase):
         }
         rleb_settings.thread_crashes['asyncio'] = 2
 
-        with patch('rleb_core.rleb_log_error') as mock_log_error:
-            rleb_core.health_check([])
+        with patch('rleb_health.rleb_log_error') as mock_log_error:
+            rleb_health.health_check([])
 
             mock_log_error.assert_called_with(
                 "HEALTH: submissions asyncio thread has stopped responding! (2 crashes)"
