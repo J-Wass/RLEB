@@ -39,11 +39,12 @@ def get_scheduled_posts() -> list[Event]:
         if log.id in already_warned_scheduled_posts:
             continue
 
-        # if post was scheduled >5 days ago, ignore
-        if (datetime.now().timestamp() - log.created_utc) > 60 * 60 * 24 * 5:
+        # if post was scheduled >2 days ago, ignore
+        if (datetime.now().timestamp() - log.created_utc) > 60 * 60 * 24 * 2:
             continue
 
         try:
+            # https://stackoverflow.com/questions/1703546/parsing-date-time-string-with-timezone-abbreviated-name-in-python
             description = log.description  # description looks like 'scheduled for Tue, 31 Aug 2021 08:30 AM UTC'
             description = description.replace('UTC', '+0000')
             scheduled_datetime = datetime.strptime(description, 'scheduled for %a, %d %b %Y %I:%M %p %z').replace(tzinfo=pytz.UTC)
