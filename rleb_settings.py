@@ -18,7 +18,7 @@ try:
     import secrets
 except Exception as e:
     secrets = {}
-    print("secrets.py not found, usings keys in environment settings.")
+    print("secrets.py not found, using keys in environment settings.")
 
 # OS
 ENVIRONMENT_DICT = {

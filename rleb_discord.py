@@ -15,9 +15,9 @@ from rleb_group_lookup import handle_group_lookup
 from rleb_census import handle_flair_census
 from rleb_calendar import handle_calendar_lookup
 from rleb_tasks import handle_task_lookup, user_names_to_ids
+from rleb_swiss import handle_swiss_lookup
 
 responses_lock = Lock()
-
 
 def is_staff(user: discord.Member) -> bool:
     """Return true if discord user has the Subreddit Moderators role."""
@@ -738,9 +738,9 @@ class RLEsportsBot(discord.Client):
         elif message.content.startswith("!teams") and is_staff(message.author):
             rleb_settings.rleb_log_info("DISCORD: Starting team generation.")
             await message.channel.send(
-                "Starting team lookup, this may take a minute...")
+                "Starting team lookup...")
             tokens = message.content.split()
-            url = 10
+            url = ''
             try:
                 url = tokens[1]
             except Exception:
@@ -751,13 +751,28 @@ class RLEsportsBot(discord.Client):
             seconds = await handle_team_lookup(url, message.channel)
             await self.add_response(message)
 
+        elif message.content.startswith("!swiss") and is_staff(message.author):
+            rleb_settings.rleb_log_info("DISCORD: Starting swiss bracket generation.")
+            await message.channel.send("Starting swiss bracket lookup...")
+            tokens = message.content.split()
+            url = ''
+            try:
+                url = tokens[1]
+            except Exception:
+                await message.channel.send(
+                    "Couldn't understand that. Expected '!swiss liquipedia-url'."
+                )
+                return
+            seconds = await handle_swiss_lookup(url, message.channel)
+            await self.add_response(message)
+
         elif message.content.startswith("!groups") and is_staff(
                 message.author):
             rleb_settings.rleb_log_info("DISCORD: Starting group generation.")
             await message.channel.send(
-                "Starting group lookup, this may take a minute...")
+                "Starting group lookup...")
             tokens = message.content.split()
-            url = 10
+            url = ''
             try:
                 url = tokens[1]
             except Exception:
