@@ -18,7 +18,6 @@ async def handle_team_lookup(url, channel):
     # Variable to keep track of how many seconds the lookup took.
     seconds = 0
 
-    # Webdriver setup
     start = time.time()
     rleb_settings.rleb_log_info("DISCORD: Creating lookup for {0}".format(url))
 
