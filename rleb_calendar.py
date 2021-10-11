@@ -33,12 +33,17 @@ TABLE_HEADER = """
 TABLE_ROW = """|[**{title}**]({link}) |[**{ET}**](https://www.google.com/search?q={ET}+ET) |{CET} |{AET} | {STREAM} |[**Bracket**]({BRACKET})|"""
 
 BOTTOM_SECTION = """
+
+# Event Threads
+
+Events prefixed with :soccer: will have an **Event Thread** posted by mods.  Anyone can [**create an Event Thread**](https://www.reddit.com/r/RocketLeagueEsports/wiki/event_threads) or **Match Threads** for unmarked events. Follow the link to learn more.
+
 # Sidebar Schedule
 
 If you are on the official **Reddit App**, you will find the schedule under the "**About**" tab. If you are browsing the **Desktop** version,  you can find the schedule on the sidebar of the [**new.reddit**](https://new.reddit.com/r/RocketLeagueEsports/) version of this subreddit. Alternatively you can use our [**Google Calendar**](https://www.reddit.com/r/RocketLeagueEsports/wiki/calendar) which is used to feed the schedule.
 
 # Guides / FAQs
-
+* [**Announcing the RLCS 2021-2022 Season**](https://esports.rocketleague.com/news/announcing-the-rlcs-202122-season/)
 * [**Intro to RL Esports**](https://www.reddit.com/r/RocketLeagueEsports/wiki/guide)
 * [**Fan Rewards FAQ**](https://www.reddit.com/r/RocketLeagueEsports/wiki/rewards)
 
