@@ -36,7 +36,7 @@ BOTTOM_SECTION = """
 
 # Event Threads
 
-Events prefixed with :soccer: will have an **Event Thread** posted by mods.  Anyone can [**create an Event Thread**](https://www.reddit.com/r/RocketLeagueEsports/wiki/event_threads) or **Match Threads** for unmarked events. Follow the link to learn more.
+Events prefixed with ⚽ will have an **Event Thread** posted by mods.  Anyone can [**create an Event Thread**](https://www.reddit.com/r/RocketLeagueEsports/wiki/event_threads) or **Match Threads** for unmarked events. Follow the link to learn more.
 
 # Sidebar Schedule
 

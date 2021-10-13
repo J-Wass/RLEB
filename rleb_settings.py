@@ -14,6 +14,7 @@ import os
 from sys import platform
 import discord
 
+# This is bad code, don't tell anyone I wrote this.
 try:
     import secrets
 except Exception as e:

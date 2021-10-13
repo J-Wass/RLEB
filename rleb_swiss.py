@@ -30,7 +30,7 @@ async def handle_swiss_lookup(url, channel):
 
         # The indicator that each cell in the swiss table starts with.
         indicator = {
-            'swisstable-bgc-win': "✔",
+            'swisstable-bgc-win': "✔️",
             'swisstable-bgc-lose': "❌",
             'swisstable-bgc-': "",
         }
