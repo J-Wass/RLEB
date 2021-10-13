@@ -60,14 +60,17 @@ def get_weekly_tasks() -> list[Event]:
     weekly_tasks = []
     tasks = rleb_tasks.get_tasks()
     for t in tasks:
-        time_string = t.event_schedule_time.replace('Schedule ', '')
-        date_string = t.event_date
-        date_time_str = f"{date_string} {time_string} +0000"  # 0 hours and 0 minutes from UTC
-        task_datetime = datetime.strptime(date_time_str, '%Y-%m-%d %H:%M %z').replace(tzinfo=pytz.UTC)
-        timestamp = task_datetime.timestamp()
+        try:
+            time_string = t.event_schedule_time.replace('Schedule ', '')
+            date_string = t.event_date
+            date_time_str = f"{date_string} {time_string} +0000"  # 0 hours and 0 minutes from UTC
+            task_datetime = datetime.strptime(date_time_str, '%Y-%m-%d %H:%M %z').replace(tzinfo=pytz.UTC)
+            timestamp = task_datetime.timestamp()
 
-        task_event = Event(t.event_name, t.event_creator, timestamp)
-        weekly_tasks.append(task_event)
+            task_event = Event(t.event_name, t.event_creator, timestamp)
+            weekly_tasks.append(task_event)
+        except:
+            continue
     return weekly_tasks
 
 
