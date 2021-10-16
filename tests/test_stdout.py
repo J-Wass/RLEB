@@ -26,7 +26,7 @@ class TestStandardOut(RLEBAsyncTestCase):
         self.mock_http_post = patch("requests.post").start()
         self.mock_http_post.return_value = mock.Mock()
         self.mock_http_post.return_value.status_code = 200
-        self.mock_http_post.return_value.text = "pastebin_url"
+        self.mock_http_post.return_value.text = '{"link": "paste.ee url"}'
         self.addCleanup(self.mock_http_post)
 
         # import rleb_stdout after setUp is done so that rleb_settings loads with mocks/patches
@@ -45,18 +45,14 @@ class TestStandardOut(RLEBAsyncTestCase):
         result = await create_paste("some words", title="really cool title")
 
         expected_arguments = {
-            'api_dev_key': rleb_settings.PASTEBIN_API_KEY,
-            'api_user_key': rleb_settings.PASTEBIN_API_USER_KEY,
-            'api_paste_code': "some words",
-            'api_paste_expire_date': '1W',
-            'api_option': 'paste',
-            'api_paste_private': '0',
-            'api_paste_name': 'really cool title'
+            'key': rleb_settings.PASTEEE_APP_KEY,
+            'sections': [{"name":"really cool title","syntax":"autodetect","contents":"some words"}]
         }
+        expected_headers = {'X-Auth-Token': 'token'}
 
-        self.assertEqual(result, "pastebin_url")
+        self.assertEqual(result, "paste.ee url")
         self.mock_http_post.assert_called_once_with(
-            "https://pastebin.com/api/api_post.php", data=expected_arguments)
+            "https://api.paste.ee/v1/pastes", json=expected_arguments, headers=expected_headers)
 
     async def test_print_to_channel_calls_create_paste(self):
         mock_channel = mock.Mock(spec=discord.TextChannel)
@@ -75,7 +71,7 @@ class TestStandardOut(RLEBAsyncTestCase):
                                title="the best title")
 
         mock_channel.send.assert_awaited_once_with(
-            "**test_hook**: pastebin_url")
+            "**test_hook**: paste.ee url")
 
     async def test_print_to_channel_with_exception(self):
         # Set the pastebin response to be 500, so that the alternative std out is used.
