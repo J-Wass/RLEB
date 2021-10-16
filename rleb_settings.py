@@ -245,3 +245,5 @@ PASTEBIN_USER_NAME = os.environ.get(
     'PASTEBIN_USER_NAME') or secrets.PASTEBIN_USER_NAME
 PASTEBIN_USER_PASS = os.environ.get(
     'PASTEBIN_USER_PASS') or secrets.PASTEBIN_USER_PASS
+PASTEEE_APP_KEY = os.environ.get(
+    'PASTEEE_APP_KEY') or secrets.PASTEEE_APP_KEY
