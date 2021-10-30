@@ -735,7 +735,7 @@ class RLEsportsBot(discord.Client):
             await message.channel.send(embed=embed)
             await self.add_response(message)
 
-        elif message.content.startswith("!d_teams") and is_staff(message.author):
+        elif message.content.startswith("!teams") and is_staff(message.author):
             rleb_settings.rleb_log_info("DISCORD: Starting team generation.")
             await message.channel.send(
                 "Starting team lookup...")
@@ -751,7 +751,7 @@ class RLEsportsBot(discord.Client):
             seconds = await handle_team_lookup(url, message.channel)
             await self.add_response(message)
 
-        elif message.content.startswith("!d_swiss") and is_staff(message.author):
+        elif message.content.startswith("!swiss") and is_staff(message.author):
             rleb_settings.rleb_log_info("DISCORD: Starting swiss bracket generation.")
             await message.channel.send("Starting swiss bracket lookup...")
             tokens = message.content.split()
