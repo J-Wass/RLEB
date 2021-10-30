@@ -1,5 +1,6 @@
 import rleb_settings
 from rleb_settings import rleb_log_info, rleb_log_error
+from rleb_data import Data
 import rleb_tasks
 
 import time
@@ -7,13 +8,6 @@ from datetime import datetime, timedelta, timezone
 import traceback
 import math
 import pytz
-
-# List of scheduled post ids that weren't misformatted and already warned.
-already_warned_scheduled_posts = []
-
-# List of (task_name, timestamp) tuple of tasks that were already warned.
-already_warned_late_posts = []
-
 
 class Event:
     """Encapsulation of an event in time."""
@@ -30,10 +24,11 @@ class Event:
         self.event_seconds_since_epoch = event_seconds_since_epoch
 
     def __repr__(self):
-        return f"{self.event_name} by {self.event_creator} @ {self.event_seconds_since_epoch}"
+        return f"{self.event_name} ({self.event_creator}) @ {self.event_seconds_since_epoch}"
 
 
-def get_scheduled_posts() -> list[Event]:
+def get_scheduled_posts(already_warned_scheduled_posts: list[int]) -> list[Event]:
+    """"Returns a list of scheduled posts from the sub.."""
     scheduled_posts = []
     for log in rleb_settings.sub.mod.log(action="create_scheduled_post", limit=20):
         if log.id in already_warned_scheduled_posts:
@@ -53,6 +48,7 @@ def get_scheduled_posts() -> list[Event]:
         except Exception as e:
             rleb_settings.queues["schedule_chat"].put(f"**{log.details}** {log.description} wasn't scheduled in UTC! (internal error = {e})")
             already_warned_scheduled_posts.append(log.id)
+            Data.singleton().write_already_warned_scheduled_post(log.id)
     return scheduled_posts
 
 
@@ -75,12 +71,20 @@ def get_weekly_tasks() -> list[Event]:
 
 
 def task_alert_check():
+    
+    # List of scheduled post ids that weren't misformatted and already warned.
+    one_week_ago_seconds_since_epoch = datetime.now().timestamp() - 7 * 86400
+    already_warned_scheduled_posts = Data.singleton().read_already_warned_scheduled_posts(one_week_ago_seconds_since_epoch)
+
+    # List of (task_name, timestamp) tuple of tasks that were already warned.
+    already_warned_late_posts = []
+
     while True:
         # List of events from the weekly spreadsheet.
         tasks = get_weekly_tasks()
 
         # ModAction of schedule post creations on reddit.
-        scheduled_posts = get_scheduled_posts()
+        scheduled_posts = get_scheduled_posts(already_warned_scheduled_posts)
 
         # Gather tasks which don't have a scheduled post.
         unscheduled_tasks = []
