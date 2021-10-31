@@ -35,15 +35,17 @@ async def handle_team_lookup(url, channel):
         html = BeautifulSoup(page, "html.parser")
 
         # The reddit markdown table to return.
-        table = '|Team|\n:--:|\n'
+        table = '|Team|\n:--|\n'
 
         # Iterate each team.
         for team in html.select('div.teamcard'):
             team_element = team.select('b a')[0]
             team_name = team_element.text.replace('(', '').replace(
                 ')', '') if team_element else "TBD"
-            team_link = 'https://liquipedia.net' + team_element.attrs[
-                'href'] if team_element and team_element.attrs['href'] else "#"
+            href = team_element.attrs['href'].replace('(', '\(').replace(')', '\)')
+            if 'https://liquipedia.net' not in href:
+                        href = 'https://liquipedia.net' + href
+            team_link = href if team_element and href else "#"
             players = []
 
             # Iterate each player on the team.

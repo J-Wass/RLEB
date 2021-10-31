@@ -46,7 +46,7 @@ async def handle_swiss_lookup(url, channel):
                 continue
 
             # Strip years (YYYY) from aria-label.
-            team_name = re.sub(r'\s[\d]{4}', '', raw_team_name)
+            team_name = re.sub(r'\s[\d]{4}', '', raw_team_name).lower()
             team_acronym = t.text
 
             # Add to mapping.
@@ -70,7 +70,10 @@ async def handle_swiss_lookup(url, channel):
                 if team_link is None or len(team_link) == 0:
                     team_markdown = "**" + team_name + "**"
                 else:
-                    team_markdown = "[**" + team_name + "**](https://liquipedia.net" + team_link[0]['href'] + ")"
+                    href = team_link[0]['href'].replace('(', '\(').replace(')', '\)')
+                    if 'https://liquipedia.net' not in href:
+                        href = 'https://liquipedia.net'+href
+                    team_markdown = "[**" + team_name + "**](" + href + ")"
                 row.append(team_markdown)
                 row.append("**" + t.select('b')[0].text + "**")
                 for m in t.select('td[class^="swisstable-bgc"]'):
@@ -86,7 +89,7 @@ async def handle_swiss_lookup(url, channel):
             tables.append(table)
         await rleb_stdout.print_to_channel(channel, "\n".join(tables), title="Swiss Bracket")
     except Exception as e:
-        await channel.send("Couldn't find swiss group in {0}. Error: {1}".format(url, e))
+        await channel.send("Couldn't find swiss group in {0}. Error: {1}.".format(url, e))
         rleb_settings.rleb_log_info(
-            "LOOKUP: Couldn't find swiss group in {0}. Error: {1}".format(url, e))
+            "LOOKUP: Couldn't find swiss group in {0}.\nError: {1}\nTraceback: {2}".format(url, e, traceback.format_exc()))
         rleb_settings.rleb_log_error(traceback.format_exc())
