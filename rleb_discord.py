@@ -178,7 +178,7 @@ class RLEsportsBot(discord.Client):
                     discord_user = self.get_user(user_mapping[author])
                     if discord_user == None:
                         continue
-                    message = [random.choice(rleb_settings.greetings), "\n\n----------\n\n", message, "\n\n----------\n\n"].join("\n")  
+                    message = "\n".join([random.choice(rleb_settings.greetings), "\n----------\n", message, "\n----------\n"])  
                     DM = await discord_user.send(message)
                     await DM.edit(suppress=True)              
 
