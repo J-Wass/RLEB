@@ -34,12 +34,12 @@ def get_scheduled_posts(already_warned_scheduled_posts: list[int]) -> list[Event
         if log.id in already_warned_scheduled_posts:
             continue
 
-        # if post was scheduled >2 days ago, ignore
-        if (datetime.now().timestamp() - log.created_utc) > 60 * 60 * 24 * 2:
+        # if post was scheduled >5 days ago, ignore
+        if (datetime.now().timestamp() - log.created_utc) > 60 * 60 * 24 * 5:
             continue
 
         try:
-            # https://stackoverflow.com/questions/1703546/parsing-date-time-string-with-timezone-abbreviated-name-in-python
+            # todo https://stackoverflow.com/questions/1703546/parsing-date-time-string-with-timezone-abbreviated-name-in-python
             description = log.description  # description looks like 'scheduled for Tue, 31 Aug 2021 08:30 AM UTC'
             description = description.replace('UTC', '+0000')
             scheduled_datetime = datetime.strptime(description, 'scheduled for %a, %d %b %Y %I:%M %p %z').replace(tzinfo=pytz.UTC)
@@ -48,7 +48,7 @@ def get_scheduled_posts(already_warned_scheduled_posts: list[int]) -> list[Event
         except Exception as e:
             rleb_settings.queues["schedule_chat"].put(f"**{log.details}** {log.description} wasn't scheduled in UTC! (internal error = {e})")
             already_warned_scheduled_posts.append(log.id)
-            Data.singleton().write_already_warned_scheduled_post(log.id)
+            Data.singleton().write_already_warned_scheduled_post(log.id, datetime.now().timestamp())
     return scheduled_posts
 
 
@@ -76,10 +76,19 @@ def task_alert_check():
     one_week_ago_seconds_since_epoch = datetime.now().timestamp() - 7 * 86400
     already_warned_scheduled_posts = Data.singleton().read_already_warned_scheduled_posts(one_week_ago_seconds_since_epoch)
 
-    # List of (task_name, timestamp) tuple of tasks that were already warned.
+    # List of (task_creator, timestamp) tuple of tasks that were already warned.
     already_warned_late_posts = []
+    last_emptied_already_late_posts = datetime.now().timestamp()
+
+    # List of (task_creator, timestamp) tuple of tasks that were already warned.
+    already_confirmed_scheduled_posts = []
 
     while True:
+        # Every 2 hours, empty the already warned posts list and rewarn the world.
+        if (datetime.now().timestamp() - last_emptied_already_late_posts) > 60 * 60 * 2:
+            last_emptied_already_late_posts = datetime.now().timestamp()
+            already_warned_late_posts = []
+
         # List of events from the weekly spreadsheet.
         tasks = get_weekly_tasks()
 
@@ -89,24 +98,37 @@ def task_alert_check():
         # Gather tasks which don't have a scheduled post.
         unscheduled_tasks = []
         for task in tasks:
-            # If post is already warned, don't add to list.
+         # If post is already warned, don't continue.
             if (task.event_creator, task.event_seconds_since_epoch) in already_warned_late_posts:
                 continue
 
+            # If post is already confirmed, don't continue.
+            if (task.event_creator, task.event_seconds_since_epoch) in already_warned_late_posts:
+                continue
+
+            # Find if any posts are scheduled at the right time. If they are, assume post is scheduled.
             post_at_same_time = list(filter(lambda s: s.event_seconds_since_epoch == task.event_seconds_since_epoch, scheduled_posts))
             if len(post_at_same_time) == 0:
+                # todo, also try to compare task.event_name and posts that share a similar name
                 unscheduled_tasks.append(task)
+
+            # Task is scheduled.
+            else:
+                message = f"✔️ Task is scheduled: {task.event_name}"
+                rleb_settings.queues["schedule_chat"].put(message)
+                already_confirmed_scheduled_posts.append((task.event_creator, task.event_seconds_since_epoch))
 
         # Warn for each unscheduled task.
         for unscheduled_task in unscheduled_tasks:
             now = datetime.now().timestamp()
             seconds_remaining = unscheduled_task.event_seconds_since_epoch - now
 
-            # Only warn about events that are 2 hours late and due in 8 hours
+            # Only warn about events that are 2 hours late or are due in 8 hours
             if (seconds_remaining < 60 * 60 * 8) and (seconds_remaining > -60 * 60 * 2):
                 message = f"WARNING: {unscheduled_task.event_name} was not scheduled correctly!\n\n"
                 message += f"Task is due in {math.floor(seconds_remaining / 3600)} hour(s) and {round((seconds_remaining / 60) % 60, 0)} minute(s).\n\nScheduled posts: https://new.reddit.com/r/RocketLeagueEsports/about/scheduledposts"
                 rleb_settings.queues["schedule_chat"].put(message)
+                rleb_settings.queues["direct_messages"].put((task.event_creator, message))
                 already_warned_late_posts.append((unscheduled_task.event_creator, unscheduled_task.event_seconds_since_epoch))
 
         # Break before waiting for the interval.

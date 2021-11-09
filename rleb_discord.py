@@ -178,11 +178,9 @@ class RLEsportsBot(discord.Client):
                     discord_user = self.get_user(user_mapping[author])
                     if discord_user == None:
                         continue
-                    await discord_user.send("\n\n----------\n\n")
-                    await discord_user.send(random.choice(rleb_settings.greetings))
-                    await discord_user.send("\n\n----------\n\n")
+                    message = [random.choice(rleb_settings.greetings), "\n\n----------\n\n", message, "\n\n----------\n\n"].join("\n")  
                     DM = await discord_user.send(message)
-                    await DM.edit(suppress=True)
+                    await DM.edit(suppress=True)              
 
                 rleb_settings.asyncio_threads['direct_messages'] = datetime.now()
                 if not rleb_settings.discord_check_direct_messages_enabled:
@@ -377,9 +375,16 @@ class RLEsportsBot(discord.Client):
 
         await self.remove_old_responses()
 
+        # allow local builds to use !deb command before any commands
+        discord_message = message.content
+        if rleb_settings.RUNNING_MODE == 'local':
+            if '!deb' not in discord_message:
+                return
+            discord_message = discord_message.replace('!deb ', '')
+
         if str(message.channel) == 'voting':
             rleb_settings.rleb_log_info(
-                "DISCORD: New voting message: {0}".format(message.content))
+                "DISCORD: New voting message: {0}".format(discord_message))
             await message.add_reaction('👍')
             await message.add_reaction('👎')
             await message.add_reaction('🤷')
@@ -387,7 +392,7 @@ class RLEsportsBot(discord.Client):
 
         if str(message.channel) == 'ban-review':
             rleb_settings.rleb_log_info(
-                "DISCORD: New ban-remove message: {0}".format(message.content))
+                "DISCORD: New ban-remove message: {0}".format(discord_message))
             await message.add_reaction('1️⃣')
             await message.add_reaction('2️⃣')
             await message.add_reaction('3️⃣')
@@ -396,8 +401,8 @@ class RLEsportsBot(discord.Client):
             await message.add_reaction('🤷')
             return
 
-        elif (message.content == "thanks" or message.content == "thank you"
-              or message.content == "ty" or message.content == "thx"):
+        elif (discord_message == "thanks" or discord_message == "thank you"
+              or discord_message == "ty" or discord_message == "thx"):
             if str(message.author) in self.responses:
                 thanks_responses = [
                     "np", "no problem", "no worries", "you're welcome"
@@ -405,7 +410,7 @@ class RLEsportsBot(discord.Client):
                 await message.channel.send(random.choice(thanks_responses))
                 del self.responses[str(message.author)]
 
-        elif message.content.startswith("!census") and is_staff(
+        elif discord_message.startswith("!census") and is_staff(
                 message.author):
 
             if (not rleb_settings.is_discord_mod(message.author)):
@@ -414,7 +419,7 @@ class RLEsportsBot(discord.Client):
             rleb_settings.rleb_log_info("DISCORD: Starting flair census.")
             await message.channel.send(
                 "Starting flair census, this may take a minute...")
-            tokens = message.content.split()
+            tokens = discord_message.split()
             amount = 10
             try:
                 amount = abs(int(tokens[1]))
@@ -433,14 +438,14 @@ class RLEsportsBot(discord.Client):
             await handle_flair_census(sub, amount, message.channel, divider)
             await self.add_response(message)
 
-        elif message.content.startswith("!migrate") and is_staff(
+        elif discord_message.startswith("!migrate") and is_staff(
                 message.author):
 
             if (not rleb_settings.is_discord_mod(message.author)):
                 return
 
             rleb_settings.rleb_log_info("DISCORD: Starting migration")
-            tokens = message.content.split()
+            tokens = discord_message.split()
             from_flair = None
             to_flair = None
             try:
@@ -465,7 +470,7 @@ class RLEsportsBot(discord.Client):
                 self.migrate_request_time = datetime.now()
                 await self.add_response(message)
 
-        elif message.content == "!confirm migrate" and is_staff(
+        elif discord_message == "!confirm migrate" and is_staff(
                 message.author):
 
             if (not rleb_settings.is_discord_mod(message.author)):
@@ -492,7 +497,7 @@ class RLEsportsBot(discord.Client):
             await message.channel.send("Flair migration finished.")
             await self.add_response(message)
 
-        elif message.content == "!dualflairs list":
+        elif discord_message == "!dualflairs list":
 
             if (not rleb_settings.is_discord_mod(message.author)):
                 return
@@ -510,13 +515,13 @@ class RLEsportsBot(discord.Client):
             await message.channel.send(all_flairs)
             await self.add_response(message)
 
-        elif message.content.startswith("!dualflairs remove") and is_staff(
+        elif discord_message.startswith("!dualflairs remove") and is_staff(
                 message.author):
 
             if (not rleb_settings.is_discord_mod(message.author)):
                 return
 
-            tokens = message.content.split()
+            tokens = discord_message.split()
             flair = None
             try:
                 flair = tokens[2]
@@ -532,7 +537,7 @@ class RLEsportsBot(discord.Client):
             self.remove_flair_time = datetime.now()
             await self.add_response(message)
 
-        elif message.content == '!confirm remove' and is_staff(message.author):
+        elif discord_message == '!confirm remove' and is_staff(message.author):
 
             if (not rleb_settings.is_discord_mod(message.author)):
                 return
@@ -561,13 +566,13 @@ class RLEsportsBot(discord.Client):
                     self.flair_to_remove))
                 await self.add_response(message)
 
-        elif message.content.startswith("!dualflairs add") and is_staff(
+        elif discord_message.startswith("!dualflairs add") and is_staff(
                 message.author):
 
             if (not rleb_settings.is_discord_mod(message.author)):
                 return
 
-            tokens = message.content.split()
+            tokens = discord_message.split()
             flair = None
             try:
                 flair = tokens[2]
@@ -582,7 +587,7 @@ class RLEsportsBot(discord.Client):
                 "Type '!confirm add' to add the {0} flair.".format(flair))
             await self.add_response(message)
 
-        elif message.content == '!confirm add' and is_staff(message.author):
+        elif discord_message == '!confirm add' and is_staff(message.author):
 
             if (not rleb_settings.is_discord_mod(message.author)):
                 return
@@ -610,7 +615,7 @@ class RLEsportsBot(discord.Client):
                     self.flair_to_add))
                 await self.add_response(message)
 
-        elif message.content.startswith('!flush') and is_staff(message.author):
+        elif discord_message.startswith('!flush') and is_staff(message.author):
 
             if (not rleb_settings.is_discord_mod(message.author)):
                 return
@@ -618,7 +623,7 @@ class RLEsportsBot(discord.Client):
             rleb_settings.flush_memory_log()
             await message.channel.send(":toilet:")
 
-        elif message.content.startswith('!schedule') and is_staff(message.author):
+        elif discord_message.startswith('!schedule') and is_staff(message.author):
             await message.channel.send("**Found the following scheduled posts on reddit:**")
             scheduled_posts = rleb_health.get_scheduled_posts()
             for s in scheduled_posts:
@@ -631,12 +636,12 @@ class RLEsportsBot(discord.Client):
 
             await self.add_response(message)
 
-        elif message.content.startswith('!logs') and is_staff(message.author):
+        elif discord_message.startswith('!logs') and is_staff(message.author):
 
             if (not rleb_settings.is_discord_mod(message.author)):
                 return
 
-            tokens = message.content.split()
+            tokens = discord_message.split()
             datasource = 'memory'
             count = 10
             try:
@@ -674,7 +679,7 @@ class RLEsportsBot(discord.Client):
                 )
             await self.add_response(message)
 
-        elif message.content == '!status' and is_staff(message.author):
+        elif discord_message == '!status' and is_staff(message.author):
 
             if (not rleb_settings.is_discord_mod(message.author)):
                 return
@@ -707,7 +712,7 @@ class RLEsportsBot(discord.Client):
                                                 self.threads))))
             await self.add_response(message)
 
-        elif message.content == '!reset crashes' and is_staff(message.author):
+        elif discord_message == '!reset crashes' and is_staff(message.author):
 
             if (not rleb_settings.is_discord_mod(message.author)):
                 return
@@ -718,8 +723,8 @@ class RLEsportsBot(discord.Client):
             rleb_settings.rleb_log_info("DISCORD: Thread count was reset.")
             await self.add_response(message)
 
-        elif message.content.startswith("!search"):
-            tokens = message.content.split()
+        elif discord_message.startswith("!search"):
+            tokens = discord_message.split()
             target = ""
             try:
                 target = tokens[1]
@@ -735,11 +740,11 @@ class RLEsportsBot(discord.Client):
             await message.channel.send(embed=embed)
             await self.add_response(message)
 
-        elif message.content.startswith("!teams") and is_staff(message.author):
+        elif discord_message.startswith("!teams") and is_staff(message.author):
             rleb_settings.rleb_log_info("DISCORD: Starting team generation.")
             await message.channel.send(
                 "Starting team lookup...")
-            tokens = message.content.split()
+            tokens = discord_message.split()
             url = ''
             try:
                 url = tokens[1]
@@ -751,10 +756,10 @@ class RLEsportsBot(discord.Client):
             seconds = await handle_team_lookup(url, message.channel)
             await self.add_response(message)
 
-        elif message.content.startswith("!swiss") and is_staff(message.author):
+        elif discord_message.startswith("!swiss") and is_staff(message.author):
             rleb_settings.rleb_log_info("DISCORD: Starting swiss bracket generation.")
             await message.channel.send("Starting swiss bracket lookup...")
-            tokens = message.content.split()
+            tokens = discord_message.split()
             url = ''
             try:
                 url = tokens[1]
@@ -766,12 +771,12 @@ class RLEsportsBot(discord.Client):
             seconds = await handle_swiss_lookup(url, message.channel)
             await self.add_response(message)
 
-        elif message.content.startswith("!groups") and is_staff(
+        elif discord_message.startswith("!groups") and is_staff(
                 message.author):
             rleb_settings.rleb_log_info("DISCORD: Starting group generation.")
             await message.channel.send(
                 "Starting group lookup...")
-            tokens = message.content.split()
+            tokens = discord_message.split()
             url = ''
             try:
                 url = tokens[1]
@@ -783,10 +788,10 @@ class RLEsportsBot(discord.Client):
             seconds = await handle_group_lookup(url, message.channel)
             await self.add_response(message)
 
-        elif message.content.startswith("!events") and is_staff(
+        elif discord_message.startswith("!events") and is_staff(
                 message.author):
             rleb_settings.rleb_log_info("DISCORD: Starting event lookup.")
-            tokens = message.content.split()
+            tokens = discord_message.split()
             formatter = 'reddit'
             days = 7
             try:
@@ -800,9 +805,9 @@ class RLEsportsBot(discord.Client):
             await handle_calendar_lookup(message.channel, formatter, days)
             await self.add_response(message)
 
-        elif message.content.startswith("!tasks") and is_staff(message.author):
+        elif discord_message.startswith("!tasks") and is_staff(message.author):
             rleb_settings.rleb_log_info("DISCORD: Starting task lookup.")
-            tokens = message.content.split()
+            tokens = discord_message.split()
             user = message.author.name.lower(
             ) + '#' + message.author.discriminator
             try:
@@ -812,12 +817,12 @@ class RLEsportsBot(discord.Client):
             await handle_task_lookup(message.channel, self, user)
             await self.add_response(message)
 
-        elif message.content.startswith("!meme"):
+        elif discord_message.startswith("!meme"):
             await self.send_meme(message.channel)
             await self.add_response(message)
 
-        elif message.content.startswith("!setmeme"):
-            tokens = message.content.split()
+        elif discord_message.startswith("!setmeme"):
+            tokens = discord_message.split()
             subreddit = ''
             try:
                 subreddit = tokens[1]

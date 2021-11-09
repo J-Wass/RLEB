@@ -12,7 +12,12 @@ except Exception as e:
 
 class Data(object):
     _singleton = None
+
+    # Locks usage of database and memory caches to guarantee atomicity.
     _db_lock = Lock()
+
+    # ONLY USE WITH _DB_LOCK. Generic cache, mapping a string key to any object.
+    _cache = {}
 
     def __init__(self):
         raise RuntimeError('Call singleton() instead')
@@ -24,14 +29,20 @@ class Data(object):
         return cls._singleton
 
     def postgres_connection(self):
-        """MUST_HAVE_DB_LOCK. Returns a new postgresSQL connection."""
-        return psycopg2.connect(
+        """MUST_HAVE_DB_LOCK. Returns the postgresSQL connection."""
+
+        if 'connection' in Data._cache:
+            return Data._cache['connection']
+
+        connection = psycopg2.connect(
             dbname=os.environ.get('DB_NAME') or secrets.DB_NAME,
             host=os.environ.get('DB_HOST') or secrets.DB_HOST,
             user=os.environ.get('DB_USER') or secrets.DB_USER,
             port=os.environ.get('DB_PORT') or secrets.DB_PORT,
             password=os.environ.get('DB_PASSWORD') or secrets.DB_PASSWORD,
         )
+        Data._cache['connection'] = connection
+        return connection
 
     def write_already_warned_scheduled_post(self, log_id: int, seconds_since_epoch: int) -> None:
         with Data._db_lock:
@@ -41,11 +52,11 @@ class Data(object):
                 (log_id, seconds_since_epoch))
             db.commit()
 
-    def read_already_warned_scheduled_posts(self, min_seconds_since_epoch) -> list[int]:
+    def read_already_warned_scheduled_posts(self, min_seconds_since_epoch: int) -> list[int]:
         """"Returns a list of log ids for already warned scheduled posts."""
         with Data._db_lock:
             db = self.postgres_connection()
             cursor = db.cursor()
             cursor.execute("""SELECT id FROM already_warned_scheduled_posts WHERE seconds_since_epoch > %s;""", (min_seconds_since_epoch,))
-            log_ids = list(map(lambda x: x[0],cursor.fetchall()))
-            return log_ids
+            post_ids = list(map(lambda x: x[0],cursor.fetchall()))
+            return post_ids

@@ -59,7 +59,7 @@ def start():
     trello_thread.setDaemon(True)
     modmail_thread = Thread(target=monitor_modmail, name="Modmail thread")
     modmail_thread.setDaemon(True)
-    task_alert_thread = Thread(target=rleb_health.task_alert_check, name="`Task alert thread")
+    task_alert_thread = Thread(target=rleb_health.task_alert_check, name="Task alert thread")
     task_alert_thread.setDaemon(True)
     threads = [
         modmail_thread, trello_thread, subreddit_thread, submissions_thread,
