@@ -114,6 +114,7 @@ def task_alert_check():
 
             # Task is scheduled.
             else:
+                pass
                 #message = f"✔️ Task is scheduled: {task.event_name}"
                 #rleb_settings.queues["schedule_chat"].put(message)
                 #already_confirmed_scheduled_posts.append((task.event_creator, task.event_seconds_since_epoch))
