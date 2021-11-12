@@ -84,8 +84,8 @@ def task_alert_check():
     already_confirmed_scheduled_posts = []
 
     while True:
-        # Every 2 hours, empty the already warned posts list and rewarn the world.
-        if (datetime.now().timestamp() - last_emptied_already_late_posts) > 60 * 60 * 2:
+        # Every 3 hours, empty the already warned posts list and rewarn the world.
+        if (datetime.now().timestamp() - last_emptied_already_late_posts) > 60 * 60 * 3:
             last_emptied_already_late_posts = datetime.now().timestamp()
             already_warned_late_posts = []
 
@@ -129,7 +129,7 @@ def task_alert_check():
                 message = f"WARNING: {unscheduled_task.event_name} was not scheduled correctly!\n\n"
                 message += f"Task is due in {math.floor(seconds_remaining / 3600)} hour(s) and {round((seconds_remaining / 60) % 60, 0)} minute(s).\n\nScheduled posts: https://new.reddit.com/r/RocketLeagueEsports/about/scheduledposts"
                 rleb_settings.queues["schedule_chat"].put(message)
-                rleb_settings.queues["direct_messages"].put((task.event_creator, message))
+                rleb_settings.queues["direct_messages"].put((unscheduled_task.event_creator, message))
                 already_warned_late_posts.append((unscheduled_task.event_creator, unscheduled_task.event_seconds_since_epoch))
 
         # Break before waiting for the interval.
