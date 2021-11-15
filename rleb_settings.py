@@ -121,6 +121,12 @@ BOT_COMMANDS_CHANNEL_ID = int(
 SCHEDULE_CHAT_CHANNEL_ID = int(
     os.environ.get('SCHEDULE_CHAT_CHANNEL_ID')
     or secrets.SCHEDULE_CHAT_CHANNEL_ID)
+
+# reroute testing pings to bot_commands
+if RUNNING_MODE == 'local':
+    SCHEDULE_CHAT_CHANNEL_ID = BOT_COMMANDS_CHANNEL_ID
+    MODMAIL_CHANNEL_ID = BOT_COMMANDS_CHANNEL_ID
+    NEW_POSTS_CHANNEL_ID = BOT_COMMANDS_CHANNEL_ID
 colors = [
     0x2644ce,
     0x000000,
@@ -142,7 +148,12 @@ hooks = [
 greetings = [
     "Incoming!",
     "Why hello there.",
-    "Hot and ready"
+    "Hola amigo"
+]
+success_emojis = [
+    '🥳',
+    '💪',
+    '✅'
 ]
 verified_moderators = json.loads(
     os.environ.get('VERIFIED_MODERATORS') or secrets.VERIFIED_MODERATORS)

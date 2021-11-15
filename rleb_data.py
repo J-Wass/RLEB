@@ -53,10 +53,27 @@ class Data(object):
             db.commit()
 
     def read_already_warned_scheduled_posts(self, min_seconds_since_epoch: int) -> list[int]:
-        """"Returns a list of log ids for already warned scheduled posts."""
+        """"Returns a list of log ids for already confirmed scheduled posts."""
         with Data._db_lock:
             db = self.postgres_connection()
             cursor = db.cursor()
             cursor.execute("""SELECT id FROM already_warned_scheduled_posts WHERE seconds_since_epoch > %s;""", (min_seconds_since_epoch,))
+            post_ids = list(map(lambda x: x[0],cursor.fetchall()))
+            return post_ids
+
+    def write_already_warned_confirmed_post(self, log_id: int, seconds_since_epoch: int) -> None:
+        with Data._db_lock:
+            db = self.postgres_connection()
+            cursor = db.cursor()
+            cursor.execute("""INSERT INTO already_confirmed_scheduled_posts VALUES (%s, %s);""", 
+                (log_id, seconds_since_epoch))
+            db.commit()
+
+    def read_already_confirmed_scheduled_posts(self, min_seconds_since_epoch: int) -> list[int]:
+        """"Returns a list of log ids for already confirmed scheduled posts."""
+        with Data._db_lock:
+            db = self.postgres_connection()
+            cursor = db.cursor()
+            cursor.execute("""SELECT post_id FROM already_confirmed_scheduled_posts WHERE seconds_since_epoch > %s;""", (min_seconds_since_epoch,))
             post_ids = list(map(lambda x: x[0],cursor.fetchall()))
             return post_ids

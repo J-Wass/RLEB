@@ -8,10 +8,11 @@ from datetime import datetime, timedelta, timezone
 import traceback
 import math
 import pytz
+import random
 
 class Event:
     """Encapsulation of an event in time."""
-    def __init__(self, event_name, event_creator, event_seconds_since_epoch):
+    def __init__(self, event_name, event_creator, event_seconds_since_epoch, id = None):
         """Initialize a new task. """
 
         # Human-readable name of event.
@@ -23,15 +24,18 @@ class Event:
         # When the event is due.
         self.event_seconds_since_epoch = event_seconds_since_epoch
 
+        # Id of the event, if any exists.
+        self.id = id
+
     def __repr__(self):
         return f"{self.event_name} ({self.event_creator}) @ {self.event_seconds_since_epoch}"
 
 
-def get_scheduled_posts(already_warned_scheduled_posts: list[int]) -> list[Event]:
+def get_scheduled_posts(already_warned_scheduled_posts: list[int] = None) -> list[Event]:
     """"Returns a list of scheduled posts from the sub.."""
     scheduled_posts = []
     for log in rleb_settings.sub.mod.log(action="create_scheduled_post", limit=20):
-        if log.id in already_warned_scheduled_posts:
+        if already_warned_scheduled_posts and log.id in already_warned_scheduled_posts:
             continue
 
         # if post was scheduled >5 days ago, ignore
@@ -43,12 +47,14 @@ def get_scheduled_posts(already_warned_scheduled_posts: list[int]) -> list[Event
             description = log.description  # description looks like 'scheduled for Tue, 31 Aug 2021 08:30 AM UTC'
             description = description.replace('UTC', '+0000')
             scheduled_datetime = datetime.strptime(description, 'scheduled for %a, %d %b %Y %I:%M %p %z').replace(tzinfo=pytz.UTC)
-            scheduled_event = Event(log.details, log.mod, scheduled_datetime.timestamp())
+            scheduled_event = Event(log.details, log.mod, scheduled_datetime.timestamp(), log.id)
             scheduled_posts.append(scheduled_event)
         except Exception as e:
-            rleb_settings.queues["schedule_chat"].put(f"**{log.details}** {log.description} wasn't scheduled in UTC! (internal error = {e})")
-            already_warned_scheduled_posts.append(log.id)
-            Data.singleton().write_already_warned_scheduled_post(log.id, datetime.now().timestamp())
+            # only send warnings of the caller provided a list to be filled out (already_warned_scheduled_posts)
+            if already_warned_scheduled_posts:
+                rleb_settings.queues["schedule_chat"].put(f"**{log.details}** {log.description} wasn't scheduled in UTC! (internal error = {e})")
+                already_warned_scheduled_posts.append(log.id)
+                Data.singleton().write_already_warned_scheduled_post(log.id, datetime.now().timestamp())
     return scheduled_posts
 
 
@@ -76,12 +82,12 @@ def task_alert_check():
     one_week_ago_seconds_since_epoch = datetime.now().timestamp() - 7 * 86400
     already_warned_scheduled_posts = Data.singleton().read_already_warned_scheduled_posts(one_week_ago_seconds_since_epoch)
 
+    # List of scheduled post ids have already been confirmed to be scheduled.
+    already_confirmed_scheduled_posts = Data.singleton().read_already_confirmed_scheduled_posts(one_week_ago_seconds_since_epoch)
+
     # List of (task_creator, timestamp) tuple of tasks that were already warned.
     already_warned_late_posts = []
     last_emptied_already_late_posts = datetime.now().timestamp()
-
-    # List of (task_creator, timestamp) tuple of tasks that were already warned.
-    already_confirmed_scheduled_posts = []
 
     while True:
         # Every 3 hours, empty the already warned posts list and rewarn the world.
@@ -114,10 +120,13 @@ def task_alert_check():
 
             # Task is scheduled.
             else:
-                pass
-                #message = f"✔️ Task is scheduled: {task.event_name}"
-                #rleb_settings.queues["schedule_chat"].put(message)
-                #already_confirmed_scheduled_posts.append((task.event_creator, task.event_seconds_since_epoch))
+                scheduled_post = post_at_same_time[0]
+                if scheduled_post.id not in already_confirmed_scheduled_posts:
+                    message = random.choice(rleb_settings.success_emojis)
+                    message += f" Task is scheduled: {task.event_name}"
+                    rleb_settings.queues["schedule_chat"].put(message)
+                    already_confirmed_scheduled_posts.append(scheduled_post.id)
+                    Data.singleton().write_already_warned_confirmed_post(scheduled_post.id, datetime.now().timestamp())
 
         # Warn for each unscheduled task.
         for unscheduled_task in unscheduled_tasks:
@@ -129,6 +138,7 @@ def task_alert_check():
                 message = f"WARNING: {unscheduled_task.event_name} was not scheduled correctly!\n\n"
                 message += f"Task is due in {math.floor(seconds_remaining / 3600)} hour(s) and {round((seconds_remaining / 60) % 60, 0)} minute(s).\n\nScheduled posts: https://new.reddit.com/r/RocketLeagueEsports/about/scheduledposts"
                 rleb_settings.queues["schedule_chat"].put(message)
+                message += f"\nAccording to the weekly sheet, **you** are the thread creator."
                 rleb_settings.queues["direct_messages"].put((unscheduled_task.event_creator, message))
                 already_warned_late_posts.append((unscheduled_task.event_creator, unscheduled_task.event_seconds_since_epoch))
 
