@@ -840,6 +840,12 @@ class RLEsportsBot(discord.Client):
 
             await self.add_response(message)
 
+        elif discord_message.startswith("!echo"):
+            tokens = discord_message.split()
+            message_without_command = " ".join(tokens[1:])
+            await message.channel.send(message_without_command)
+            await self.add_response(message)
+        
 
 def start(threads):
     """Spawns the various discord asyncio threads.
