@@ -104,14 +104,7 @@ def task_alert_check():
         # Gather tasks which don't have a scheduled post.
         unscheduled_tasks = []
         for task in tasks:
-         # If post is already warned, don't continue.
-            if (task.event_creator, task.event_seconds_since_epoch) in already_warned_late_posts:
-                continue
-
-            # If post is already confirmed, don't continue.
-            if (task.event_creator, task.event_seconds_since_epoch) in already_warned_late_posts:
-                continue
-
+            
             # Find if any posts are scheduled at the right time. If they are, assume post is scheduled.
             post_at_same_time = list(filter(lambda s: s.event_seconds_since_epoch == task.event_seconds_since_epoch, scheduled_posts))
             if len(post_at_same_time) == 0:
@@ -132,6 +125,10 @@ def task_alert_check():
         for unscheduled_task in unscheduled_tasks:
             now = datetime.now().timestamp()
             seconds_remaining = unscheduled_task.event_seconds_since_epoch - now
+
+            # Don't warn about task again.
+            if (unscheduled_task.event_creator, unscheduled_task.event_seconds_since_epoch) in already_warned_late_posts:
+                continue
 
             # Only warn about events that are 2 hours late or are due in 8 hours
             if (seconds_remaining < 60 * 60 * 8) and (seconds_remaining > -60 * 60 * 2):
