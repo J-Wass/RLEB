@@ -50,7 +50,7 @@ class RLEsportsBot(discord.Client):
         rleb_settings.rleb_log_info('DISCORD: Logged on as {0}'.format(
             self.user))
         rleb_settings.rleb_log_info(
-            'DISCORD: Loading channel settings: new_posts: {0}, trello: {1}, modmail: {2}, bot_commands: {3}'
+            'DISCORD: Loading channel settings: new_posts: {0}, trello: {1}, modmail: {2}, bot_commands: {3}, roster_updates: {4}'
             .format(rleb_settings.NEW_POSTS_CHANNEL_ID,
                     rleb_settings.TRELLO_CHANNEL_ID,
                     rleb_settings.MODMAIL_CHANNEL_ID,
@@ -111,7 +111,7 @@ class RLEsportsBot(discord.Client):
 
                     if 'roster news' in submission.link_flair_text.strip().lower():
                         await self.roster_news_channel.send(embed=embed)
-                    
+
                     await self.new_post_channel.send(embed=embed)
                 rleb_settings.asyncio_threads['submissions'] = datetime.now()
                 if not rleb_settings.discord_check_new_submission_enabled:
