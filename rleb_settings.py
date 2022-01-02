@@ -121,6 +121,9 @@ BOT_COMMANDS_CHANNEL_ID = int(
 SCHEDULE_CHAT_CHANNEL_ID = int(
     os.environ.get('SCHEDULE_CHAT_CHANNEL_ID')
     or secrets.SCHEDULE_CHAT_CHANNEL_ID)
+ROSTER_NEWS_CHANNEL_ID = int(
+    os.environ.get('ROSTER_NEWS_CHANNEL_ID')
+    or secrets.ROSTER_NEWS_CHANNEL_ID)
 
 # reroute testing pings to bot_commands
 if RUNNING_MODE == 'local':

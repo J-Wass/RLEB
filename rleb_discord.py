@@ -54,7 +54,8 @@ class RLEsportsBot(discord.Client):
             .format(rleb_settings.NEW_POSTS_CHANNEL_ID,
                     rleb_settings.TRELLO_CHANNEL_ID,
                     rleb_settings.MODMAIL_CHANNEL_ID,
-                    rleb_settings.BOT_COMMANDS_CHANNEL_ID))
+                    rleb_settings.BOT_COMMANDS_CHANNEL_ID,
+                    rleb_settings.ROSTER_NEWS_CHANNEL_ID))
         self.new_post_channel = self.get_channel(
             rleb_settings.NEW_POSTS_CHANNEL_ID)
         self.trello_channel = self.get_channel(rleb_settings.TRELLO_CHANNEL_ID)
@@ -64,6 +65,8 @@ class RLEsportsBot(discord.Client):
             rleb_settings.BOT_COMMANDS_CHANNEL_ID)
         self.schedule_chat_channel = self.get_channel(
             rleb_settings.SCHEDULE_CHAT_CHANNEL_ID)
+        self.roster_news_channel = self.get_channel(
+            rleb_settings.ROSTER_NEWS_CHANNEL_ID)
 
         # If testing, ping the discord channel.
         if rleb_settings.RUNNING_MODE != "production":
@@ -105,6 +108,10 @@ class RLEsportsBot(discord.Client):
                             submission.permalink),
                         color=random.choice(rleb_settings.colors))
                     embed.set_author(name=submission.author.name)
+
+                    if 'roster news' in submission.link_flair_text.strip().lower():
+                        await self.roster_news_channel.send(embed=embed)
+                    
                     await self.new_post_channel.send(embed=embed)
                 rleb_settings.asyncio_threads['submissions'] = datetime.now()
                 if not rleb_settings.discord_check_new_submission_enabled:
@@ -178,9 +185,9 @@ class RLEsportsBot(discord.Client):
                     discord_user = self.get_user(user_mapping[author])
                     if discord_user == None:
                         continue
-                    message = "\n".join([random.choice(rleb_settings.greetings), "\n----------\n", message, "\n----------\n"])  
+                    message = "\n".join([random.choice(rleb_settings.greetings), "\n----------\n", message, "\n----------\n"])
                     DM = await discord_user.send(message)
-                    await DM.edit(suppress=True)              
+                    await DM.edit(suppress=True)
 
                 rleb_settings.asyncio_threads['direct_messages'] = datetime.now()
                 if not rleb_settings.discord_check_direct_messages_enabled:
@@ -828,7 +835,7 @@ class RLEsportsBot(discord.Client):
                 subreddit = tokens[1]
             except Exception:
                 pass
-            
+
             original_meme_subreddit = self.meme_subreddit
             try:
                 rleb_settings.r.subreddit(self.meme_subreddit)
@@ -845,7 +852,7 @@ class RLEsportsBot(discord.Client):
             message_without_command = " ".join(tokens[1:])
             await message.channel.send(message_without_command)
             await self.add_response(message)
-        
+
 
 def start(threads):
     """Spawns the various discord asyncio threads.
