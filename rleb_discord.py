@@ -108,6 +108,14 @@ class RLEsportsBot(discord.Client):
                             submission.permalink),
                         color=random.choice(rleb_settings.colors))
                     embed.set_author(name=submission.author.name)
+                    print('\n')
+                    print('\n')
+                    print('\n')
+                    print(submission)
+                    print(submission.link_flair_text)
+                    print('\n')
+                    print('\n')
+                    print('\n')
 
                     if 'roster news' in submission.link_flair_text.strip().lower():
                         await self.roster_news_channel.send(embed=embed)
