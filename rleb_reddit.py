@@ -54,6 +54,8 @@ def monitor_subreddit():
                 # if message is a flair request
                 if subject == "flair" or subject == "flairrequest" or subject == "flairs" or subject == "dualflairs" or subject == "dualflair":
                     handle_dualflair(sub, user, body)
+        except prawcore.exceptions.ServerError as e:
+            pass  # Reddit server borked, wait an interval and try again
         except Exception as e:
             if rleb_settings.thread_crashes['thread'] > 5:
                 break
@@ -79,6 +81,8 @@ def monitor_modmail():
                     item.id))
                 rleb_settings.queues['modmail'].put(item)
             time.sleep(rleb_settings.modmail_polling_interval_seconds)
+        except prawcore.exceptions.ServerError as e:
+            pass  # Reddit server borked, wait an interval and try again            
         except Exception as e:
             if rleb_settings.thread_crashes['thread'] > 5:
                 break
