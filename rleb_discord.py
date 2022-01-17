@@ -49,24 +49,13 @@ class RLEsportsBot(discord.Client):
         """Indicate bot has joined the discord."""
         rleb_settings.rleb_log_info('DISCORD: Logged on as {0}'.format(
             self.user))
-        rleb_settings.rleb_log_info(
-            'DISCORD: Loading channel settings: new_posts: {0}, trello: {1}, modmail: {2}, bot_commands: {3}, roster_updates: {4}'
-            .format(rleb_settings.NEW_POSTS_CHANNEL_ID,
-                    rleb_settings.TRELLO_CHANNEL_ID,
-                    rleb_settings.MODMAIL_CHANNEL_ID,
-                    rleb_settings.BOT_COMMANDS_CHANNEL_ID,
-                    rleb_settings.ROSTER_NEWS_CHANNEL_ID))
-        self.new_post_channel = self.get_channel(
-            rleb_settings.NEW_POSTS_CHANNEL_ID)
+        self.new_post_channel = self.get_channel(rleb_settings.NEW_POSTS_CHANNEL_ID)
         self.trello_channel = self.get_channel(rleb_settings.TRELLO_CHANNEL_ID)
-        self.modmail_channel = self.get_channel(
-            rleb_settings.MODMAIL_CHANNEL_ID)
-        self.bot_command_channel = self.get_channel(
-            rleb_settings.BOT_COMMANDS_CHANNEL_ID)
-        self.schedule_chat_channel = self.get_channel(
-            rleb_settings.SCHEDULE_CHAT_CHANNEL_ID)
-        self.roster_news_channel = self.get_channel(
-            rleb_settings.ROSTER_NEWS_CHANNEL_ID)
+        self.modmail_channel = self.get_channel(rleb_settings.MODMAIL_CHANNEL_ID)
+        self.bot_command_channel = self.get_channel(rleb_settings.BOT_COMMANDS_CHANNEL_ID)
+        self.schedule_chat_channel = self.get_channel(rleb_settings.SCHEDULE_CHAT_CHANNEL_ID)
+        self.roster_news_channel = self.get_channel(rleb_settings.ROSTER_NEWS_CHANNEL_ID)
+        self.modlog_channel = self.get_channel(rleb_settings.MODLOG_CHANNEL_ID)
 
         # If testing, ping the discord channel.
         if rleb_settings.RUNNING_MODE != "production":
@@ -242,10 +231,44 @@ class RLEsportsBot(discord.Client):
                 rleb_settings.last_datetime_crashed['asyncio'] = datetime.now()
             await asyncio.sleep(rleb_settings.discord_async_interval_seconds)
 
-    async def check_new_modmail(self):
-        """Check modmail queue to post in 'modmail' discord channel."""
+    async def check_new_modfeed(self):
+        """Check modmail/modlog queue to post in discord."""
         while (True):
             try:
+                # Mod Log
+                while not rleb_settings.queues['modlog'].empty():
+                    item = rleb_settings.queues['modlog'].get()
+                    rleb_settings.rleb_log_info(
+                        "DISCORD: Received modlog id {0}: {1}".format(
+                            item.id, item.action))
+
+                    # Create an embed to post for each mod log.
+                    embed = discord.Embed(
+                        title=item.action,
+                        url="https://www.reddit.com/r/RocketLeagueEsports/about/log/",
+                        color=random.choice(rleb_settings.colors))
+
+                    # Set up the author field.
+                    author = item.mod
+                    if item.target_author is not None and item.target_author != item.mod:
+                        author = f'{item.mod} -> {item.target_author}'
+                    embed.set_author(name=author)
+
+                    # The text that will follow the embed.
+                    contents = '\n'.join([
+                        f'**Details**: {item.details}',
+                        f'**Description**: {item.description}',
+                        f'**Target Title**: {item.target_title}',
+                    ])
+
+                    # Send everything.
+                    await self.modlog_channel.send(embed=embed)
+                    await self.modlog_channel.send(contents)
+                    await self.modlog_channel.send(
+                        "--------------------------------------------------------"
+                    )
+                
+                # Mod Mail (todo clean this up)
                 while not rleb_settings.queues['modmail'].empty():
                     item = rleb_settings.queues['modmail'].get()
                     rleb_settings.rleb_log_info(
@@ -295,7 +318,7 @@ class RLEsportsBot(discord.Client):
                                                         " fyi")
                     break
                 rleb_settings.rleb_log_error(
-                    "DISCORD: Modmail asyncio thread failed - {0}".format(e))
+                    "DISCORD: Modfeed asyncio thread failed - {0}".format(e))
                 rleb_settings.rleb_log_error(traceback.format_exc())
                 rleb_settings.thread_crashes['asyncio'] += 1
                 rleb_settings.last_datetime_crashed['asyncio'] = datetime.now()
@@ -382,12 +405,12 @@ class RLEsportsBot(discord.Client):
 
         await self.remove_old_responses()
 
-        # allow local builds to use !deb command before any commands
+        # force local builds to use !debug command before any commands
         discord_message = message.content
         if rleb_settings.RUNNING_MODE == 'local':
-            if '!deb' not in discord_message:
+            if '!debug' not in discord_message:
                 return
-            discord_message = discord_message.replace('!deb ', '')
+            discord_message = discord_message.replace('!debug ', '')
 
         if str(message.channel) == 'voting':
             rleb_settings.rleb_log_info(
@@ -714,7 +737,7 @@ class RLEsportsBot(discord.Client):
                         thread_type, last_crash_string))
 
             await message.channel.send(
-                "Found {0} out of 6 threads running: {1}".format(
+                "Found {0} out of 7 threads running: {1}".format(
                     len(self.threads), list(map(lambda x: x.name,
                                                 self.threads))))
             await self.add_response(message)
@@ -865,7 +888,7 @@ def start(threads):
     # Create asyncronoush discord tasks.
     client.loop.create_task(client.check_new_submissions())
     client.loop.create_task(client.check_new_trello_actions())
-    client.loop.create_task(client.check_new_modmail())
+    client.loop.create_task(client.check_new_modfeed())
     client.loop.create_task(client.check_new_alerts())
     client.loop.create_task(client.check_new_direct_messages())
     client.loop.create_task(client.check_new_schedule_chat())

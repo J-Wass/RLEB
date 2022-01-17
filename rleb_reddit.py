@@ -1,5 +1,6 @@
 import time
 import prawcore
+import praw
 import traceback
 from datetime import datetime
 
@@ -12,7 +13,6 @@ from rleb_settings import sub, r, rleb_log_info
 def read_new_submissions():
     """Stream subreddit submissions into the submissions queue."""
     while True:
-        started = datetime.now()
         try:
             # webhook for reddit submissions
             for submission in sub.stream.submissions():
@@ -69,10 +69,35 @@ def monitor_subreddit():
             break
         time.sleep(rleb_settings.thread_restart_interval_seconds)
 
+# Monitor moderator feeds.
+def monitor_modlog():
+    """Listen to new ModLogs."""
+    while True:
+        try:
+            logs = praw.models.util.stream_generator(rleb_settings.sub.mod.log, pause_after=0, skip_existing=True, attribute_name='id')
+            for log in logs:
+                if log is None:
+                    continue
+                rleb_settings.rleb_log_info("REDDIT: Modlog - {0}".format(log.id))
+                rleb_settings.queues['modlog'].put(log)
+                time.sleep(rleb_settings.modmail_polling_interval_seconds)
+        except prawcore.exceptions.ServerError as e:
+            pass  # Reddit server borked, wait an interval and try again            
+        except Exception as e:
+            if rleb_settings.thread_crashes['thread'] > 5:
+                break
+            rleb_settings.rleb_log_error(
+                "REDDIT: Monitoring subreddit modlogs failed - {0}".format(e))
+            rleb_settings.rleb_log_error(traceback.format_exc())
+            rleb_settings.thread_crashes['thread'] += 1
+            rleb_settings.last_datetime_crashed['thread'] = datetime.now()
+        if (not rleb_settings.monitor_modlog_enabled):
+            break
+        time.sleep(rleb_settings.thread_restart_interval_seconds)
 
-# Monitor modmail
+# Monitor moderator feeds.
 def monitor_modmail():
-    """Loop over ModMail, looking for new mail."""
+    """Listen to new ModMail."""
     while True:
         try:
             for item in sub.mod.unread():

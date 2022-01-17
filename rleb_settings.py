@@ -78,6 +78,7 @@ moderators = sub.moderator()
 read_new_submissions_enabled = True
 monitor_subreddit_enabled = True
 monitor_modmail_enabled = True
+monitor_modlog_enabled = True
 
 def is_mod(username):
     """Return true if username belongs to a sub moderator.
@@ -124,12 +125,16 @@ SCHEDULE_CHAT_CHANNEL_ID = int(
 ROSTER_NEWS_CHANNEL_ID = int(
     os.environ.get('ROSTER_NEWS_CHANNEL_ID')
     or secrets.ROSTER_NEWS_CHANNEL_ID)
+MODLOG_CHANNEL_ID = int(
+    os.environ.get('MODLOG_CHANNEL_ID') or secrets.MODLOG_CHANNEL_ID)
 
 # reroute testing pings to bot_commands
 if RUNNING_MODE == 'local':
     SCHEDULE_CHAT_CHANNEL_ID = BOT_COMMANDS_CHANNEL_ID
     MODMAIL_CHANNEL_ID = BOT_COMMANDS_CHANNEL_ID
     NEW_POSTS_CHANNEL_ID = BOT_COMMANDS_CHANNEL_ID
+    MODLOG_CHANNEL_ID = BOT_COMMANDS_CHANNEL_ID
+
 colors = [
     0x2644ce,
     0x000000,
