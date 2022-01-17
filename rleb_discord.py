@@ -263,7 +263,8 @@ class RLEsportsBot(discord.Client):
 
                     # Send everything.
                     await self.modlog_channel.send(embed=embed)
-                    await self.modlog_channel.send(contents)
+                    if len(contents or '') > 0:
+                        await self.modlog_channel.send(contents)
                     await self.modlog_channel.send(
                         "--------------------------------------------------------"
                     )
