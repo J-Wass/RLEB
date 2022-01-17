@@ -9,7 +9,7 @@ import math
 import pytz
 
 import rleb_discord
-from rleb_reddit import read_new_submissions, monitor_subreddit, monitor_modmail
+from rleb_reddit import read_new_submissions, monitor_subreddit, monitor_modmail, monitor_modlog
 import rleb_settings
 from rleb_settings import rleb_log_error, rleb_log_info
 from rleb_trello import read_new_trello_actions
@@ -26,6 +26,8 @@ def start():
     trello_queue = Queue()
     # Used for passing modmail from reddit to discord.
     modmail_queue = Queue()
+    # Used for passing modlogs from reddit to discord.
+    modlog_queue = Queue()    
     # Used for passing alerts from reddit to discord.
     alert_queue = Queue()
     # Used for discord DMs from reddit to discord.
@@ -36,6 +38,7 @@ def start():
     rleb_settings.queues['submissions'] = submissions_queue
     rleb_settings.queues['trello'] = trello_queue
     rleb_settings.queues['modmail'] = modmail_queue
+    rleb_settings.queues["modlog"] = modlog_queue
     rleb_settings.queues['alerts'] = alert_queue
     rleb_settings.queues["direct_messages"] = direct_message_queue
     rleb_settings.queues["schedule_chat"] = schedule_chat_queue
@@ -57,13 +60,15 @@ def start():
     trello_thread = Thread(target=read_new_trello_actions,
                            name="Trello thread")
     trello_thread.setDaemon(True)
-    modmail_thread = Thread(target=monitor_modmail, name="Modmail thread")
+    modmail_thread = Thread(target=monitor_modmail, name="ModMail thread")
     modmail_thread.setDaemon(True)
+    modlog_thread = Thread(target=monitor_modlog, name="ModLog thread")
+    modlog_thread.setDaemon(True)    
     task_alert_thread = Thread(target=rleb_health.task_alert_check, name="Task alert thread")
     task_alert_thread.setDaemon(True)
     threads = [
         modmail_thread, trello_thread, subreddit_thread, submissions_thread,
-        health_thread, task_alert_thread
+        health_thread, task_alert_thread, modlog_thread
     ]
 
     rleb_log_info("Starting RLEB. Running under {0} in {1} mode.".format(
@@ -76,6 +81,9 @@ def start():
 
         rleb_log_info("Starting modmail thread.")
         modmail_thread.start()
+
+        rleb_log_info("Starting modlog thread.")
+        modlog_thread.start()
 
         rleb_log_info("Starting subreddit thread.")
         subreddit_thread.start()

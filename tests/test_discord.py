@@ -30,6 +30,7 @@ class TestDiscord(RLEBAsyncTestCase):
         self.discord_client.new_post_channel = mock.AsyncMock()
         self.discord_client.roster_news_channel = mock.AsyncMock()
         self.discord_client.modmail_channel = mock.AsyncMock()
+        self.discord_client.modlog_channel = mock.AsyncMock()
         self.discord_client.bot_command_channel = mock.AsyncMock()
 
         # Used for passing reddit submissions from reddit to discord.
@@ -45,6 +46,7 @@ class TestDiscord(RLEBAsyncTestCase):
         rleb_settings.queues['trello'] = trello_queue
         rleb_settings.queues['modmail'] = modmail_queue
         rleb_settings.queues['alerts'] = alert_queue
+        rleb_settings.queues['modlog'] = Queue()
 
         rleb_settings.colors = [0x2644ce]
 
@@ -95,11 +97,47 @@ class TestDiscord(RLEBAsyncTestCase):
 
         rleb_settings.discord_check_new_modmail_enabled = False
 
-        await self.discord_client.check_new_modmail()
+        await self.discord_client.check_new_modfeed()
 
         self.discord_client.modmail_channel.send.assert_has_awaits([
             call(embed=self.mock_embedded_object),
             call('author: "modmail body"'),
+            call('--------------------------------------------------------')
+        ])
+
+    async def test_reads_new_modlogs(self):
+        # Build a mock embed.
+        self.mock_embed = patch("discord.Embed").start()
+        self.addCleanup(self.mock_embed)
+
+        self.mock_embedded_object = mock.Mock(autospec=discord.Embed)
+        self.mock_embed.return_value = self.mock_embedded_object
+
+        # Build a mock reddit modlog.
+        mock_modlog = mock.Mock()
+        mock_modlog.id = "title"
+        mock_modlog.details = "details"
+        mock_modlog.mod = "mod"
+        mock_modlog.description = "description"
+        mock_modlog.target_title = "title"
+        mock_modlog.target_author = "author"
+
+        # Add the modmail to the queue.
+        rleb_settings.queues['modlog'].put(mock_modlog)
+
+        rleb_settings.discord_check_new_modmail_enabled = False
+
+        await self.discord_client.check_new_modfeed()
+
+        expected_contents = '\n'.join([
+            f'**Details**: {mock_modlog.details}',
+            f'**Description**: {mock_modlog.description}',
+            f'**Target Title**: {mock_modlog.target_title}',
+        ])
+
+        self.discord_client.modlog_channel.send.assert_has_awaits([
+            call(embed=self.mock_embedded_object),
+            call(expected_contents),
             call('--------------------------------------------------------')
         ])
 
