@@ -244,22 +244,22 @@ class RLEsportsBot(discord.Client):
 
                     # Create an embed to post for each mod log.
                     embed = discord.Embed(
-                        title=item.action,
+                        title=item.action.replace("_", " ").title(),
                         url="https://www.reddit.com/r/RocketLeagueEsports/about/log/",
                         color=random.choice(rleb_settings.colors))
-
-                    # Set up the author field.
-                    author = item.mod
-                    if item.target_author is not None and item.target_author != item.mod:
-                        author = f'{item.mod} -> {item.target_author}'
-                    embed.set_author(name=author)
+                    embed.set_author(name=item.mod)
 
                     # The text that will follow the embed.
-                    contents = '\n'.join([
-                        f'**Details**: {item.details}',
-                        f'**Description**: {item.description}',
-                        f'**Target Title**: {item.target_title}',
-                    ])
+                    content_array = []
+                    if len(item.target_title or '') > 0:
+                        content_array.append(f'**Title**: {item.target_title}')
+                    if len(item.target_author or '') > 0 and item.target_author != item.mod:
+                        content_array.append(f'**User**: {item.target_author}')
+                    if len(item.description or '') > 0:
+                        content_array.append(f'**Description**: {item.description}')
+                    if len(item.details or '') > 0:
+                        content_array.append(f'**Extra Details**: {item.details}')
+                    contents = '\n'.join(content_array)
 
                     # Send everything.
                     await self.modlog_channel.send(embed=embed)
