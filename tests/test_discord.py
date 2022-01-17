@@ -129,11 +129,7 @@ class TestDiscord(RLEBAsyncTestCase):
 
         await self.discord_client.check_new_modfeed()
 
-        expected_contents = '\n'.join([
-            f'**Details**: {mock_modlog.details}',
-            f'**Description**: {mock_modlog.description}',
-            f'**Target Title**: {mock_modlog.target_title}',
-        ])
+        expected_contents = '**Title**: title\n**User**: author\n**Description**: description\n**Extra Details**: details'
 
         self.discord_client.modlog_channel.send.assert_has_awaits([
             call(embed=self.mock_embedded_object),
