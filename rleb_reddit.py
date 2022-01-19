@@ -80,7 +80,6 @@ def monitor_modlog():
                     continue
                 if (log.mod or '') in rleb_settings.filtered_mod_log:
                     continue
-                rleb_settings.rleb_log_info("REDDIT: Modlog - {0}".format(log.id))
                 rleb_settings.queues['modlog'].put(log)
                 time.sleep(rleb_settings.modmail_polling_interval_seconds)
         except prawcore.exceptions.ServerError as e:

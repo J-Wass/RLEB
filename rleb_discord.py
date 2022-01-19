@@ -238,9 +238,6 @@ class RLEsportsBot(discord.Client):
                 # Mod Log
                 while not rleb_settings.queues['modlog'].empty():
                     item = rleb_settings.queues['modlog'].get()
-                    rleb_settings.rleb_log_info(
-                        "DISCORD: Received modlog id {0}: {1}".format(
-                            item.id, item.action))
 
                     # Create an embed to post for each mod log.
                     embed = discord.Embed(
