@@ -9,6 +9,7 @@ import math
 
 import rleb_health
 import rleb_settings
+import rleb_stdout
 from rleb_settings import sub
 from rleb_team_lookup import handle_team_lookup
 from rleb_group_lookup import handle_group_lookup
@@ -260,43 +261,41 @@ class RLEsportsBot(discord.Client):
 
                     # Send everything.
                     await self.modlog_channel.send(embed=embed)
+                    time.sleep(1)
                     if len(contents or '') > 0:
                         await self.modlog_channel.send(contents)
                     await self.modlog_channel.send(
                         "--------------------------------------------------------"
                     )
                 
-                # Mod Mail (todo clean this up)
+                # Mod Mail
                 while not rleb_settings.queues['modmail'].empty():
                     item = rleb_settings.queues['modmail'].get()
                     rleb_settings.rleb_log_info(
                         "DISCORD: Received modmail id {0}: {1}".format(
                             item.id, item.body))
                     embed = None
+
+                    # New modmail
                     if item.parent_id:
                         embed = discord.Embed(
                             title="Commented on '{0}'".format(item.subject),
                             url="https://mod.reddit.com/mail/all",
                             color=random.choice(rleb_settings.colors))
                         embed.set_author(name=item.author.name)
+                    # On-going modmail
                     else:
                         embed = discord.Embed(
                             title="Created: '{0}'".format(item.subject),
                             url="https://mod.reddit.com/mail/all",
                             color=random.choice(rleb_settings.colors))
                         embed.set_author(name=item.author.name)
+
+                    # Send everything.
                     await self.modmail_channel.send(embed=embed)
                     time.sleep(1)
                     await self.modmail_channel.send("{0}: \"{1}\"".format(
                         item.author.name, item.body))
-                    removed_post = await self.post_removed(item)
-                    if removed_post:
-                        time.sleep(1)
-                        await self.modmail_channel.send(
-                            "Removed Post (by {0}): {1}".format(
-                                str(removed_post.author),
-                                str(removed_post.selftext)
-                                or str(removed_post.url)))
                     await self.modmail_channel.send(
                         "--------------------------------------------------------"
                     )
@@ -356,26 +355,6 @@ class RLEsportsBot(discord.Client):
                 rleb_settings.thread_crashes['asyncio'] += 1
                 rleb_settings.last_datetime_crashed['asyncio'] = datetime.now()
             await asyncio.sleep(rleb_settings.discord_async_interval_seconds)
-
-    async def post_removed(self, item):
-        """Take in a modmail item and return either a comment if this modmail
-           was an automod notification about a removed comment, else returns
-           None.
-
-           Args:
-             item (praw.models.ModmailMessage): PRAW modmail message.
-
-           Returns (praw.models.Submission): The comment that was removed by the
-           modmail item.
-        """
-        if "Please investigate and ensure that this action was correct" not in item.body:
-            return None
-        tokens = item.body.split()
-        link = tokens[0]
-        if not link.startswith(
-                "https://www.reddit.com/r/RocketLeagueEsports/comments"):
-            return None
-        return rleb_settings.r.submission(url=link)
 
     # Record that a user was responded to. Useful for responding "thanks".
     async def add_response(self, message):
@@ -699,7 +678,7 @@ class RLEsportsBot(discord.Client):
                 if logs == None or len(logs) == 0:
                     await message.channel.send("No logs to show.")
                     return
-                await message.channel.send("\n".join(logs))
+                await rleb_stdout.print_to_channel(message.channel, "\n".join(logs), title="logs")
             except discord.errors.HTTPException:
                 rleb_settings.rleb_log_error(traceback.format_exc())
                 await message.channel.send(
