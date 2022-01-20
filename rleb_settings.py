@@ -60,6 +60,9 @@ thread_crashes = {'asyncio': 0, 'thread': 0}
 # The last time a thread or asyncio thread crashed and had to be restarted. Used for logging.
 last_datetime_crashed = {'asyncio': None, 'thread': None}
 
+# WEB
+web_enabled = True
+
 # REDDIT
 reddit_enabled = True
 target_sub =  'rocketleagueesports' if RUNNING_MODE == 'production' else 'rlcsnewstest'

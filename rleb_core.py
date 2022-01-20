@@ -15,6 +15,7 @@ from rleb_settings import rleb_log_error, rleb_log_info
 from rleb_trello import read_new_trello_actions
 import rleb_tasks
 import rleb_health
+import rleb_web
 
 def start():
     # Allows discord bot to read from queues while running.
@@ -66,9 +67,11 @@ def start():
     modlog_thread.setDaemon(True)    
     task_alert_thread = Thread(target=rleb_health.task_alert_check, name="Task alert thread")
     task_alert_thread.setDaemon(True)
+    web_thread = Thread(target=rleb_web.start, name="Web thread")
+    web_thread.setDaemon(True)
     threads = [
         modmail_thread, trello_thread, subreddit_thread, submissions_thread,
-        health_thread, task_alert_thread, modlog_thread
+        health_thread, task_alert_thread, modlog_thread, web_thread
     ]
 
     rleb_log_info("Starting RLEB. Running under {0} in {1} mode.".format(
@@ -99,6 +102,10 @@ def start():
     if rleb_settings.task_alerts_enabled:
         rleb_log_info("Starting task alert thread.")
         task_alert_thread.start()
+
+    if rleb_settings.web_enabled:
+        rleb_log_info("Starting web thread.")
+        web_thread.start()
 
     # Start the discord thread, running on main thread.
     rleb_log_info("Starting discord thread.")
