@@ -1,7 +1,5 @@
 # Utilities file. Houses methods that are used throughout rleb.
-
 import praw
-from pymongo import MongoClient
 import psycopg2
 from psycopg2.extras import execute_values
 import datetime
