@@ -1,7 +1,5 @@
 # Utilities file. Houses methods that are used throughout rleb.
-
 import praw
-from pymongo import MongoClient
 import psycopg2
 from psycopg2.extras import execute_values
 import datetime
@@ -59,6 +57,9 @@ thread_crashes = {'asyncio': 0, 'thread': 0}
 
 # The last time a thread or asyncio thread crashed and had to be restarted. Used for logging.
 last_datetime_crashed = {'asyncio': None, 'thread': None}
+
+# WEB
+web_enabled = True
 
 # REDDIT
 reddit_enabled = True
