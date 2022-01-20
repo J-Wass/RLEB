@@ -6,7 +6,7 @@ app = Flask(__name__)
 
 @app.route("/")
 def main():
-    status = ['RLEB Status']
+    status = ['.::RLEB Status::.']
 
     # Asyncio
     asyncio_threads = ['--Discord Lightweight Threads (asyncio)--\n']
