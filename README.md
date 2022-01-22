@@ -21,7 +21,7 @@ Also required is Google Chrome to be installed to use `!teams !postmatch !groups
 
 Then copy your `secrets.py` file into the main repository folder.
 
-See `secrets.default.py` for an example of the structure of this file.
+See `secrets.example.py` for an example of the structure of this file.
 
 ## Installing and setting up the environment
 
