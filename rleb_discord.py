@@ -13,7 +13,7 @@ import rleb_stdout
 from rleb_settings import sub
 from rleb_team_lookup import handle_team_lookup
 from rleb_group_lookup import handle_group_lookup
-from rleb_census import handle_flair_census
+from rleb_census import handle_user_flairs, handle_flair_census
 from rleb_calendar import handle_calendar_lookup
 from rleb_tasks import handle_task_lookup, user_names_to_ids
 from rleb_swiss import handle_swiss_lookup
@@ -852,6 +852,16 @@ class RLEsportsBot(discord.Client):
             message_without_command = " ".join(tokens[1:])
             await message.channel.send(message_without_command)
             await self.add_response(message)
+        elif discord_message.startswith("!findflair"):
+            # Expected format "!findflair {flair_type} | 1 arg"
+            tokens = discord_message.split()
+            rleb_settings.rleb_log_info("DISCORD: Getting users with flair" + tokens[1])
+            await handle_user_flairs(sub, tokens[1], message.channel)
+        elif discord_message.startswith("!verified"):
+            # Expected format "!verified | 0 arg"
+            rleb_settings.rleb_log_info("DISCORD: Getting verified users")
+            await handle_user_flairs(sub, "Verified", message.channel)
+
 
 
 def start(threads):
