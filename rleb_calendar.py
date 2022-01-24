@@ -42,19 +42,15 @@ Events prefixed with ⚽ will have an **Event Thread** posted by mods.  Anyone c
 
 If you are on the official **Reddit App**, you will find the schedule under the "**About**" tab. If you are browsing the **Desktop** version,  you can find the schedule on the sidebar of the [**new.reddit**](https://new.reddit.com/r/RocketLeagueEsports/) version of this subreddit. Alternatively you can use our [**Google Calendar**](https://www.reddit.com/r/RocketLeagueEsports/wiki/calendar) which is used to feed the schedule.
 
-# Guides / FAQs
-* [**Announcing the RLCS 2021-2022 Season**](https://esports.rocketleague.com/news/announcing-the-rlcs-202122-season/)
-* [**Intro to RL Esports**](https://www.reddit.com/r/RocketLeagueEsports/wiki/guide)
-* [**Fan Rewards FAQ**](https://www.reddit.com/r/RocketLeagueEsports/wiki/rewards)
+# RLCS 2021-22 Wiki Pages
 
-&nbsp;
-&nbsp;
+▶ [**How it works**](https://www.reddit.com/r/RocketLeagueEsports/wiki/guide)
 
-# Community Spotlight
+▶ [**Broadcast Schedule**](https://www.reddit.com/r/RocketLeagueEsports/wiki/schedule)
 
-Every Monday we will pin 1 quality piece of Original Content from the previous week or earlier.
+▶ [**Where to watch**](https://www.reddit.com/r/RocketLeagueEsports/wiki/watch)
 
-* [**Past Community Spotlights**](https://www.reddit.com/r/RocketLeagueEsports/wiki/community_spotlight)"""
+▶ [**Coverage**](https://www.reddit.com/r/RocketLeagueEsports/wiki/coverage)"""
 
 
 class CalendarEvent:
