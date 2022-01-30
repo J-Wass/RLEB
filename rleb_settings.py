@@ -179,11 +179,6 @@ def is_discord_mod(user: discord.Member):
 
 discord_async_interval_seconds = 20
 
-def _flush_memory_log():
-    """Write all logs from memory to db. MUST HAVE LOG_LOCK."""
-    Data.singleton().write_to_logs(memory_log)
-    memory_log.clear()
-
 
 # TRELLO
 trello_enabled = True
@@ -204,6 +199,11 @@ def get_trello_actions(date):
 
 # MONITORING
 logging_enabled = True
+
+def _flush_memory_log():
+    """Write all logs from memory to db. MUST HAVE LOG_LOCK."""
+    Data.singleton().write_to_logs(memory_log)
+    memory_log.clear()
 
 memory_log = []
 log_lock = Lock()  # Used when writing to the memory_log

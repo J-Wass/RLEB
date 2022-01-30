@@ -28,6 +28,10 @@ class Data(object):
             cls._singleton = cls.__new__(cls)
         return cls._singleton
 
+    def empty_cache(self, cache_key: str) -> None:
+        if cache_key in Data._cache:
+            del Data._cache[cache_key]
+
     def postgres_connection(self):
         """MUST_HAVE_DB_LOCK. Returns the postgresSQL connection."""
 
@@ -88,6 +92,8 @@ class Data(object):
                                    memory_logs_tuples)
             db.commit()
 
+        Data.singleton().empty_cache('logs')
+
     def read_logs(self) -> list[str]:
         """"Reads logs to the database."""
         with Data._db_lock:
@@ -100,7 +106,7 @@ class Data(object):
             cursor.execute("SELECT * FROM logs;")
             all_logs = cursor.fetchall()
             Data._cache['logs'] = all_logs 
-            return 
+            return all_logs
 
     def add_dualflair(self, flair_to_add) -> list[str]:
         """"Yeets a dualflair out of the database."""
@@ -109,15 +115,23 @@ class Data(object):
             cursor = db.cursor()
             cursor.execute("""INSERT INTO dualflairs VALUES (%s)""",
                             (flair_to_add, ))
-            db.commit()  
+            db.commit()
+
+        Data.empty_cache('dualflairs')
     
     def read_dualflairs(self) -> list[str]:
         """"Reads all the dualflairs from the database."""
         with Data._db_lock:
+
+            if 'dualflairs' in Data._cache:
+                return Data._cache['dualflairs']
+
             db = self.postgres_connection()
             cursor = db.cursor()
             cursor.execute("SELECT * FROM dualflairs;")
-            return cursor.fetchall()  
+            all_dualflairs = cursor.fetchall()  
+            Data._cache['dualflairs'] = all_dualflairs
+            return all_dualflairs
 
     def yeet_dualflair(self, flair_to_remove) -> list[str]:
         """"Yeets a dualflair out of the database."""
@@ -126,5 +140,7 @@ class Data(object):
             cursor = db.cursor()
             cursor.execute("DELETE FROM dualflairs WHERE dualflair = %s",
                                (flair_to_remove, ))
-            db.commit()          
+            db.commit()  
+
+        Data.empty_cache('dualflairs')       
 

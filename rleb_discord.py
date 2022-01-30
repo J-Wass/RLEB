@@ -616,7 +616,7 @@ class RLEsportsBot(discord.Client):
             if (not rleb_settings.is_discord_mod(message.author)):
                 return
 
-            rleb_settings.flush_memory_log()
+            rleb_settings._flush_memory_log()
             await message.channel.send(":toilet:")
 
         elif discord_message.startswith('!schedule') and is_staff(message.author):
