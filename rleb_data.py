@@ -22,15 +22,16 @@ class Data(object):
     def __init__(self):
         raise RuntimeError('Call singleton() instead')
 
+    def _empty_cache(cache_key: str) -> None:
+        """Safely removes cache_key and its memory from the internal data cache."""
+        if cache_key in Data._cache:
+            del Data._cache[cache_key]
+
     @classmethod
     def singleton(cls):
         if cls._singleton is None:
             cls._singleton = cls.__new__(cls)
         return cls._singleton
-
-    def empty_cache(self, cache_key: str) -> None:
-        if cache_key in Data._cache:
-            del Data._cache[cache_key]
 
     def postgres_connection(self):
         """MUST_HAVE_DB_LOCK. Returns the postgresSQL connection."""
@@ -92,7 +93,7 @@ class Data(object):
                                    memory_logs_tuples)
             db.commit()
 
-        Data.singleton().empty_cache('logs')
+        Data._empty_cache('logs')
 
     def read_logs(self) -> list[str]:
         """"Reads logs to the database."""
@@ -117,7 +118,7 @@ class Data(object):
                             (flair_to_add, ))
             db.commit()
 
-        Data.empty_cache('dualflairs')
+        Data._empty_cache('dualflairs')
     
     def read_dualflairs(self) -> list[str]:
         """"Reads all the dualflairs from the database."""
@@ -142,5 +143,5 @@ class Data(object):
                                (flair_to_remove, ))
             db.commit()  
 
-        Data.empty_cache('dualflairs')       
+        Data._empty_cache('dualflairs')
 

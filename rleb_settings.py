@@ -153,7 +153,7 @@ hooks = [
     "Fresh outa the oven",
     "This one was made with love",
     "Enjoy",
-    "Congrats! You won! Prize:"
+    "Congrats! You won! Prize"
 ]
 greetings = [
     "Incoming!",
