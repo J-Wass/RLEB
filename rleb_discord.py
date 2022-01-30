@@ -10,6 +10,7 @@ import math
 import rleb_health
 import rleb_settings
 import rleb_stdout
+from rleb_data import Data
 from rleb_settings import sub
 from rleb_team_lookup import handle_team_lookup
 from rleb_group_lookup import handle_group_lookup
@@ -399,12 +400,13 @@ class RLEsportsBot(discord.Client):
 
         if str(message.channel) == 'ban-review':
             rleb_settings.rleb_log_info(
-                "DISCORD: New ban-remove message: {0}".format(discord_message))
+                "DISCORD: New ban-review message: {0}".format(discord_message))
+            await message.add_reaction('⚠️')
             await message.add_reaction('1️⃣')
             await message.add_reaction('2️⃣')
             await message.add_reaction('3️⃣')
             await message.add_reaction('💀')
-            await message.add_reaction('⚠️')
+            await message.add_reaction('👥')
             await message.add_reaction('🤷')
             return
 
@@ -510,10 +512,7 @@ class RLEsportsBot(discord.Client):
                 return
 
             all_flairs = ""
-            db = rleb_settings.postgresConnection()
-            cursor = db.cursor()
-            cursor.execute("SELECT * FROM dualflairs;")
-            flairs = cursor.fetchall()
+            flairs = Data.singleton().read_dualflairs()
             flair_list = list(map(lambda x: x[0], flairs))
             flair_list.sort()
             for flair in flair_list:
@@ -555,10 +554,7 @@ class RLEsportsBot(discord.Client):
                     "Removal timed out. You must confirm within 2 minutes to remove flairs."
                 )
                 return
-            db = rleb_settings.postgresConnection()
-            cursor = db.cursor()
-            cursor.execute("SELECT * FROM dualflairs;")
-            flairs = cursor.fetchall()
+            flairs = Data.singleton().read_dualflairs()
             flair_list = list(map(lambda x: x[0], flairs))
             if not (self.flair_to_remove in flair_list):
                 await message.channel.send(
@@ -566,9 +562,7 @@ class RLEsportsBot(discord.Client):
                     .format(self.flair_to_remove))
                 return
             else:
-                cursor.execute("DELETE FROM dualflairs WHERE dualflair = %s",
-                               (self.flair_to_remove, ))
-                db.commit()
+                Data.singleton().yeet_dualflair(self.flair_to_remove)
                 await message.channel.send("Removed {0}.".format(
                     self.flair_to_remove))
                 await self.add_response(message)
@@ -604,10 +598,7 @@ class RLEsportsBot(discord.Client):
                     "Addition timed out. You must confirm within 2 minutes to add flairs."
                 )
                 return
-            db = rleb_settings.postgresConnection()
-            cursor = db.cursor()
-            cursor.execute("SELECT * FROM dualflairs;")
-            flairs = cursor.fetchall()
+            flairs = Data.singleton().read_dualflairs()
             flair_list = list(map(lambda x: x[0], flairs))
             if self.flair_to_add in flair_list:
                 await message.channel.send(
@@ -615,9 +606,7 @@ class RLEsportsBot(discord.Client):
                     .format(self.flair_to_add))
                 return
             else:
-                cursor.execute("""INSERT INTO dualflairs VALUES (%s)""",
-                               (self.flair_to_add, ))
-                db.commit()
+                Data.singleton().add_dualflair(self.flair_to_add)
                 await message.channel.send("Added {0}.".format(
                     self.flair_to_add))
                 await self.add_response(message)
@@ -627,7 +616,7 @@ class RLEsportsBot(discord.Client):
             if (not rleb_settings.is_discord_mod(message.author)):
                 return
 
-            rleb_settings.flush_memory_log()
+            rleb_settings._flush_memory_log()
             await message.channel.send(":toilet:")
 
         elif discord_message.startswith('!schedule') and is_staff(message.author):
@@ -662,12 +651,9 @@ class RLEsportsBot(discord.Client):
 
             logs = None
             if datasource == 'memory':
-                logs = status_list = rleb_settings.memory_log[(-1 * count):]
+                logs  = rleb_settings.memory_log[(-1 * count):]
             elif datasource == 'db':
-                db = rleb_settings.postgresConnection()
-                cursor = db.cursor()
-                cursor.execute("SELECT * FROM logs;")
-                db_logs = cursor.fetchall()
+                db_logs = Data.singleton().read_logs()
                 db_logs_as_list = list(map(lambda x: x[0], db_logs))
                 logs = db_logs_as_list[(-1 * count):]
             else:

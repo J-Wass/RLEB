@@ -22,6 +22,11 @@ class Data(object):
     def __init__(self):
         raise RuntimeError('Call singleton() instead')
 
+    def _empty_cache(cache_key: str) -> None:
+        """Safely removes cache_key and its memory from the internal data cache."""
+        if cache_key in Data._cache:
+            del Data._cache[cache_key]
+
     @classmethod
     def singleton(cls):
         if cls._singleton is None:
@@ -53,7 +58,7 @@ class Data(object):
             db.commit()
 
     def read_already_warned_scheduled_posts(self, min_seconds_since_epoch: int) -> list[int]:
-        """"Returns a list of log ids for already confirmed scheduled posts."""
+        """"Returns a list of log ids for already warned scheduled posts."""
         with Data._db_lock:
             db = self.postgres_connection()
             cursor = db.cursor()
@@ -77,3 +82,66 @@ class Data(object):
             cursor.execute("""SELECT post_id FROM already_confirmed_scheduled_posts WHERE seconds_since_epoch > %s;""", (min_seconds_since_epoch,))
             post_ids = list(map(lambda x: x[0],cursor.fetchall()))
             return post_ids
+
+    def write_to_logs(self, logs: list[str]) -> None:
+        """"Writes all logs to the database."""
+        with Data._db_lock:
+            db = self.postgres_connection()
+            cursor = db.cursor()
+            memory_logs_tuples = list(map(lambda x: (x, ), logs))
+            psycopg2.extras.execute_values(cursor, "INSERT INTO logs VALUES %s",
+                                   memory_logs_tuples)
+            db.commit()
+
+        Data._empty_cache('logs')
+
+    def read_logs(self) -> list[str]:
+        """"Reads logs to the database."""
+        with Data._db_lock:
+            
+            if 'logs' in Data._cache:
+                return Data._cache['logs']
+
+            db = self.postgres_connection()
+            cursor = db.cursor()
+            cursor.execute("SELECT * FROM logs;")
+            all_logs = cursor.fetchall()
+            Data._cache['logs'] = all_logs 
+            return all_logs
+
+    def add_dualflair(self, flair_to_add) -> list[str]:
+        """"Yeets a dualflair out of the database."""
+        with Data._db_lock:
+            db = self.postgres_connection()
+            cursor = db.cursor()
+            cursor.execute("""INSERT INTO dualflairs VALUES (%s)""",
+                            (flair_to_add, ))
+            db.commit()
+
+        Data._empty_cache('dualflairs')
+    
+    def read_dualflairs(self) -> list[str]:
+        """"Reads all the dualflairs from the database."""
+        with Data._db_lock:
+
+            if 'dualflairs' in Data._cache:
+                return Data._cache['dualflairs']
+
+            db = self.postgres_connection()
+            cursor = db.cursor()
+            cursor.execute("SELECT * FROM dualflairs;")
+            all_dualflairs = cursor.fetchall()  
+            Data._cache['dualflairs'] = all_dualflairs
+            return all_dualflairs
+
+    def yeet_dualflair(self, flair_to_remove) -> list[str]:
+        """"Yeets a dualflair out of the database."""
+        with Data._db_lock:
+            db = self.postgres_connection()
+            cursor = db.cursor()
+            cursor.execute("DELETE FROM dualflairs WHERE dualflair = %s",
+                               (flair_to_remove, ))
+            db.commit()  
+
+        Data._empty_cache('dualflairs')
+

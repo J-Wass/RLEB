@@ -2,6 +2,7 @@ import re
 
 import rleb_settings
 from rleb_settings import flair_pattern, rleb_log_info
+from rleb_data import Data
 
 # allowlist of allowed flairs
 # fallback if file not found
@@ -40,10 +41,7 @@ def handle_dualflair(sub, user, body):
         rleb_log_info("REDDIT: Set mod flair for {0} to {1}".format(
             user.name, body))
     else:
-        db = rleb_settings.postgresConnection()
-        cursor = db.cursor()
-        cursor.execute("SELECT * FROM dualflairs;")
-        dualflairs = cursor.fetchall()
+        dualflairs = Data.singleton().read_dualflairs()
         if dualflairs:
             allowed = list(map(lambda x: x[0], dualflairs))
         # break string into :emoji: tokens
