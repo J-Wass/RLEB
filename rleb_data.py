@@ -53,7 +53,7 @@ class Data(object):
             db.commit()
 
     def read_already_warned_scheduled_posts(self, min_seconds_since_epoch: int) -> list[int]:
-        """"Returns a list of log ids for already confirmed scheduled posts."""
+        """"Returns a list of log ids for already warned scheduled posts."""
         with Data._db_lock:
             db = self.postgres_connection()
             cursor = db.cursor()
@@ -77,3 +77,54 @@ class Data(object):
             cursor.execute("""SELECT post_id FROM already_confirmed_scheduled_posts WHERE seconds_since_epoch > %s;""", (min_seconds_since_epoch,))
             post_ids = list(map(lambda x: x[0],cursor.fetchall()))
             return post_ids
+
+    def write_to_logs(self, logs: list[str]) -> None:
+        """"Writes all logs to the database."""
+        with Data._db_lock:
+            db = self.postgres_connection()
+            cursor = db.cursor()
+            memory_logs_tuples = list(map(lambda x: (x, ), logs))
+            psycopg2.extras.execute_values(cursor, "INSERT INTO logs VALUES %s",
+                                   memory_logs_tuples)
+            db.commit()
+
+    def read_logs(self) -> list[str]:
+        """"Reads logs to the database."""
+        with Data._db_lock:
+            
+            if 'logs' in Data._cache:
+                return Data._cache['logs']
+
+            db = self.postgres_connection()
+            cursor = db.cursor()
+            cursor.execute("SELECT * FROM logs;")
+            all_logs = cursor.fetchall()
+            Data._cache['logs'] = all_logs 
+            return 
+
+    def add_dualflair(self, flair_to_add) -> list[str]:
+        """"Yeets a dualflair out of the database."""
+        with Data._db_lock:
+            db = self.postgres_connection()
+            cursor = db.cursor()
+            cursor.execute("""INSERT INTO dualflairs VALUES (%s)""",
+                            (flair_to_add, ))
+            db.commit()  
+    
+    def read_dualflairs(self) -> list[str]:
+        """"Reads all the dualflairs from the database."""
+        with Data._db_lock:
+            db = self.postgres_connection()
+            cursor = db.cursor()
+            cursor.execute("SELECT * FROM dualflairs;")
+            return cursor.fetchall()  
+
+    def yeet_dualflair(self, flair_to_remove) -> list[str]:
+        """"Yeets a dualflair out of the database."""
+        with Data._db_lock:
+            db = self.postgres_connection()
+            cursor = db.cursor()
+            cursor.execute("DELETE FROM dualflairs WHERE dualflair = %s",
+                               (flair_to_remove, ))
+            db.commit()          
+

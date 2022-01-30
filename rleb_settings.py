@@ -12,6 +12,8 @@ import os
 from sys import platform
 import discord
 
+from rleb_data import Data
+
 # This is bad code, don't tell anyone I wrote this.
 try:
     import secrets
@@ -57,9 +59,6 @@ thread_crashes = {'asyncio': 0, 'thread': 0}
 
 # The last time a thread or asyncio thread crashed and had to be restarted. Used for logging.
 last_datetime_crashed = {'asyncio': None, 'thread': None}
-
-# WEB
-web_enabled = True
 
 # REDDIT
 reddit_enabled = True
@@ -154,16 +153,19 @@ hooks = [
     "Fresh outa the oven",
     "This one was made with love",
     "Enjoy",
+    "Congrats! You won! Prize:"
 ]
 greetings = [
     "Incoming!",
     "Why hello there.",
-    "Hola amigo"
+    "Hola, amigo",
+    "Bonjour, mon ami"
 ]
 success_emojis = [
     '🥳',
     '💪',
-    '✅'
+    '✅',
+    '🔥'
 ]
 verified_moderators = json.loads(
     os.environ.get('VERIFIED_MODERATORS') or secrets.VERIFIED_MODERATORS)
@@ -177,31 +179,9 @@ def is_discord_mod(user: discord.Member):
 
 discord_async_interval_seconds = 20
 
-
-# DATABASE
-def postgresConnection():
-    """Returns a new postgresSQL connection."""
-    return psycopg2.connect(
-        dbname=os.environ.get('DB_NAME') or secrets.DB_NAME,
-        host=os.environ.get('DB_HOST') or secrets.DB_HOST,
-        user=os.environ.get('DB_USER') or secrets.DB_USER,
-        port=os.environ.get('DB_PORT') or secrets.DB_PORT,
-        password=os.environ.get('DB_PASSWORD') or secrets.DB_PASSWORD,
-    )
-
-
-memory_log = []
-log_lock = Lock()  # Used when writing to the memory_log
-
-
-def flush_memory_log():
+def _flush_memory_log():
     """Write all logs from memory to db. MUST HAVE LOG_LOCK."""
-    db = postgresConnection()
-    cursor = db.cursor()
-    memory_logs_tuples = list(map(lambda x: (x, ), memory_log))
-    psycopg2.extras.execute_values(cursor, "INSERT INTO logs VALUES %s",
-                                   memory_logs_tuples)
-    db.commit()
+    Data.singleton().write_to_logs(memory_log)
     memory_log.clear()
 
 
@@ -225,26 +205,28 @@ def get_trello_actions(date):
 # MONITORING
 logging_enabled = True
 
+memory_log = []
+log_lock = Lock()  # Used when writing to the memory_log
 
-def rleb_log(message, should_flush=False):
-    """Log a message to memory (thread safe)."""
+def _rleb_log(message, should_flush=False):
+    """Log a message to memory (thread safe). If should_flush is True or memory is too full, the logs will be sent to db."""
     print("{0} UTC {1}".format(datetime.utcnow(), message))
     if (not logging_enabled):
         return
     with log_lock:
         memory_log.append("{0} UTC {1}".format(datetime.utcnow(), message))
         if len(memory_log) > 100 or should_flush:
-            flush_memory_log()
+            _flush_memory_log()
 
 
 def rleb_log_info(message):
-    """Log an informative message to either memory."""
-    rleb_log("INFO - {0}".format(message), should_flush=False)
+    """Log an informative message."""
+    _rleb_log("INFO - {0}".format(message), should_flush=False)
 
 
 def rleb_log_error(message):
-    """Log an error message to either memory."""
-    rleb_log("ERROR - {0}".format(message), should_flush=True)
+    """Log an error message."""
+    _rleb_log("ERROR - {0}".format(message), should_flush=True)
 
 
 # DATES
