@@ -1,12 +1,14 @@
-async def handle_flair_census(sub, amount, channel, divider=","):
+import rleb_settings
+
+async def handle_flair_census(amount, channel, divider=","):
     """ Takes a census of all user flairs and prints to |channel|.
     
     Parameters:
-        sub (praw.models.Subreddit): The subreddit to fetch user flairs for. 
         amount (int): The top x flairs you want to see.
         channel (discord.TextChannel): The channel to print results to.
         divider (str): Optional, divider to put between each flair and their count in the output.
     """
+    sub = rleb_settings.sub
     all_flairs = {}
     for flair in sub.flair(limit=None):
         if flair['flair_text'] != None:

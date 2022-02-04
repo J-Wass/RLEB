@@ -33,6 +33,7 @@ class RLEsportsBot(discord.Client):
         Args:
             threads (List of Thread): List of threads used for monitoring both health.
         """
+
         super().__init__(intents=discord.Intents.all())
 
         # List of all threads running RLEB.
@@ -377,6 +378,7 @@ class RLEsportsBot(discord.Client):
         Args:
             message (discord.Message): Discord message being handled.
         """
+
         # Don't response to messages from yourself, lol.
         if "RLesports" in str(message.author):
             return
@@ -444,7 +446,7 @@ class RLEsportsBot(discord.Client):
                     divider = ","
             except Exception:
                 divider = ","
-            await handle_flair_census(sub, amount, message.channel, divider)
+            await handle_flair_census(amount, message.channel, divider)
             await self.add_response(message)
 
         elif discord_message.startswith("!migrate") and is_staff(
