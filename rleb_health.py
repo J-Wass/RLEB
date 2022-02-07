@@ -116,7 +116,7 @@ def task_alert_check():
                 scheduled_post = post_at_same_time[0]
                 if scheduled_post.id not in already_confirmed_scheduled_posts:
                     message = random.choice(rleb_settings.success_emojis)
-                    message += f" Task is scheduled: {task.event_name}"
+                    message += f" Task is scheduled: {task.event_name}. https://www.reddit.com/r/RocketLeagueEsports/about/scheduledposts"
                     rleb_settings.queues["schedule_chat"].put(message)
                     already_confirmed_scheduled_posts.append(scheduled_post.id)
                     Data.singleton().write_already_warned_confirmed_post(scheduled_post.id, datetime.now().timestamp())
