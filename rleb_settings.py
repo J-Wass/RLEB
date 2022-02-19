@@ -78,7 +78,7 @@ moderators = sub.moderator()
 read_new_submissions_enabled = True
 monitor_subreddit_enabled = True
 monitor_modmail_enabled = True
-monitor_modlog_enabled = True
+monitor_modlog_enabled = False
 filtered_mod_log = ['tweet_widget'] # list of mods who don't show up in discord #mod-log channel
 
 def is_mod(username):
