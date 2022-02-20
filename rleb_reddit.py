@@ -78,9 +78,11 @@ def monitor_modlog():
             for log in logs:
                 if log is None:
                     continue
-                if (log.mod or '') in rleb_settings.filtered_mod_log:
+
+                # only accept logs that have an appropriate mod & action
+                if log.mod != None and (log.mod in rleb_settings.filtered_mod_log):
                     continue
-                if (log.action.lower() or '') in rleb_settings.filtered_mod_actions:
+                if log.action != None and (log.action.lower() not in rleb_settings.allowed_mod_actions):
                     continue
                 rleb_settings.queues['modlog'].put(log)
                 time.sleep(rleb_settings.modmail_polling_interval_seconds)

@@ -78,9 +78,9 @@ moderators = sub.moderator()
 read_new_submissions_enabled = True
 monitor_subreddit_enabled = True
 monitor_modmail_enabled = True
-monitor_modlog_enabled = False
+monitor_modlog_enabled = True
 filtered_mod_log = ['tweet_widget'] # list of mods who shouldn't show up in discord #mod-log channel
-filtered_mod_actions = ['approvecomment', 'removecomment', 'approvelink', 'removelink', 'create_scheduled_post', 'edit_scheduled_post',] # list of mod actions who shouldn't show up in discord #mod-log channgel
+allowed_mod_actions = ['approvecomment', 'removecomment', 'approvelink', 'removelink', 'create_scheduled_post', 'edit_scheduled_post',] # list of mod actions which should show up in discord #mod-log channgel
 
 def is_mod(username):
     """Return true if username belongs to a sub moderator.

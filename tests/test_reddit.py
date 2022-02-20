@@ -110,6 +110,7 @@ class TestReddit(RLEBTestCase):
 
         mock_modlog_item = mock.Mock()
         mock_modlog_item.id = "123"
+        mock_modlog_item.action = "removecomment"
 
         def mock_modlog_stream(args=[], pause_after=None,skip_existing=True, attribute_name='id'):
             """ Mock method for sub.stream.submissions()."""
@@ -128,6 +129,29 @@ class TestReddit(RLEBTestCase):
 
         modlog_from_queue = rleb_settings.queues["modlog"].get()
         self.assertEqual(modlog_from_queue, mock_modlog_item)
+
+    def test_monitor_modlog_unallowed_action(self):
+        rleb_settings.monitor_modlog_enabled = False
+        rleb_settings.modmail_polling_interval_seconds = 0
+
+        mock_modlog_item = mock.Mock()
+        mock_modlog_item.id = "123"
+        mock_modlog_item.action = "unallowed action"
+
+        def mock_modlog_stream(args=[], pause_after=None,skip_existing=True, attribute_name='id'):
+            """ Mock method for sub.stream.submissions()."""
+            return [mock_modlog_item]
+
+        # Mock the modmail stream to be an array of 1.
+        modlog_stream = patch.object(praw.models.util,
+                                      "stream_generator",
+                                      new=mock_modlog_stream).start()
+        self.addCleanup(modlog_stream)
+
+        # Assert that the new modmail is in the modmail queue after the method.
+        self.assertEqual(rleb_settings.queues["modlog"].qsize(), 0)
+        rleb_reddit.monitor_modlog()
+        self.assertEqual(rleb_settings.queues["modlog"].qsize(), 0)
 
 
 if __name__ == '__main__':
