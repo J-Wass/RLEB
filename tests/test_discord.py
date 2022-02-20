@@ -91,6 +91,7 @@ class TestDiscord(RLEBAsyncTestCase):
         mock_modmail.subject = "modmail subject"
         mock_modmail.body = "modmail body"
         mock_modmail.author.name = "author"
+        mock_modmail.parent_id = None
 
         # Add the modmail to the queue.
         rleb_settings.queues['modmail'].put(mock_modmail)
@@ -99,10 +100,12 @@ class TestDiscord(RLEBAsyncTestCase):
 
         await self.discord_client.check_new_modfeed()
 
+        self.mock_embed.assert_called_with(title="Created: 'modmail subject'", url="https://mod.reddit.com/mail/all", color=0x2644ce)
+        self.mock_embedded_object.set_author.assert_called_with(name="author")
+        self.assertEqual(self.mock_embedded_object.description, f"modmail body\n--------------------------------------------------------")
+
         self.discord_client.modmail_channel.send.assert_has_awaits([
             call(embed=self.mock_embedded_object),
-            call('author: "modmail body"'),
-            call('--------------------------------------------------------')
         ])
 
     async def test_reads_new_modlogs(self):
@@ -121,6 +124,7 @@ class TestDiscord(RLEBAsyncTestCase):
         mock_modlog.description = "description"
         mock_modlog.target_title = "title"
         mock_modlog.target_author = "author"
+        mock_modlog.action = "approvecomment"
 
         # Add the modmail to the queue.
         rleb_settings.queues['modlog'].put(mock_modlog)
@@ -129,12 +133,13 @@ class TestDiscord(RLEBAsyncTestCase):
 
         await self.discord_client.check_new_modfeed()
 
-        expected_contents = '**Title**: title\n**User**: author\n**Description**: description\n**Extra Details**: details'
 
+        self.mock_embed.assert_called_with(title='Approvecomment', url='https://www.reddit.com/r/RocketLeagueEsports/about/log/', color=2507982)
+        self.mock_embedded_object.set_author.assert_called_with(name="mod")
+
+        self.assertEqual(self.mock_embedded_object.description, '**Title**: title\n**User**: author\n**Description**: description\n**Extra Details**: details\n--------------------------------------------------------')
         self.discord_client.modlog_channel.send.assert_has_awaits([
             call(embed=self.mock_embedded_object),
-            call(expected_contents),
-            call('--------------------------------------------------------')
         ])
 
     async def test_reads_new_alerts(self):

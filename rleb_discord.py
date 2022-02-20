@@ -239,6 +239,7 @@ class RLEsportsBot(discord.Client):
             try:
                 # Mod Log
                 while not rleb_settings.queues['modlog'].empty():
+                    await asyncio.sleep(1)
                     item = rleb_settings.queues['modlog'].get()
 
                     # Create an embed to post for each mod log.
@@ -258,16 +259,13 @@ class RLEsportsBot(discord.Client):
                         content_array.append(f'**Description**: {item.description}')
                     if len(item.details or '') > 0:
                         content_array.append(f'**Extra Details**: {item.details}')
+                    content_array.append("--------------------------------------------------------")
                     contents = '\n'.join(content_array)
+
+                    embed.description = contents
 
                     # Send everything.
                     await self.modlog_channel.send(embed=embed)
-                    time.sleep(1)
-                    if len(contents or '') > 0:
-                        await self.modlog_channel.send(contents)
-                    await self.modlog_channel.send(
-                        "--------------------------------------------------------"
-                    )
                 
                 # Mod Mail
                 while not rleb_settings.queues['modmail'].empty():
@@ -277,14 +275,14 @@ class RLEsportsBot(discord.Client):
                             item.id, item.body))
                     embed = None
 
-                    # New modmail
+                    # On-going conversation.
                     if item.parent_id:
                         embed = discord.Embed(
                             title="Commented on '{0}'".format(item.subject),
                             url="https://mod.reddit.com/mail/all",
                             color=random.choice(rleb_settings.colors))
                         embed.set_author(name=item.author.name)
-                    # On-going modmail
+                    # New modmail
                     else:
                         embed = discord.Embed(
                             title="Created: '{0}'".format(item.subject),
@@ -292,14 +290,11 @@ class RLEsportsBot(discord.Client):
                             color=random.choice(rleb_settings.colors))
                         embed.set_author(name=item.author.name)
 
+                    embed.description = f"{item.body}\n--------------------------------------------------------"
+
                     # Send everything.
                     await self.modmail_channel.send(embed=embed)
-                    time.sleep(1)
-                    await self.modmail_channel.send("{0}: \"{1}\"".format(
-                        item.author.name, item.body))
-                    await self.modmail_channel.send(
-                        "--------------------------------------------------------"
-                    )
+
                 rleb_settings.asyncio_threads['modmail'] = datetime.now()
                 if not rleb_settings.discord_check_new_modmail_enabled:
                     break

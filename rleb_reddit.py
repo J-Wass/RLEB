@@ -80,6 +80,8 @@ def monitor_modlog():
                     continue
                 if (log.mod or '') in rleb_settings.filtered_mod_log:
                     continue
+                if (log.action.lower() or '') in rleb_settings.filtered_mod_actions:
+                    continue
                 rleb_settings.queues['modlog'].put(log)
                 time.sleep(rleb_settings.modmail_polling_interval_seconds)
         except prawcore.exceptions.ServerError as e:
