@@ -10,7 +10,7 @@ import rleb_settings
 class Task:
     """Encapsulation of a task from the google sheet."""
     def __init__(self, event_name, event_creator, event_updater1,
-                 event_updater2, event_day, event_date, event_schedule_time):
+                 event_updater2, event_day, event_date, event_schedule_time, event_sticky = None):
         """Initialize a new task. """
         self.event_name = event_name
         self.event_creator = event_creator
@@ -19,10 +19,13 @@ class Task:
         self.event_day = event_day
         self.event_date = event_date
         self.event_schedule_time = event_schedule_time
+        self.event_sticky = event_sticky
 
     def pretty_print(self):
         """Returns a human-readable string which represents this task."""
         output = f'**{self.event_name}** ({self.event_day} {self.event_date})\n'
+        if self.event_sticky:
+            output += f'Sticky: **{self.event_sticky}**\n'
         output += f'Creator/Scheduler ({self.event_schedule_time} UTC): **{self.event_creator}**\n'
         output += f'Updaters/Monitors: **{self.event_updater1}**, **{self.event_updater2}**\n'
         output += f'\n-----------------------------------------------------------\n\n'
@@ -67,6 +70,8 @@ async def broadcast_tasks(tasks: list[Task], client: discord.ClientUser,
 
     users.discard('')
     users.discard('No one needed')
+    users.discard('****')
+    users.discard('**')
 
     # Iterate each user, and pm them their tasks.
     user_mapping = user_names_to_ids(channel)
@@ -104,6 +109,7 @@ def get_tasks() -> list[Task]:
     event_dates = values[1]
     event_times = values[2]
     creators = values[3]
+    thread_options = values[4]
     updaters = values[6]
 
     # Iterate each event, build a new task for each.
@@ -115,9 +121,10 @@ def get_tasks() -> list[Task]:
         event_day = event_dates[i + 1]
         event_date = event_dates[i]
         event_schedule_time = event_times[i]
+        event_sticky = thread_options[i+1]
         new_task = Task(event_name, event_creator, event_updater1,
                         event_updater2, event_day, event_date,
-                        event_schedule_time)
+                        event_schedule_time, event_sticky)
         tasks.append(new_task)
 
     return tasks
