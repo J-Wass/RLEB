@@ -173,7 +173,7 @@ verified_moderators = json.loads(
 
 
 def is_discord_mod(user: discord.Member):
-    """Returns true if the discord user a verified moderator."""
+    """Returns true if the discord user is a verified moderator."""
     username = user.name.lower() + "#" + user.discriminator
     return username in verified_moderators
 

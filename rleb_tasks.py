@@ -1,4 +1,5 @@
 import json
+import random
 
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
@@ -6,6 +7,7 @@ import discord
 import traceback
 
 import rleb_settings
+import rleb_stdout
 
 class Task:
     """Encapsulation of a task from the google sheet."""
@@ -25,9 +27,9 @@ class Task:
         """Returns a human-readable string which represents this task."""
         output = f'**{self.event_name}** ({self.event_day} {self.event_date})\n'
         if self.event_sticky:
-            output += f'Sticky: **{self.event_sticky}**\n'
-        output += f'Creator/Scheduler ({self.event_schedule_time} UTC): **{self.event_creator}**\n'
-        output += f'Updaters/Monitors: **{self.event_updater1}**, **{self.event_updater2}**\n'
+            output += f'📌 Sticky: **{self.event_sticky}**\n'
+        output += f'✏️ Creator/Scheduler ({self.event_schedule_time} UTC): **{self.event_creator}**\n'
+        output += f'🚔 Updaters/Monitors: **{self.event_updater1}**, **{self.event_updater2}**\n'
         output += f'\n-----------------------------------------------------------\n\n'
         return output
 
@@ -85,9 +87,14 @@ async def broadcast_tasks(tasks: list[Task], client: discord.ClientUser,
                 f'Couldn\'t dm {u}! Is their name spelled correctly in the sheet?'
             )
             continue
-        await discord_user.send("Incoming!\n\n")
+
+        message = f"{random.choice(rleb_settings.greetings)}\n\n"
         for t in user_tasks:
-            await discord_user.send(t.pretty_print())
+            message += t.pretty_print()
+        # Discord messages must be less than 2000 to avoid rejection.
+        if len(message) > 1990:
+            message = await rleb_stdout.create_paste(message, title=f"{u}'s tasks")
+        await discord_user.send(message)
 
 def get_tasks() -> list[Task]:
     """Gets all tasks from the Spreadsheet tab named "Current Week". """
