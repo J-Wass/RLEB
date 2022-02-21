@@ -28,7 +28,7 @@ class TestTeamLookup(RLEBAsyncTestCase):
         global rleb_stdout
         global rleb_team_lookup
         import rleb_stdout
-        import rleb_team_lookup
+        from rleb_liqui import rleb_team_lookup
 
     async def test_team_lookup(self):
 

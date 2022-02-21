@@ -5,6 +5,7 @@ import traceback
 
 import rleb_settings
 import rleb_stdout
+from rleb_liqui import rleb_liqui_utils
 
 async def handle_swiss_lookup(url, channel):
     """Handle swiss table lookup message.
@@ -16,17 +17,17 @@ async def handle_swiss_lookup(url, channel):
     rleb_settings.rleb_log_info("DISCORD: Creating lookup for {0}".format(url))
 
     try:
-        page = None
+        content = None
         try:
-            page = requests.get(url).content
+            content = rleb_liqui_utils.get_page_html_from_url(url)
         except Exception as e:
-            await channel.send("Couldn't load {0}!\nError: {1}".format(url, e))
+            await channel.send("Couldn't load {0} !\nError: {1}".format(url, e))
             rleb_settings.rleb_log_info(
-                "TEAMS: Couldn't load {0}!\nError: {1}".format(url, e))
+                "SWISS: Couldn't load {0}!\nError: {1}".format(url, e))
             rleb_settings.rleb_log_error(traceback.format_exc())
             return
 
-        html = BeautifulSoup(page, "html.parser")
+        html = BeautifulSoup(content, "html.parser")
 
         # The indicator that each cell in the swiss table starts with.
         indicator = {
@@ -91,5 +92,5 @@ async def handle_swiss_lookup(url, channel):
     except Exception as e:
         await channel.send("Couldn't find swiss group in {0}. Error: {1}.".format(url, e))
         rleb_settings.rleb_log_info(
-            "LOOKUP: Couldn't find swiss group in {0}.\nError: {1}\nTraceback: {2}".format(url, e, traceback.format_exc()))
+            "SWISS: Couldn't find swiss group in {0}.\nError: {1}\nTraceback: {2}".format(url, e, traceback.format_exc()))
         rleb_settings.rleb_log_error(traceback.format_exc())

@@ -12,12 +12,12 @@ import rleb_settings
 import rleb_stdout
 from rleb_data import Data
 from rleb_settings import sub
-from rleb_team_lookup import handle_team_lookup
-from rleb_group_lookup import handle_group_lookup
+from rleb_liqui.rleb_team_lookup import handle_team_lookup
+from rleb_liqui.rleb_group_lookup import handle_group_lookup
 from rleb_census import handle_flair_census
 from rleb_calendar import handle_calendar_lookup
 from rleb_tasks import handle_task_lookup, user_names_to_ids
-from rleb_swiss import handle_swiss_lookup
+from rleb_liqui.rleb_swiss import handle_swiss_lookup
 
 responses_lock = Lock()
 

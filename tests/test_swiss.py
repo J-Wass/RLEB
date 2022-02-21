@@ -28,7 +28,7 @@ class TestSwissLookup(RLEBAsyncTestCase):
         global rleb_stdout
         global rleb_swiss
         import rleb_stdout
-        import rleb_swiss
+        from rleb_liqui import rleb_swiss
 
     async def test_swiss_complete(self):
 

@@ -6,7 +6,7 @@ import math
 
 import rleb_settings
 import rleb_stdout
-
+from rleb_liqui import rleb_liqui_utils
 
 async def handle_team_lookup(url, channel):
     """Handle team lookup message.
@@ -24,7 +24,7 @@ async def handle_team_lookup(url, channel):
     try:
         page = None
         try:
-            page = requests.get(url).content
+            page = rleb_liqui_utils.get_page_html_from_url(url)
         except Exception as e:
             await channel.send("Couldn't load {0}!\nError: {1}".format(url, e))
             rleb_settings.rleb_log_info(

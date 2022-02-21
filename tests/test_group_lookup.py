@@ -28,7 +28,7 @@ class TestGroupLookup(RLEBAsyncTestCase):
         global rleb_stdout
         global rleb_group_lookup
         import rleb_stdout
-        import rleb_group_lookup
+        from rleb_liqui import rleb_group_lookup
 
     async def test_group_lookup(self):
 
