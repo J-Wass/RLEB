@@ -1,0 +1,1 @@
+{"batchcomplete":"","query":{"normalized":[{"from":"Rocket_League_Championship_Series/Season_X/Spring/North_America/The_Grid/Open_Qualifier","to":"Rocket League Championship Series/Season X/Spring/North America/The Grid/Open Qualifier"}],"pages":{"104165":{"pageid":104165,"ns":0,"title":"Rocket League Championship Series/Season X/Spring/North America/The Grid/Open Qualifier"}}}}

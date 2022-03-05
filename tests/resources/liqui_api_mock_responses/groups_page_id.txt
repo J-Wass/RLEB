@@ -1,0 +1,1 @@
+{"batchcomplete":"","query":{"normalized":[{"from":"Rocket_League_Championship_Series/Season_X/Spring/Oceania","to":"Rocket League Championship Series/Season X/Spring/Oceania"}],"pages":{"104174":{"pageid":104174,"ns":0,"title":"Rocket League Championship Series/Season X/Spring/Oceania"}}}}

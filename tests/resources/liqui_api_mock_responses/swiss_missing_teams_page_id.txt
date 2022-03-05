@@ -1,0 +1,1 @@
+{"batchcomplete":"","query":{"normalized":[{"from":"Rocket_League_Championship_Series/2021-22/Fall/Sub-Saharan_Africa/1","to":"Rocket League Championship Series/2021-22/Fall/Sub-Saharan Africa/1"}],"pages":{"113139":{"pageid":113139,"ns":0,"title":"Rocket League Championship Series/2021-22/Fall/Sub-Saharan Africa/1"}}}}
