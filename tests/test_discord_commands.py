@@ -12,8 +12,8 @@ from tests.common.rleb_async_test_case import RLEBAsyncTestCase
 import discord
 from threading import Thread
 
-class TestDiscordCommands(RLEBAsyncTestCase):
 
+class TestDiscordCommands(RLEBAsyncTestCase):
     async def _send_message(self, message: str, from_staff_user: bool = False) -> None:
         """Sends a message to discord chat, triggering bot response.
 
@@ -38,7 +38,6 @@ class TestDiscordCommands(RLEBAsyncTestCase):
         discord_message.author = mock_author
         await self.discord_client.on_message(discord_message)
 
-
     async def asyncSetUp(self):
         await super().asyncSetUp()
 
@@ -51,16 +50,18 @@ class TestDiscordCommands(RLEBAsyncTestCase):
         self.discord_client = rleb_discord.RLEsportsBot([])
         self.mock_channel = mock.MagicMock(discord.TextChannel)
 
-        self.discord_thread = Thread(target=self.discord_client.run, 
-                                     args=(rleb_settings.TOKEN,),
-                                     name="Discord Test Thread")
+        self.discord_thread = Thread(
+            target=self.discord_client.run,
+            args=(rleb_settings.TOKEN,),
+            name="Discord Test Thread",
+        )
         self.discord_thread.setDaemon(True)
 
         # Otherwise, we'd need to add !debug before each command.
         rleb_settings.RUNNING_MODE = "production"
         rleb_settings.verified_moderators = ["test_mod#1"]
 
-    @mock.patch('rleb_discord.handle_flair_census')
+    @mock.patch("rleb_discord.handle_flair_census")
     async def test_census(self, mock_rleb_census):
 
         # Users can't use census
@@ -70,13 +71,13 @@ class TestDiscordCommands(RLEBAsyncTestCase):
 
         # Mod can use census
         await self._send_message("!census 5 ,", from_staff_user=True)
-        mock_rleb_census.assert_awaited_once_with(rleb_settings.sub, 5, self.mock_channel, ',')
+        mock_rleb_census.assert_awaited_once_with(
+            rleb_settings.sub, 5, self.mock_channel, ","
+        )
         mock_rleb_census.reset_mock()
 
         # Census works without optional divider
         await self._send_message("!census 10", from_staff_user=True)
-        mock_rleb_census.assert_awaited_once_with(rleb_settings.sub, 10, self.mock_channel, ',')
-
-        
-        
-        
+        mock_rleb_census.assert_awaited_once_with(
+            rleb_settings.sub, 10, self.mock_channel, ","
+        )

@@ -15,7 +15,7 @@ from google.auth.transport.requests import Request
 import rleb_settings
 import rleb_stdout
 
-SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
+SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
 
 ABOUT_SECTION = """
 # About
@@ -77,59 +77,66 @@ def timestring(datetime, relative_datetime, offset_hours=0):
 
 def process_calendar_events(calendar_event):
     """Builds the list of calendar event objects from the google calendar api response."""
-    calendar_event.title = calendar_event.rawtext.split("**")[1].replace(
-        "|", "-")
+    calendar_event.title = calendar_event.rawtext.split("**")[1].replace("|", "-")
     calendar_event.link = calendar_event.rawtext.split("(")[1].split(")")[0]
     calendar_event.bracket_link = calendar_event.link + "#Results"
 
     calendar_event.start_datetime = datetime.datetime.fromisoformat(
-        calendar_event.start_timestamp)
+        calendar_event.start_timestamp
+    )
     calendar_event.utc_datetime = calendar_event.start_datetime.astimezone(
-        pytz.timezone("Etc/UTC"))
+        pytz.timezone("Etc/UTC")
+    )
     calendar_event.et_datetime = calendar_event.start_datetime.astimezone(
-        pytz.timezone("America/New_York"))
+        pytz.timezone("America/New_York")
+    )
     calendar_event.cet_datetime = calendar_event.start_datetime.astimezone(
-        pytz.timezone("Europe/Paris"))
+        pytz.timezone("Europe/Paris")
+    )
     calendar_event.aet_datetime = calendar_event.start_datetime.astimezone(
-        pytz.timezone("Australia/Melbourne"))
+        pytz.timezone("Australia/Melbourne")
+    )
 
     calendar_event.day_number = calendar_event.et_datetime.day
-    calendar_event.day_name = rleb_settings.DAYS[
-        calendar_event.et_datetime.weekday()]
+    calendar_event.day_name = rleb_settings.DAYS[calendar_event.et_datetime.weekday()]
     calendar_event.month_number = calendar_event.et_datetime.month
     calendar_event.month_name = rleb_settings.MONTHS[
-        calendar_event.et_datetime.month - 1]
+        calendar_event.et_datetime.month - 1
+    ]
 
 
 def formatted_calendar_events(calendar_events, formatter):
-    if formatter == 'reddit':
+    if formatter == "reddit":
         return reddit_formatted_calendar_events(calendar_events)
-    elif formatter == 'sheets':
+    elif formatter == "sheets":
         return sheets_formatted_calendar_events(calendar_events)
     else:
         return "I didn't understand formatter '{0}', I can only recognize 'reddit' and 'sheets' as a formatter. Try '!events reddit 7'.".format(
-            formatter)
+            formatter
+        )
 
 
 def sheets_formatted_calendar_events(calendar_events):
     """Returns tab separated calendar events for google sheets (or other spreadsheet software)."""
 
-    lines = ['' for x in range(3)]
+    lines = ["" for x in range(3)]
     # Start to build each line in the sheet, indexed by item.
     # 0 - Title
     # 1 - Date & Day of the Week
     # 2 - Schedule Time & Update Time
     for event in sorted(calendar_events, key=lambda e: e.start_datetime):
-        lines[0] += event.title + ',,'
-        lines[1] += event.start_datetime.strftime(
-            "%x") + ',' + event.day_name + ','
-        lines[2] += 'Schedule ' + timestring(
-            event.utc_datetime,
-            event.utc_datetime, offset_hours=1) + ',Update ' + timestring(
-                event.utc_datetime, event.utc_datetime) + ','
+        lines[0] += event.title + ",,"
+        lines[1] += event.start_datetime.strftime("%x") + "," + event.day_name + ","
+        lines[2] += (
+            "Schedule "
+            + timestring(event.utc_datetime, event.utc_datetime, offset_hours=1)
+            + ",Update "
+            + timestring(event.utc_datetime, event.utc_datetime)
+            + ","
+        )
 
     # idk why but if I use tabs above, the formatting get's wrecked, convert from csv to tsv here
-    return ('\n'.join(lines)).replace(',', '\t')
+    return ("\n".join(lines)).replace(",", "\t")
 
 
 def reddit_formatted_calendar_events(calendar_events):
@@ -147,13 +154,12 @@ def reddit_formatted_calendar_events(calendar_events):
 
     # Start listing out each day, one by one.
     for day, events in sorted(day_buckets.items(), key=lambda x: x[0]):
-        sample_event = events[
-            0]  # snag a random event and use it to build the header
-        header = TABLE_HEADER.replace(
-            "{day-name}", sample_event.day_name).replace(
-                "{day-number}",
-                str(sample_event.day_number)).replace("{month-name}",
-                                                      sample_event.month_name)
+        sample_event = events[0]  # snag a random event and use it to build the header
+        header = (
+            TABLE_HEADER.replace("{day-name}", sample_event.day_name)
+            .replace("{day-number}", str(sample_event.day_number))
+            .replace("{month-name}", sample_event.month_name)
+        )
         rows = []
         # Make a new row for each event within the day
         event_list = events
@@ -162,18 +168,15 @@ def reddit_formatted_calendar_events(calendar_events):
             tr = TABLE_ROW.replace("{title}", event.title)
             tr = tr.replace("{link}", event.link)
             tr = tr.replace("{BRACKET}", event.bracket_link)
-            tr = tr.replace("{ET}",
-                            timestring(event.et_datetime, event.et_datetime))
-            tr = tr.replace("{CET}",
-                            timestring(event.cet_datetime, event.et_datetime))
-            tr = tr.replace("{AET}",
-                            timestring(event.aet_datetime, event.et_datetime))
+            tr = tr.replace("{ET}", timestring(event.et_datetime, event.et_datetime))
+            tr = tr.replace("{CET}", timestring(event.cet_datetime, event.et_datetime))
+            tr = tr.replace("{AET}", timestring(event.aet_datetime, event.et_datetime))
 
             # Make sure that all http links start with https://www
-            if '.' in event.stream:
+            if "." in event.stream:
                 stream = event.stream
-                if 'https://www.' not in stream:
-                    stream = 'https://www.' + stream
+                if "https://www." not in stream:
+                    stream = "https://www." + stream
                 tr = tr.replace("{STREAM}", "[**Stream**]({0})".format(stream))
             else:
                 tr = tr.replace("{STREAM}", event.stream)
@@ -187,41 +190,50 @@ def reddit_formatted_calendar_events(calendar_events):
     return reddit_submission
 
 
-async def handle_calendar_lookup(channel,
-                                 formatter='reddit',
-                                 days_in_advance=7):
+async def handle_calendar_lookup(channel, formatter="reddit", days_in_advance=7):
     """Retrieves calendar events, formats them, and then sends them to the discord channel with the supplied formatter."""
 
     try:
         credential_info = json.loads(rleb_settings.GOOGLE_CREDENTIALS_JSON)
         credentials = service_account.Credentials.from_service_account_info(
-            credential_info, scopes=SCOPES)
+            credential_info, scopes=SCOPES
+        )
 
-        service = build('calendar', 'v3', credentials=credentials)
+        service = build("calendar", "v3", credentials=credentials)
 
-        later = datetime.datetime.now() + datetime.timedelta(
-            days=days_in_advance)
-        upcoming_events = service.events().list(
-            calendarId=rleb_settings.GOOGLE_CALENDAR_ID,
-            timeMin=datetime.datetime.now().astimezone().isoformat(),
-            timeMax=later.astimezone().isoformat(),
-            orderBy='updated').execute()
+        later = datetime.datetime.now() + datetime.timedelta(days=days_in_advance)
+        upcoming_events = (
+            service.events()
+            .list(
+                calendarId=rleb_settings.GOOGLE_CALENDAR_ID,
+                timeMin=datetime.datetime.now().astimezone().isoformat(),
+                timeMax=later.astimezone().isoformat(),
+                orderBy="updated",
+            )
+            .execute()
+        )
 
         # Store processed calendar events from the Google calendar API.
         calendar_events = []
 
-        event_items = upcoming_events['items']
+        event_items = upcoming_events["items"]
         for event_item in event_items:
-            rawtext = event_item['summary'] if 'summary' in event_item else ''
-            is_start_time_available = ('start' in event_item) and ('dateTime' in event_item['start'])
-            start_timestamp = event_item['start']['dateTime'] if (is_start_time_available) else ''
+            rawtext = event_item["summary"] if "summary" in event_item else ""
+            is_start_time_available = ("start" in event_item) and (
+                "dateTime" in event_item["start"]
+            )
+            start_timestamp = (
+                event_item["start"]["dateTime"] if (is_start_time_available) else ""
+            )
             stream = "None"
-            if 'location' in event_item:
-                stream = event_item['location']
+            if "location" in event_item:
+                stream = event_item["location"]
             else:
                 await channel.send(
-                    "Warning: No location for \"{0}\" was put in the calendar, using \"None\" instead."
-                    .format(rawtext))
+                    'Warning: No location for "{0}" was put in the calendar, using "None" instead.'.format(
+                        rawtext
+                    )
+                )
             calendar_event = CalendarEvent(rawtext, start_timestamp, stream)
             process_calendar_events(calendar_event)
             calendar_events.append(calendar_event)
@@ -231,8 +243,8 @@ async def handle_calendar_lookup(channel,
         await rleb_stdout.print_to_channel(
             channel,
             formatted_text,
-            title='{0} calendar for next {1} days'.format(
-                formatter, days_in_advance))
+            title="{0} calendar for next {1} days".format(formatter, days_in_advance),
+        )
     except Exception as e:
         rleb_settings.rleb_log_error(traceback.format_exc())
         await channel.send("Couldn't build event post :(")

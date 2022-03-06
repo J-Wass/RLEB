@@ -20,23 +20,23 @@ class TestVerifiedModerators(RLEBTestCase):
         import rleb_settings
 
     def test_verified_moderator(self):
-        rleb_settings.verified_moderators = ['janedoe#1023']
+        rleb_settings.verified_moderators = ["janedoe#1023"]
 
         mock_author = Mock(spec=discord.Member)
-        mock_author.name = 'JaneDoe'
-        mock_author.discriminator = '1023'
+        mock_author.name = "JaneDoe"
+        mock_author.discriminator = "1023"
 
         self.assertTrue(rleb_settings.is_discord_mod(mock_author))
 
     def test_non_verified_moderator(self):
-        rleb_settings.verified_moderators = ['janedoe#1023']
+        rleb_settings.verified_moderators = ["janedoe#1023"]
 
         mock_author = Mock(spec=discord.Member)
-        mock_author.name = 'JohnSmith'
-        mock_author.discriminator = '2031'
+        mock_author.name = "JohnSmith"
+        mock_author.discriminator = "2031"
 
         self.assertFalse(rleb_settings.is_discord_mod(mock_author))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

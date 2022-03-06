@@ -40,8 +40,7 @@ async def handle_team_lookup(url, channel):
         # Iterate each team.
         for team in html.select('div.teamcard'):
             team_element = team.select('b a')[0]
-            team_name = team_element.text.replace('(', '').replace(
-                ')', '') if team_element else "TBD"
+            team_name = team_element.text.replace('(', '').replace(')', '') if team_element else "TBD"
             href = team_element.attrs['href'].replace('(', '\(').replace(')', '\)')
             if 'https://liquipedia.net' not in href:
                         href = 'https://liquipedia.net' + href

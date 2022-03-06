@@ -5,6 +5,7 @@ import json
 
 import rleb_settings
 
+
 async def create_paste(content, title=None):
     """
     Creates a pastebin/paste.ee of with the given content. Returns the link to the paste
@@ -14,25 +15,31 @@ async def create_paste(content, title=None):
     try:
         request = "https://api.paste.ee/v1/pastes"
         arguments = {
-            'key': rleb_settings.PASTEEE_APP_KEY,
-            'sections': [{"name":('Untitled' if title is None else title),"syntax":"autodetect","contents":content}]
+            "key": rleb_settings.PASTEEE_APP_KEY,
+            "sections": [
+                {
+                    "name": ("Untitled" if title is None else title),
+                    "syntax": "autodetect",
+                    "contents": content,
+                }
+            ],
         }
-        headers = {'X-Auth-Token': 'token'}
+        headers = {"X-Auth-Token": "token"}
         response = requests.post(request, json=arguments, headers=headers)
         if response.status_code > 300:
             raise Exception(response.text)
-        return json.loads(response.text)['link']
+        return json.loads(response.text)["link"]
     # If paste.ee fails, try pastebin.
     except:
         request = "https://pastebin.com/api/api_post.php"
         arguments = {
-            'api_dev_key': rleb_settings.PASTEBIN_API_KEY,
-            'api_user_key': rleb_settings.PASTEBIN_API_USER_KEY,
-            'api_paste_code': content,
-            'api_paste_expire_date': '1W',
-            'api_option': 'paste',
-            'api_paste_private': '0',
-            'api_paste_name': ('Untitled' if title is None else title)
+            "api_dev_key": rleb_settings.PASTEBIN_API_KEY,
+            "api_user_key": rleb_settings.PASTEBIN_API_USER_KEY,
+            "api_paste_code": content,
+            "api_paste_expire_date": "1W",
+            "api_option": "paste",
+            "api_paste_private": "0",
+            "api_paste_name": ("Untitled" if title is None else title),
         }
         response = requests.post(request, data=arguments)
         if response.status_code > 300:
@@ -41,13 +48,13 @@ async def create_paste(content, title=None):
 
 
 async def print_to_channel(channel, content, title=None):
-    """Prints a pastebin link with the |content| in the discord |channel|. 
-       If the pastebin fails to load, the content will be printed directly in the channel.
-    
-       Args:
-           channel (discord.channel.TextChannel): Discord channel to print a message in.
-           content (str): The content of the message to be sent.
-           title (str): Optional, the title to make the pastebin.
+    """Prints a pastebin link with the |content| in the discord |channel|.
+    If the pastebin fails to load, the content will be printed directly in the channel.
+
+    Args:
+        channel (discord.channel.TextChannel): Discord channel to print a message in.
+        content (str): The content of the message to be sent.
+        title (str): Optional, the title to make the pastebin.
     """
     try:
         response = await create_paste(content, title=title)
@@ -67,13 +74,14 @@ async def print_to_channel(channel, content, title=None):
         # Marshall the text out, 5 lines at a time. Discord cuts the message off at some char limit.
         formatted_text_rows = content.split("\n")
         while len(formatted_text_rows) > 5:
-            formatted_text_row_message = await channel.send("\n".join(
-                formatted_text_rows[:5]),
-                                                            embed=None)
+            formatted_text_row_message = await channel.send(
+                "\n".join(formatted_text_rows[:5]), embed=None
+            )
             await formatted_text_row_message.edit(
-                suppress=True)  # remove those annoying embeds
+                suppress=True
+            )  # remove those annoying embeds
             formatted_text_rows = formatted_text_rows[5:]
         formatted_text_message = await channel.send(
-            "\n".join(formatted_text_rows), embed=None)
-        await formatted_text_message.edit(suppress=True
-                                          )  # remove those annoying embeds
+            "\n".join(formatted_text_rows), embed=None
+        )
+        await formatted_text_message.edit(suppress=True)  # remove those annoying embeds

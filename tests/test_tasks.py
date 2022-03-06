@@ -29,7 +29,7 @@ class TestTasks(RLEBAsyncTestCase):
         self.mock_sheet_query = mock.Mock()
         self.mock_values = mock.Mock()
         self.mock_sheet = mock.Mock()
-        with open('tests/resources/google_sheets_response.json', 'r') as f:
+        with open("tests/resources/google_sheets_response.json", "r") as f:
             self.mock_sheet_query.execute.return_value = json.load(f)
 
         self.mock_values.get.return_value = self.mock_sheet_query
@@ -47,9 +47,11 @@ class TestTasks(RLEBAsyncTestCase):
             return self.mock_credentials
 
         # Patch google sheet apis with the mocks.
-        credentials = patch.object(google.oauth2.service_account.Credentials,
-                                   "from_service_account_info",
-                                   new=mock_from_service_account_info).start()
+        credentials = patch.object(
+            google.oauth2.service_account.Credentials,
+            "from_service_account_info",
+            new=mock_from_service_account_info,
+        ).start()
         self.addCleanup(credentials)
 
         build = patch.object(rleb_tasks, "build", new=mock_build).start()
@@ -61,11 +63,11 @@ class TestTasks(RLEBAsyncTestCase):
         user = "voices#6380"
         await rleb_tasks.handle_task_lookup(mock_channel, mock_client, user)
 
-        event1_discord_markup = '**cool event** (Tuesday 2021-06-01)\n✏️ Creator/Scheduler (Schedule UTC): **hawkkn#0408**\n🚔 Updaters/Monitors: **ds0308#9530**, **voices#6380**\n\n-----------------------------------------------------------\n\n'
-        event2_discord_markup = '**Weekly Points Standings** (Monday 2021-05-03)\n📌 Sticky: **No sticky**\n✏️ Creator/Scheduler (Post 16:00 UTC): **voices#6380**\n🚔 Updaters/Monitors: **No one needed**, **No one needed**\n\n-----------------------------------------------------------\n\n'
+        event1_discord_markup = "**cool event** (Tuesday 2021-06-01)\n✏️ Creator/Scheduler (Schedule UTC): **hawkkn#0408**\n🚔 Updaters/Monitors: **ds0308#9530**, **voices#6380**\n\n-----------------------------------------------------------\n\n"
+        event2_discord_markup = "**Weekly Points Standings** (Monday 2021-05-03)\n📌 Sticky: **No sticky**\n✏️ Creator/Scheduler (Post 16:00 UTC): **voices#6380**\n🚔 Updaters/Monitors: **No one needed**, **No one needed**\n\n-----------------------------------------------------------\n\n"
         mock_channel.send.assert_has_awaits(
-            [call(event1_discord_markup),
-             call(event2_discord_markup)])
+            [call(event1_discord_markup), call(event2_discord_markup)]
+        )
 
     async def test_task_all(self):
         mock_channel = mock.AsyncMock(spec=discord.TextChannel)
@@ -73,27 +75,29 @@ class TestTasks(RLEBAsyncTestCase):
         user = "all"
         await rleb_tasks.handle_task_lookup(mock_channel, mock_client, user)
 
-        event1_discord_markup = '**cool event** (Tuesday 2021-06-01)\n✏️ Creator/Scheduler (Schedule UTC): **hawkkn#0408**\n🚔 Updaters/Monitors: **ds0308#9530**, **voices#6380**\n\n-----------------------------------------------------------\n\n'
-        event2_discord_markup = '**Weekly Points Standings** (Monday 2021-05-03)\n📌 Sticky: **No sticky**\n✏️ Creator/Scheduler (Post 16:00 UTC): **voices#6380**\n🚔 Updaters/Monitors: **No one needed**, **No one needed**\n\n-----------------------------------------------------------\n\n'
-        event3_discord_markup = '**Weekly Schedule/Ask Questions** (Monday 2021-05-03)\n📌 Sticky: **First sticky**\n✏️ Creator/Scheduler (Schedule 10:00 UTC): **hawkkn#0408**\n🚔 Updaters/Monitors: **No one needed**, **No one needed**\n\n-----------------------------------------------------------\n\n'
-        mock_channel.send.assert_has_awaits([
-            call(event1_discord_markup),
-            call(event3_discord_markup),
-            call(event2_discord_markup)
-        ])
+        event1_discord_markup = "**cool event** (Tuesday 2021-06-01)\n✏️ Creator/Scheduler (Schedule UTC): **hawkkn#0408**\n🚔 Updaters/Monitors: **ds0308#9530**, **voices#6380**\n\n-----------------------------------------------------------\n\n"
+        event2_discord_markup = "**Weekly Points Standings** (Monday 2021-05-03)\n📌 Sticky: **No sticky**\n✏️ Creator/Scheduler (Post 16:00 UTC): **voices#6380**\n🚔 Updaters/Monitors: **No one needed**, **No one needed**\n\n-----------------------------------------------------------\n\n"
+        event3_discord_markup = "**Weekly Schedule/Ask Questions** (Monday 2021-05-03)\n📌 Sticky: **First sticky**\n✏️ Creator/Scheduler (Schedule 10:00 UTC): **hawkkn#0408**\n🚔 Updaters/Monitors: **No one needed**, **No one needed**\n\n-----------------------------------------------------------\n\n"
+        mock_channel.send.assert_has_awaits(
+            [
+                call(event1_discord_markup),
+                call(event3_discord_markup),
+                call(event2_discord_markup),
+            ]
+        )
 
     async def test_task_broadcast(self):
         mock_channel = mock.AsyncMock(spec=discord.TextChannel)
 
         # Set up a bunch of mocked members to map usernames to ids.
         mock_voices_member = mock.Mock()
-        mock_voices_member.name = 'voices'
-        mock_voices_member.discriminator = '6380'
+        mock_voices_member.name = "voices"
+        mock_voices_member.discriminator = "6380"
         mock_voices_member.id = 345639629459816458
 
         mock_hawknn_member = mock.Mock()
-        mock_hawknn_member.name = 'hawkkn'
-        mock_hawknn_member.discriminator = '0408'
+        mock_hawknn_member.name = "hawkkn"
+        mock_hawknn_member.discriminator = "0408"
         mock_hawknn_member.id = 364941319296253954
 
         mock_channel.members = [mock_voices_member, mock_hawknn_member]
@@ -115,12 +119,16 @@ class TestTasks(RLEBAsyncTestCase):
         await rleb_tasks.handle_task_lookup(mock_channel, mock_client, user)
 
         greeting = "Incoming!\n\n"
-        event1_discord_markup = '**cool event** (Tuesday 2021-06-01)\n✏️ Creator/Scheduler (Schedule UTC): **hawkkn#0408**\n🚔 Updaters/Monitors: **ds0308#9530**, **voices#6380**\n\n-----------------------------------------------------------\n\n'
-        event2_discord_markup = '**Weekly Points Standings** (Monday 2021-05-03)\n📌 Sticky: **No sticky**\n✏️ Creator/Scheduler (Post 16:00 UTC): **voices#6380**\n🚔 Updaters/Monitors: **No one needed**, **No one needed**\n\n-----------------------------------------------------------\n\n'
-        event3_discord_markup = '**Weekly Schedule/Ask Questions** (Monday 2021-05-03)\n📌 Sticky: **First sticky**\n✏️ Creator/Scheduler (Schedule 10:00 UTC): **hawkkn#0408**\n🚔 Updaters/Monitors: **No one needed**, **No one needed**\n\n-----------------------------------------------------------\n\n'
-        mock_voices.send.assert_awaited_once_with(greeting + event1_discord_markup + event2_discord_markup)
-        mock_hawkkn.send.assert_awaited_once_with(greeting + event1_discord_markup + event3_discord_markup)
+        event1_discord_markup = "**cool event** (Tuesday 2021-06-01)\n✏️ Creator/Scheduler (Schedule UTC): **hawkkn#0408**\n🚔 Updaters/Monitors: **ds0308#9530**, **voices#6380**\n\n-----------------------------------------------------------\n\n"
+        event2_discord_markup = "**Weekly Points Standings** (Monday 2021-05-03)\n📌 Sticky: **No sticky**\n✏️ Creator/Scheduler (Post 16:00 UTC): **voices#6380**\n🚔 Updaters/Monitors: **No one needed**, **No one needed**\n\n-----------------------------------------------------------\n\n"
+        event3_discord_markup = "**Weekly Schedule/Ask Questions** (Monday 2021-05-03)\n📌 Sticky: **First sticky**\n✏️ Creator/Scheduler (Schedule 10:00 UTC): **hawkkn#0408**\n🚔 Updaters/Monitors: **No one needed**, **No one needed**\n\n-----------------------------------------------------------\n\n"
+        mock_voices.send.assert_awaited_once_with(
+            greeting + event1_discord_markup + event2_discord_markup
+        )
+        mock_hawkkn.send.assert_awaited_once_with(
+            greeting + event1_discord_markup + event3_discord_markup
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

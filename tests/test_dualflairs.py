@@ -18,7 +18,8 @@ class TestDualFlairs(RLEBTestCase):
 
         self.mock_sub = mock.Mock(spec=praw.models.Subreddit)
         self.mock_sub_flair = mock.Mock(
-            spec=praw.models.reddit.subreddit.SubredditFlair)
+            spec=praw.models.reddit.subreddit.SubredditFlair
+        )
         self.mock_sub.flair = self.mock_sub_flair
 
         self.mock_redditor = mock.Mock(spec=praw.models.Redditor)
@@ -35,38 +36,37 @@ class TestDualFlairs(RLEBTestCase):
     def test_handle_two_flairs(self):
         handle_dualflair(self.mock_sub, self.mock_redditor, ":NRG: :G2:")
 
-        self.mock_sub_flair.set.assert_called_once_with(self.mock_redditor,
-                                                        text=":NRG: :G2:",
-                                                        css_class="")
+        self.mock_sub_flair.set.assert_called_once_with(
+            self.mock_redditor, text=":NRG: :G2:", css_class=""
+        )
 
     def test_handle_two_flairs_with_garbage_data(self):
-        handle_dualflair(self.mock_sub, self.mock_redditor,
-                         ":NRG: :G2: Moderator")
+        handle_dualflair(self.mock_sub, self.mock_redditor, ":NRG: :G2: Moderator")
 
-        self.mock_sub_flair.set.assert_called_once_with(self.mock_redditor,
-                                                        text=":NRG: :G2:",
-                                                        css_class="")
+        self.mock_sub_flair.set.assert_called_once_with(
+            self.mock_redditor, text=":NRG: :G2:", css_class=""
+        )
 
     def test_handle_one_flair(self):
         handle_dualflair(self.mock_sub, self.mock_redditor, ":NRG:")
 
-        self.mock_sub_flair.set.assert_called_once_with(self.mock_redditor,
-                                                        text=":NRG:",
-                                                        css_class="")
+        self.mock_sub_flair.set.assert_called_once_with(
+            self.mock_redditor, text=":NRG:", css_class=""
+        )
 
     def test_handle_disallowed_flair(self):
         handle_dualflair(self.mock_sub, self.mock_redditor, ":NRG: :Verified:")
 
-        self.mock_sub_flair.set.assert_called_once_with(self.mock_redditor,
-                                                        text=":NRG:",
-                                                        css_class="")
+        self.mock_sub_flair.set.assert_called_once_with(
+            self.mock_redditor, text=":NRG:", css_class=""
+        )
 
     def test_handle_three_flairs(self):
         handle_dualflair(self.mock_sub, self.mock_redditor, ":NRG: :G2: C9:")
 
-        self.mock_sub_flair.set.assert_called_once_with(self.mock_redditor,
-                                                        text=":NRG: :G2:",
-                                                        css_class="")
+        self.mock_sub_flair.set.assert_called_once_with(
+            self.mock_redditor, text=":NRG: :G2:", css_class=""
+        )
 
     def test_handle_moderator_flair(self):
         mock_moderator = mock.Mock(auto_spec=praw.models.Redditor)
@@ -74,10 +74,10 @@ class TestDualFlairs(RLEBTestCase):
 
         handle_dualflair(self.mock_sub, mock_moderator, ":NRG: Modguy")
 
-        self.mock_sub_flair.set.assert_called_once_with(mock_moderator,
-                                                        text=":NRG: Modguy",
-                                                        css_class="")
+        self.mock_sub_flair.set.assert_called_once_with(
+            mock_moderator, text=":NRG: Modguy", css_class=""
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

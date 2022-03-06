@@ -9,12 +9,18 @@ import math
 import pytz
 
 import rleb_discord
-from rleb_reddit import read_new_submissions, monitor_subreddit, monitor_modmail, monitor_modlog
+from rleb_reddit import (
+    read_new_submissions,
+    monitor_subreddit,
+    monitor_modmail,
+    monitor_modlog,
+)
 import rleb_settings
 from rleb_settings import rleb_log_error, rleb_log_info
 from rleb_trello import read_new_trello_actions
 import rleb_tasks
 import rleb_health
+
 
 def start():
     # Allows discord bot to read from queues while running.
@@ -27,7 +33,7 @@ def start():
     # Used for passing modmail from reddit to discord.
     modmail_queue = Queue()
     # Used for passing modlogs from reddit to discord.
-    modlog_queue = Queue()    
+    modlog_queue = Queue()
     # Used for passing alerts from reddit to discord.
     alert_queue = Queue()
     # Used for discord DMs from reddit to discord.
@@ -36,11 +42,11 @@ def start():
     schedule_chat_queue = Queue()
 
     # Place all queues in rleb_settings. These queues are used to communicate throughout the bot.
-    rleb_settings.queues['submissions'] = submissions_queue
-    rleb_settings.queues['trello'] = trello_queue
-    rleb_settings.queues['modmail'] = modmail_queue
+    rleb_settings.queues["submissions"] = submissions_queue
+    rleb_settings.queues["trello"] = trello_queue
+    rleb_settings.queues["modmail"] = modmail_queue
     rleb_settings.queues["modlog"] = modlog_queue
-    rleb_settings.queues['alerts'] = alert_queue
+    rleb_settings.queues["alerts"] = alert_queue
     rleb_settings.queues["direct_messages"] = direct_message_queue
     rleb_settings.queues["schedule_chat"] = schedule_chat_queue
 
@@ -48,32 +54,39 @@ def start():
     threads = []
 
     # Initialize all threads.
-    submissions_thread = Thread(target=read_new_submissions,
-                                name="Submissions thread")
+    submissions_thread = Thread(target=read_new_submissions, name="Submissions thread")
     submissions_thread.setDaemon(True)
-    subreddit_thread = Thread(target=monitor_subreddit,
-                              name="Subreddit thread")
+    subreddit_thread = Thread(target=monitor_subreddit, name="Subreddit thread")
     subreddit_thread.setDaemon(True)
-    health_thread = Thread(target=rleb_health.health_check,
-                           args=(threads, ),
-                           name="Health thread")
+    health_thread = Thread(
+        target=rleb_health.health_check, args=(threads,), name="Health thread"
+    )
     health_thread.setDaemon(True)
-    trello_thread = Thread(target=read_new_trello_actions,
-                           name="Trello thread")
+    trello_thread = Thread(target=read_new_trello_actions, name="Trello thread")
     trello_thread.setDaemon(True)
     modmail_thread = Thread(target=monitor_modmail, name="ModMail thread")
     modmail_thread.setDaemon(True)
     modlog_thread = Thread(target=monitor_modlog, name="ModLog thread")
-    modlog_thread.setDaemon(True)    
-    task_alert_thread = Thread(target=rleb_health.task_alert_check, name="Task alert thread")
+    modlog_thread.setDaemon(True)
+    task_alert_thread = Thread(
+        target=rleb_health.task_alert_check, name="Task alert thread"
+    )
     task_alert_thread.setDaemon(True)
     threads = [
-        modmail_thread, trello_thread, subreddit_thread, submissions_thread,
-        health_thread, task_alert_thread, modlog_thread
+        modmail_thread,
+        trello_thread,
+        subreddit_thread,
+        submissions_thread,
+        health_thread,
+        task_alert_thread,
+        modlog_thread,
     ]
 
-    rleb_log_info("Starting RLEB. Running under {0} in {1} mode.".format(
-        rleb_settings.RUNNING_ENVIRONMENT, rleb_settings.RUNNING_MODE))
+    rleb_log_info(
+        "Starting RLEB. Running under {0} in {1} mode.".format(
+            rleb_settings.RUNNING_ENVIRONMENT, rleb_settings.RUNNING_MODE
+        )
+    )
 
     # Start up first threads for streaming submissions and reading reddit PMs.
     if rleb_settings.reddit_enabled:
@@ -104,6 +117,7 @@ def start():
     # Start the discord thread, running on main thread.
     rleb_log_info("Starting discord thread.")
     rleb_discord.start(threads)
+
 
 # Here's where it all begins.
 if __name__ == "__main__":

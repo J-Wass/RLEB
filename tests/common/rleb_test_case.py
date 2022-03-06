@@ -8,12 +8,14 @@ import praw
 
 from ..common import common_utils
 
+
 class RLEBTestCase(unittest.TestCase):
     """RLEB Test Case."""
+
     def setUp(self):
-        """Sets up common patches for RLEB unit tests. 
+        """Sets up common patches for RLEB unit tests.
         Patches the following:
-        
+
         Praw (via praw.Reddit)
         PostgreSQL (via psycopg2.connect)
         """
@@ -31,7 +33,8 @@ class RLEBTestCase(unittest.TestCase):
 
         # Network Proxy.
         self.network_map = common_utils.common_proxies
-        def mock_request_get(url = None, headers = None, args=[]):
+
+        def mock_request_get(url=None, headers=None, args=[]):
             if url is None:
                 return
 
@@ -42,17 +45,15 @@ class RLEBTestCase(unittest.TestCase):
                 with open(local_file_proxy, encoding="utf8") as f:
                     return common_utils.MockRequest(f.read())
             else:
-               print(f"RLEB PROXY: Did not proxy {url}, it will hit production.") 
+                print(f"RLEB PROXY: Did not proxy {url}, it will hit production.")
 
-        mock_request = patch.object(requests, "get",
-                                    new=mock_request_get).start()
+        mock_request = patch.object(requests, "get", new=mock_request_get).start()
         self.addCleanup(mock_request)
 
     def stub_psycopg2(self):
         mock_cursor = mock.Mock()
         mock_cursor.execute.return_value = ""
-        mock_cursor.fetchall.return_value = [(":NRG:", ), (":G2:", ),
-                                             (":C9:", )]
+        mock_cursor.fetchall.return_value = [(":NRG:",), (":G2:",), (":C9:",)]
 
         self.mock_db.return_value.cursor.return_value = mock_cursor
 

@@ -39,33 +39,36 @@ class TestHealth(RLEBTestCase):
         self.mock_rleb_log_error = mock.Mock()
         rleb_settings.rleb_log_error = self.mock_rleb_log_error
 
-        rleb_settings.queues['alerts'] = Queue()
+        rleb_settings.queues["alerts"] = Queue()
 
     def test_alerts_on_dead_thread(self):
         rleb_settings.thread_health_check_enabled = True
-        rleb_settings.thread_crashes['thread'] = 3
-        with patch('rleb_health.rleb_log_error') as mock_log_error:
+        rleb_settings.thread_crashes["thread"] = 3
+        with patch("rleb_health.rleb_log_error") as mock_log_error:
             bad_thread = Thread(target=instantly_crash, name="Bad thread")
             bad_thread.start()
             rleb_health.health_check([bad_thread])
             bad_thread.join()
 
             mock_log_error.assert_called_with(
-                "HEALTH: Thread has died: Bad thread (3 crashes)")
-        self.assertEqual("Thread has died: Bad thread (3 crashes)",
-                         rleb_settings.queues['alerts'].get())
+                "HEALTH: Thread has died: Bad thread (3 crashes)"
+            )
+        self.assertEqual(
+            "Thread has died: Bad thread (3 crashes)",
+            rleb_settings.queues["alerts"].get(),
+        )
 
     def test_alerts_on_dead_asyncio_thread(self):
         rleb_settings.asyncio_health_check_enabled = True
         rleb_settings.asyncio_threads = {
-            'submissions': datetime.now() - timedelta(seconds=350),
-            'alerts': datetime.now(),
-            'modmail': datetime.now() - timedelta(seconds=250),
-            'trello': datetime.now()
+            "submissions": datetime.now() - timedelta(seconds=350),
+            "alerts": datetime.now(),
+            "modmail": datetime.now() - timedelta(seconds=250),
+            "trello": datetime.now(),
         }
-        rleb_settings.thread_crashes['asyncio'] = 2
+        rleb_settings.thread_crashes["asyncio"] = 2
 
-        with patch('rleb_health.rleb_log_error') as mock_log_error:
+        with patch("rleb_health.rleb_log_error") as mock_log_error:
             rleb_health.health_check([])
 
             mock_log_error.assert_called_with(
@@ -73,8 +76,9 @@ class TestHealth(RLEBTestCase):
             )
         self.assertEqual(
             "submissions asyncio thread has stopped responding! (2 crashes)",
-            rleb_settings.queues['alerts'].get())
+            rleb_settings.queues["alerts"].get(),
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
