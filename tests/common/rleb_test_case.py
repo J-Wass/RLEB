@@ -6,6 +6,7 @@ from unittest.mock import patch
 import psycopg2
 import praw
 
+from ..common import common_utils
 
 class RLEBTestCase(unittest.TestCase):
     """RLEB Test Case."""
@@ -27,6 +28,25 @@ class RLEBTestCase(unittest.TestCase):
         # Stubs.
         self.stub_psycopg2()
         self.stub_praw()
+
+        # Network Proxy.
+        self.network_map = common_utils.common_proxies
+        def mock_request_get(url = None, headers = None, args=[]):
+            if url is None:
+                return
+
+            local_file_proxy = self.network_map[url]
+
+            if local_file_proxy:
+                print(f"RLEB PROXY: Redirecting {url} to {local_file_proxy}")
+                with open(local_file_proxy, encoding="utf8") as f:
+                    return common_utils.MockRequest(f.read())
+            else:
+               print(f"RLEB PROXY: Did not proxy {url}, it will hit production.") 
+
+        mock_request = patch.object(requests, "get",
+                                    new=mock_request_get).start()
+        self.addCleanup(mock_request)
 
     def stub_psycopg2(self):
         mock_cursor = mock.Mock()

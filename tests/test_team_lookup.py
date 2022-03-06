@@ -66,9 +66,7 @@ class TestTeamLookup(RLEBAsyncTestCase):
 
         mock_channel = mock.Mock(spec=discord.TextChannel)
         await rleb_team_lookup.handle_team_lookup('bad url', mock_channel)
-        mock_channel.send.assert_awaited_once_with(
-            "Couldn't load bad url!\nError: 'NoneType' object has no attribute 'content'"
-        )
+        mock_channel.send.assert_awaited_once_with("Couldn't load bad url!\nError: list index out of range")
 
     async def test_team_lookup_with_parenthesis(self):
 
@@ -84,12 +82,10 @@ class TestTeamLookup(RLEBAsyncTestCase):
 
         mock_channel = mock.Mock(spec=discord.TextChannel)
 
-        with patch.object(rleb_stdout,
-                          'print_to_channel') as mocked_print_to_channel:
-            await rleb_team_lookup.handle_team_lookup('liquipedia url',
-                                                      mock_channel)
+        with patch.object(rleb_stdout, 'print_to_channel') as mocked_print_to_channel:
+            await rleb_team_lookup.handle_team_lookup('https://liquipedia.net/rocketleague/Rocket_League_Championship_Series/2021-22/Fall/Sub-Saharan_Africa/1', mock_channel)
 
-            expected_markup = "|Team|\n:--|\n[**Orlando Pirates Exdee**](https://liquipedia.net/rocketleague/Orlando_Pirates_Exdee) - Snowyy, SkillSteal, Darth|\n[**Lost Legion Giants**](https://liquipedia.net/rocketleague/index.php?title=Lost_Legion_Giants&action=edit&redlink=1) - EliakimZA, Rowen, D3Funct|\n[**Atomic Esports**](https://liquipedia.net/rocketleague/Atomic_Esports) - Wee-Casper, YoPeGo, Echo|\n[**Lost Legion Ghosts**](https://liquipedia.net/rocketleague/index.php?title=Lost_Legion_Ghosts&action=edit&redlink=1) - Crisp, LmNs., TheKeychain22|\n[**Water**](https://liquipedia.net/rocketleague/Water) - Kam, Happymeal, 2Die4|\n[**ATK**](https://liquipedia.net/rocketleague/ATK) - Arceon, SchalkG, Werty|\n[**Orgless**](https://liquipedia.net/rocketleague/Orgless_\\(South_African_Team\\)) - Friction, Lackstar, RisenEclipse|\n[**Out of Retirement**](https://liquipedia.net/rocketleague/Out_of_Retirement) - Mr.Low, PwnFlakes, li0n-za|\n[**TKO X1**](https://liquipedia.net/rocketleague/index.php?title=TKO_X1&action=edit&redlink=1) - Chace, ImNotRocky, fearlescarrot|\n[**Lost Legion Benchwarmers**](https://liquipedia.net/rocketleague/index.php?title=Lost_Legion_Benchwarmers&action=edit&redlink=1) - dece1ver, PoRRa07, Kenobiwan10x-x|\n[**Aufbau**](https://liquipedia.net/rocketleague/index.php?title=Aufbau&action=edit&redlink=1) - grape, jerome in da bath, Ram Ranch|\n[**Inferno**](https://liquipedia.net/rocketleague/index.php?title=Inferno_\\(South_African_Team\\)&action=edit&redlink=1) - josho, ChristianW, Maelstrom9508|\n[**Mist**](https://liquipedia.net/rocketleague/index.php?title=Mist_\\(South_African_Team\\)&action=edit&redlink=1) - BiscuitGalaxy, Bread, ZeroFvksGiven|\n[**Expandas**](https://liquipedia.net/rocketleague/Expandas) - h4mburger, JTW, JW|\n[**Exotic Esports**](https://liquipedia.net/rocketleague/Exotic_Esports) - ItsOlympic, TechnicEagle75, JustSpecs|\n[**Expanzees**](https://liquipedia.net/rocketleague/index.php?title=Expanzees&action=edit&redlink=1) - Serenity, Blade, Falco|\n"
+            expected_markup = '|Team|\n:--|\n[**Orlando Pirates Exdee**](https://liquipedia.net/rocketleague/Orlando_Pirates_Exdee) - Snowyy, SkillSteal, Darth|\n[**Lost Legion Giants**](https://liquipedia.net/rocketleague/Lost_Legion_Giants) - EliakimZA, Rowen, D3Funct|\n[**Atomic Esports**](https://liquipedia.net/rocketleague/Atomic_Esports) - Wee-Casper, YoPeGo, Echo|\n[**Lost Legion Ghosts**](https://liquipedia.net/rocketleague/index.php?title=Lost_Legion_Ghosts&action=edit&redlink=1) - Crisp, LmNs., TheKeychain22|\n[**Water**](https://liquipedia.net/rocketleague/Water) - Kam, Happymeal, 2Die4|\n[**ATK**](https://liquipedia.net/rocketleague/ATK) - Arceon, SchalkG, Werty|\n[**Orgless**](https://liquipedia.net/rocketleague/Orgless_\\(South_African_Team\\)) - Friction, Lackstar, RisenEclipse|\n[**Out of Retirement**](https://liquipedia.net/rocketleague/Out_of_Retirement) - Mr.Low, PwnFlakes, li0n-za|\n[**TKO X1**](https://liquipedia.net/rocketleague/TKO_X1) - Chace, ImNotRocky, fearlescarrot|\n[**Lost Legion Benchwarmers**](https://liquipedia.net/rocketleague/index.php?title=Lost_Legion_Benchwarmers&action=edit&redlink=1) - dece1ver, PoRRa07, Kenobiwan10x-x|\n[**Aufbau**](https://liquipedia.net/rocketleague/Aufbau) - grape, jerome in da bath, Ram Ranch|\n[**Inferno**](https://liquipedia.net/rocketleague/index.php?title=Inferno_\\(South_African_Team\\)&action=edit&redlink=1) - josho, ChristianW, Maelstrom9508|\n[**Mist**](https://liquipedia.net/rocketleague/index.php?title=Mist_\\(South_African_Team\\)&action=edit&redlink=1) - BiscuitGalaxy, Bread, ZeroFvksGiven|\n[**Expandas**](https://liquipedia.net/rocketleague/Expandas) - h4mburger, JTW, JW|\n[**Exotic Esports**](https://liquipedia.net/rocketleague/Exotic_Esports) - ItsOlympic, TechnicEagle75, JustSpecs|\n[**Expanzees**](https://liquipedia.net/rocketleague/index.php?title=Expanzees&action=edit&redlink=1) - Serenity, Blade, Falco|\n'
             mocked_print_to_channel.assert_awaited_once_with(mock_channel,
                                                              expected_markup,
                                                              title="Teams")

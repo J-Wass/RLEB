@@ -1,3 +1,5 @@
+# Utilities that tests classes may need to share.
+
 class MockRequest:
     """Mock request class for stubbing requests.get()."""
     def __init__(self, content: str):

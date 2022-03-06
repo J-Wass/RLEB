@@ -203,6 +203,8 @@ logging_enabled = True
 
 def _flush_memory_log():
     """Write all logs from memory to db. MUST HAVE LOG_LOCK."""
+    if RUNNING_MODE == 'local':
+        return
     Data.singleton().write_to_logs(memory_log)
     memory_log.clear()
 
