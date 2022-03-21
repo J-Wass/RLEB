@@ -123,6 +123,7 @@ discord_check_new_modmail_enabled = True
 discord_check_new_alerts_enabled = True
 discord_check_direct_messages_enabled = True
 discord_check_new_schedule_chat_enabled = True
+
 TOKEN = os.environ.get("DISCORD_TOKEN") or rleb_secrets.DISCORD_TOKEN
 NEW_POSTS_CHANNEL_ID = int(
     os.environ.get("NEW_POSTS_CHANNEL_ID") or rleb_secrets.NEW_POSTS_CHANNEL_ID
@@ -208,6 +209,9 @@ def get_trello_actions(date):
 
 
 # MONITORING
+
+enable_direct_channel_messages = True # whether rleb_stdout should send messages directly to channels
+
 logging_enabled = True
 
 

@@ -23,6 +23,8 @@ class TestStandardOut(RLEBAsyncTestCase):
 
         self.mock_channel = mock.Mock(spec=discord.channel.TextChannel)
 
+        # Mock requests.post, return a fake pasteee url.
+        # TODO, use rleb_proxy on this.
         self.mock_http_post = patch("requests.post").start()
         self.mock_http_post.return_value = mock.Mock()
         self.mock_http_post.return_value.status_code = 200
@@ -40,6 +42,7 @@ class TestStandardOut(RLEBAsyncTestCase):
 
         # Remove the randomness lol
         rleb_settings.hooks = ["test_hook"]
+        rleb_settings.enable_direct_channel_messages = False
 
     async def test_create_paste(self):
         result = await create_paste("some words", title="really cool title")
@@ -93,6 +96,19 @@ class TestStandardOut(RLEBAsyncTestCase):
         mock_channel.send.assert_has_awaits(
             [call("a\nb\nc\nd\ne", embed=None), call("f", embed=None)]
         )
+
+    async def test_print_to_channel_with_direct_messaging(self):
+        rleb_settings.enable_direct_channel_messages = True
+        mock_channel = mock.Mock(spec=discord.TextChannel)
+
+        with patch.object(rleb_stdout, "create_paste") as mocked_create_paste:
+            await print_to_channel(
+                mock_channel, "some cool content", title="the best title"
+            )
+
+            # With direct channel messaging, a pastebin should not be generated.
+            mock_channel.send.assert_called_once_with("some cool content", embed=None)
+            mocked_create_paste.assert_not_awaited()
 
 
 if __name__ == "__main__":
