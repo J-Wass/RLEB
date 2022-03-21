@@ -56,7 +56,7 @@ class TestDualFlairs(RLEBTestCase):
         handle_flair_request(self.mock_sub, self.mock_redditor, ":NRG: :Verified:")
 
         # self.mock_sub_flair.set.assert_not_awaited()
-        expected_message = "\":NRG: :Verified:\" wasn't formatted correctly!\n\nMake sure that you are using 2 or less flairs and that your flairs are spelled correctly.\n\nSee all allowed flairs: https://www.reddit.com/r/RocketLeagueEsports/wiki/flairs#wiki_how_do_i_get_2_user_flairs.3F \n\n(I'm a bot. Contact modmail to get in touch with a real person: https://reddit.com/message/compose?to=/r/RocketLeagueEsports)"
+        expected_message = "\":NRG: :Verified:\" wasn't formatted correctly!\n\nMake sure that you are using 3 or less flairs and that your flairs are spelled correctly.\n\nSee all allowed flairs: https://www.reddit.com/r/RocketLeagueEsports/wiki/flairs#wiki_how_do_i_get_2_user_flairs.3F \n\n(I'm a bot. Contact modmail to get in touch with a real person: https://reddit.com/message/compose?to=/r/RocketLeagueEsports)"
         self.mock_redditor.message.assert_called_once_with(
             "Error with flair request", expected_message
         )
@@ -65,15 +65,9 @@ class TestDualFlairs(RLEBTestCase):
     def test_handle_three_flairs(self):
         handle_flair_request(self.mock_sub, self.mock_redditor, ":NRG: :G2: :C9:")
 
-        # uncomment when triflairs are live
-        #self.mock_sub_flair.set.assert_called_once_with(
-        #    self.mock_redditor, text=":NRG: :G2: :C9:", css_class=""
-        #)
-        expected_message = "\":NRG: :G2: :C9:\" wasn't formatted correctly!\n\nMake sure that you are using 2 or less flairs and that your flairs are spelled correctly.\n\nSee all allowed flairs: https://www.reddit.com/r/RocketLeagueEsports/wiki/flairs#wiki_how_do_i_get_2_user_flairs.3F \n\n(I'm a bot. Contact modmail to get in touch with a real person: https://reddit.com/message/compose?to=/r/RocketLeagueEsports)"
-        self.mock_redditor.message.assert_called_once_with(
-            "Error with flair request", expected_message
+        self.mock_sub_flair.set.assert_called_once_with(
+            self.mock_redditor, text=":NRG: :G2: :C9:", css_class=""
         )
-        self.mock_sub_flair.set.assert_not_called()
 
     def test_handle_moderator_flair(self):
         mock_moderator = mock.Mock(auto_spec=praw.models.Redditor)
