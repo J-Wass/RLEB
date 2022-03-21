@@ -100,7 +100,7 @@ def is_mod(username):
 
 
 flair_pattern = "\:\w+\:"
-number_of_allowed_flairs = 3 # the number of allowed user flairs on the sub
+number_of_allowed_flairs = 2 # the number of allowed user flairs on the sub
 
 modmail_polling_interval_seconds = 10
 thread_restart_interval_seconds = 30
