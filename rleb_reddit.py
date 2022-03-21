@@ -4,7 +4,7 @@ import praw
 import traceback
 from datetime import datetime
 
-from rleb_dualflairs import handle_dualflair
+from rleb_dualflairs import handle_flair_request
 import rleb_settings
 from rleb_settings import sub, r, rleb_log_info
 
@@ -50,18 +50,25 @@ def monitor_subreddit():
                 # unbox message
                 unread_message = item
                 r.inbox.mark_read([unread_message])
-                subject = unread_message.subject.lower().replace(" ", "")
+                
                 body = unread_message.body
                 user = unread_message.author
+
                 # if message is a flair request
+                subject = unread_message.subject.lower().replace(" ", "")
                 if (
                     subject == "flair"
-                    or subject == "flairrequest"
                     or subject == "flairs"
-                    or subject == "dualflairs"
+                    or subject == "flairrequest"
                     or subject == "dualflair"
+                    or subject == "dualflairs"
+                    or subject == "dualflairrequest"
+                    or subject == "triflair"
+                    or subject == "triflairs"
+                    or subject == "triflairrequest"
+                    
                 ):
-                    handle_dualflair(sub, user, body)
+                    handle_flair_request(sub, user, body)
         except prawcore.exceptions.ServerError as e:
             pass  # Reddit server borked, wait an interval and try again
         except Exception as e:

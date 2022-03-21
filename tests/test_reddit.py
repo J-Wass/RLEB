@@ -74,7 +74,7 @@ class TestReddit(RLEBTestCase):
         self.addCleanup(inbox_stream)
 
         # Assert that dualflairs was called.
-        mock_dualflairs = patch.object(rleb_reddit, "handle_dualflair").start()
+        mock_dualflairs = patch.object(rleb_reddit, "handle_flair_request").start()
         self.addCleanup(mock_dualflairs)
         rleb_reddit.monitor_subreddit()
         mock_dualflairs.assert_called_once_with(
