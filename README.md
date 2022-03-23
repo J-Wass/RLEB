@@ -17,6 +17,7 @@
  * Tools to build reddit threads
  * Tools to organize moderator tasks
  * Reddit <---> Discord bridges
+ * A really awesome way to read posts labeled "roster news"
  * And many other small tools that mods use to improve their job
 
 RLEB can be run easily:
