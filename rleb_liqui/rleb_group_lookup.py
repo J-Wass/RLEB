@@ -24,7 +24,6 @@ async def handle_group_lookup(url, channel):
         page = None
         try:
             page = rleb_liqui_utils.get_page_html_from_url(url)
-            from rleb_liqui import rleb_liqui_utils
         except Exception as e:
             await channel.send("Couldn't load {0}!\nError: {1}".format(url, e))
             rleb_settings.rleb_log_info(

@@ -8,7 +8,7 @@ try:
     import rleb_secrets
 except Exception as e:
     rleb_secrets = {}
-    print("secrets.py not found, using keys in environment settings.")
+    print("rleb_secrets.py not found, using keys in environment settings.")
 
 
 class Data(object):

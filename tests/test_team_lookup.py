@@ -32,17 +32,6 @@ class TestTeamLookup(RLEBAsyncTestCase):
         from rleb_liqui import rleb_team_lookup
 
     async def test_team_lookup(self):
-
-        # Mock the liquipedia page so tests can run offline.
-        def mock_liquipedia(args=[]):
-            with open('tests/resources/liquipedia_na_grid.html',
-                      encoding="utf8") as f:
-                return MockRequest(f.read())
-
-        mock_request = patch.object(requests, "get",
-                                    new=mock_liquipedia).start()
-        self.addCleanup(mock_request)
-
         mock_channel = mock.Mock(spec=discord.TextChannel)
 
         with patch.object(rleb_stdout, "print_to_channel") as mocked_print_to_channel:
@@ -57,6 +46,7 @@ class TestTeamLookup(RLEBAsyncTestCase):
             )
 
     async def test_team_lookup_fails(self):
+        mock_channel = mock.Mock(spec=discord.TextChannel)
 
         await rleb_team_lookup.handle_team_lookup("bad url", mock_channel)
         mock_channel.send.assert_awaited_once_with(
@@ -64,17 +54,6 @@ class TestTeamLookup(RLEBAsyncTestCase):
         )
 
     async def test_team_lookup_with_parenthesis(self):
-
-        # Mock the liquipedia page so tests can run offline.
-        def mock_liquipedia(args=[]):
-            with open('tests/resources/swiss_with_parenthesis.htm',
-                      encoding="utf8") as f:
-                return MockRequest(f.read())
-
-        mock_request = patch.object(requests, "get",
-                                    new=mock_liquipedia).start()
-        self.addCleanup(mock_request)
-
         mock_channel = mock.Mock(spec=discord.TextChannel)
 
         with patch.object(rleb_stdout, "print_to_channel") as mocked_print_to_channel:

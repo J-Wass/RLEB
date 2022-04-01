@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 import psycopg2
 import praw
+import requests
 
 from ..common import common_utils
 
