@@ -3,7 +3,7 @@ import random
 from datetime import datetime
 import time
 import asyncio
-from threading import Lock
+from threading import Lock, Thread
 import traceback
 import math
 
@@ -558,13 +558,19 @@ class RLEsportsBot(discord.Client):
             await message.channel.send("Flair migration finished.")
             await self.add_response(message)
 
-        elif discord_message == "!dualflairs list":
+        elif discord_message.startswith("!dualflairs") and is_staff(message.author):
+            if not rleb_settings.is_discord_mod(message.author):
+                return
+
+            
+
+        elif discord_message == "!triflairs list" and is_staff(message.author):
 
             if not rleb_settings.is_discord_mod(message.author):
                 return
 
             all_flairs = ""
-            flairs = Data.singleton().read_dualflairs()
+            flairs = Data.singleton().read_triflairs()
             flair_list = list(map(lambda x: x[0], flairs))
             flair_list.sort()
             for flair in flair_list:
@@ -573,7 +579,7 @@ class RLEsportsBot(discord.Client):
             await message.channel.send(all_flairs)
             await self.add_response(message)
 
-        elif discord_message.startswith("!dualflairs remove") and is_staff(
+        elif discord_message.startswith("!triflairs remove") and is_staff(
             message.author
         ):
 
@@ -586,7 +592,7 @@ class RLEsportsBot(discord.Client):
                 flair = tokens[2]
             except IndexError:
                 await message.channel.send(
-                    "Couldn't understand that. Expected '!dualflairs remove:flair:'."
+                    "Couldn't understand that. Expected '!triflairs remove :flair:'."
                 )
                 return
             await message.channel.send(
@@ -606,21 +612,21 @@ class RLEsportsBot(discord.Client):
                     "Removal timed out. You must confirm within 2 minutes to remove flairs."
                 )
                 return
-            flairs = Data.singleton().read_dualflairs()
+            flairs = Data.singleton().read_triflairs()
             flair_list = list(map(lambda x: x[0], flairs))
             if not (self.flair_to_remove in flair_list):
                 await message.channel.send(
-                    "Couldn't find {0}! Type '!dualflairs list' to view all flairs.".format(
+                    "Couldn't find {0}! Type '!triflairs list' to view all flairs.".format(
                         self.flair_to_remove
                     )
                 )
                 return
             else:
-                Data.singleton().yeet_dualflair(self.flair_to_remove)
+                Data.singleton().yeet_triflair(self.flair_to_remove)
                 await message.channel.send("Removed {0}.".format(self.flair_to_remove))
                 await self.add_response(message)
 
-        elif discord_message.startswith("!dualflairs add") and is_staff(message.author):
+        elif discord_message.startswith("!triflairs add") and is_staff(message.author):
 
             if not rleb_settings.is_discord_mod(message.author):
                 return
@@ -631,7 +637,7 @@ class RLEsportsBot(discord.Client):
                 flair = tokens[2]
             except IndexError:
                 await message.channel.send(
-                    "Couldn't understand that. Expected '!dualflairs add :flair:'."
+                    "Couldn't understand that. Expected '!triflairs add :flair:'."
                 )
                 return
             self.flair_to_add = flair
@@ -651,17 +657,17 @@ class RLEsportsBot(discord.Client):
                     "Addition timed out. You must confirm within 2 minutes to add flairs."
                 )
                 return
-            flairs = Data.singleton().read_dualflairs()
+            flairs = Data.singleton().read_triflairs()
             flair_list = list(map(lambda x: x[0], flairs))
             if self.flair_to_add in flair_list:
                 await message.channel.send(
-                    "{0} is already in the flair list! Type '!dualflairs list' to view all flairs.".format(
+                    "{0} is already in the flair list! Type '!triflairs list' to view all flairs.".format(
                         self.flair_to_add
                     )
                 )
                 return
             else:
-                Data.singleton().add_dualflair(self.flair_to_add)
+                Data.singleton().add_triflair(self.flair_to_add)
                 await message.channel.send("Added {0}.".format(self.flair_to_add))
                 await self.add_response(message)
 
@@ -674,6 +680,9 @@ class RLEsportsBot(discord.Client):
             await message.channel.send(":toilet:")
 
         elif discord_message.startswith("!schedule") and is_staff(message.author):
+            if not rleb_settings.is_discord_mod(message.author):
+                return
+
             await message.channel.send(
                 "**Found the following scheduled posts on reddit:**"
             )
@@ -801,6 +810,9 @@ class RLEsportsBot(discord.Client):
             await self.add_response(message)
 
         elif discord_message.startswith("!teams") and is_staff(message.author):
+            if not rleb_settings.is_discord_mod(message.author):
+                return
+
             rleb_settings.rleb_log_info("DISCORD: Starting team generation.")
             await message.channel.send("Starting team lookup...")
             tokens = discord_message.split()
@@ -816,6 +828,9 @@ class RLEsportsBot(discord.Client):
             await self.add_response(message)
 
         elif discord_message.startswith("!swiss") and is_staff(message.author):
+            if not rleb_settings.is_discord_mod(message.author):
+                return
+
             rleb_settings.rleb_log_info("DISCORD: Starting swiss bracket generation.")
             await message.channel.send("Starting swiss bracket lookup...")
             tokens = discord_message.split()
@@ -831,6 +846,9 @@ class RLEsportsBot(discord.Client):
             await self.add_response(message)
 
         elif discord_message.startswith("!groups") and is_staff(message.author):
+            if not rleb_settings.is_discord_mod(message.author):
+                return
+
             rleb_settings.rleb_log_info("DISCORD: Starting group generation.")
             await message.channel.send("Starting group lookup...")
             tokens = discord_message.split()
@@ -846,6 +864,9 @@ class RLEsportsBot(discord.Client):
             await self.add_response(message)
 
         elif discord_message.startswith("!events") and is_staff(message.author):
+            if not rleb_settings.is_discord_mod(message.author):
+                return
+
             rleb_settings.rleb_log_info("DISCORD: Starting event lookup.")
             tokens = discord_message.split()
             formatter = "reddit"
@@ -862,6 +883,9 @@ class RLEsportsBot(discord.Client):
             await self.add_response(message)
 
         elif discord_message.startswith("!tasks") and is_staff(message.author):
+            if not rleb_settings.is_discord_mod(message.author):
+                return
+
             rleb_settings.rleb_log_info("DISCORD: Starting task lookup.")
             tokens = discord_message.split()
             user = message.author.name.lower() + "#" + message.author.discriminator
@@ -876,7 +900,10 @@ class RLEsportsBot(discord.Client):
             await self.send_meme(message.channel)
             await self.add_response(message)
 
-        elif discord_message.startswith("!setmeme"):
+        elif discord_message.startswith("!setmeme") and is_staff(message.author):
+            if not rleb_settings.is_discord_mod(message.author):
+                return
+
             tokens = discord_message.split()
             subreddit = ""
             try:
@@ -896,17 +923,17 @@ class RLEsportsBot(discord.Client):
             await self.add_response(message)
 
         elif discord_message.startswith("!echo"):
-            tokens = discord_message.split()
-            message_without_command = " ".join(tokens[1:])
+            discord_message.remove("!echo")
+            message_without_command = "> {0}".format(discord_message.remove("!echo"))
             await message.channel.send(message_without_command)
             await self.add_response(message)
 
 
-def start(threads):
+def start(threads: list[Thread]) -> None:
     """Spawns the various discord asyncio threads.
 
     Args:
-        threads (List of Thread): List of threads used for monitoring both health.
+        threads (list[Thread]): List of threads used for monitoring both health.
     """
     client = RLEsportsBot(threads)
 

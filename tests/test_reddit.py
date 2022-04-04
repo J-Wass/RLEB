@@ -21,10 +21,10 @@ class TestReddit(RLEBTestCase):
         # import rleb_reddit after setUp is done so that rleb_settings loads with mocks/patches
         global rleb_reddit
         global rleb_settings
-        global rleb_dualflairs
+        global rleb_triflairs
         import rleb_reddit
         import rleb_settings
-        import rleb_dualflairs
+        import rleb_triflairs
 
         rleb_settings.queues["submissions"] = Queue()
         rleb_settings.queues["modmail"] = Queue()

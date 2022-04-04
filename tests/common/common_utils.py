@@ -4,9 +4,9 @@
 class MockRequest:
     """Mock request class for stubbing requests.get()."""
 
-    def __init__(self, content: str):
+    def __init__(self, content: str, status_code: int = 200):
         self.text = content
-        self.status_code = 200
+        self.status_code = status_code
 
 
 def page_id_query_from_url(liqui_url: str) -> str:

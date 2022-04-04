@@ -39,9 +39,8 @@ class RLEBTestCase(unittest.TestCase):
             if url is None:
                 return
 
-            local_file_proxy = self.network_map[url]
-
-            if local_file_proxy:
+            if url in self.network_map:
+                local_file_proxy = self.network_map[url]
                 print(f"RLEB PROXY: Redirecting {url} to {local_file_proxy}")
                 with open(local_file_proxy, encoding="utf8") as f:
                     return common_utils.MockRequest(f.read())

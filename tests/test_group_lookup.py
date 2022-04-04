@@ -41,7 +41,7 @@ class TestGroupLookup(RLEBAsyncTestCase):
             )
 
             expected_markup = "|||||\n|:-|:-|:-|:-|\n|**#**|**Group A** &#x200B; &#x200B; &#x200B; &#x200B; &#x200B; &#x200B; &#x200B; &#x200B; &#x200B; &#x200B; &#x200B; &#x200B; &#x200B; |**Matches** |**Game Diff** |\n|1|[**Ground Zero Gaming**](https://liquipedia.net/rocketleague/Ground_Zero_Gaming)|4-0|+10|\n|2|[**Cringe Society**](https://liquipedia.net/rocketleague/Cringe_Society)|3-1|+1|\n|3|[**LG Dire Wolves**](https://liquipedia.net/rocketleague/Dire_Wolves)|1-3|-3|\n|4|[**R!OT Gaming**](https://liquipedia.net/rocketleague/R!OT_Gaming)|1-3|-3|\n|5|[**Overt**](https://liquipedia.net/rocketleague/Overt)|1-3|-5|\n\n&#x200B;\n\n|||||\n|:-|:-|:-|:-|\n|**#**|**Group B** &#x200B; &#x200B; &#x200B; &#x200B; &#x200B; &#x200B; &#x200B; &#x200B; &#x200B; &#x200B; &#x200B; &#x200B; &#x200B; |**Matches** |**Game Diff** |\n|1|[**Renegades**](https://liquipedia.net/rocketleague/Renegades)|3-1|+6|\n|2|[**Mindfreak**](https://liquipedia.net/rocketleague/Mindfreak)|3-1|+4|\n|3|[**Canberra Havoc**](https://liquipedia.net/rocketleague/Canberra_Havoc)|2-2|-1|\n|4|[**Team Eros**](https://liquipedia.net/rocketleague/Team_Eros)|2-2|-1|\n|5|[**Donkey squad**](https://liquipedia.net/rocketleague/Donkey_squad)|0-4|-8|\n\n&#x200B;\n\n"
-            mocked_print_to_channel.assert_awaited_once_with(
+            mocked_print_to_channel.assert_awaited_with(
                 mock_channel, expected_markup, title="Groups"
             )
 
@@ -51,14 +51,17 @@ class TestGroupLookup(RLEBAsyncTestCase):
         def mock_liquipedia(args=[]):
             return None
 
+        bad_url = "bad url"
         mock_request = patch.object(requests, "get", new=mock_liquipedia).start()
         self.addCleanup(mock_request)
 
         mock_channel = mock.Mock(spec=discord.TextChannel)
         await rleb_group_lookup.handle_group_lookup("bad url", mock_channel)
-        mock_channel.send.assert_awaited_once_with(
-            "Couldn't load bad url!\nError: list index out of range"
-        )
+
+        self.assertEquals(mock_channel.send.mock_calls, [
+            mock.call("Couldn't load bad url!\nError: list index out of range"),
+            mock.call(f"Couldn't find groups in {bad_url}."),
+        ])
 
 
 if __name__ == "__main__":

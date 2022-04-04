@@ -4,10 +4,25 @@ import praw
 import traceback
 from datetime import datetime
 
-from rleb_dualflairs import handle_flair_request
+from rleb_triflairs import handle_flair_request
 import rleb_settings
 from rleb_settings import sub, r, rleb_log_info
 
+# keys that trigger multiflair request, from modmail or u/RLMatchThreads's inbox. The keys should be lowercase and stripped of whitespace.
+multiflair_request_keys = [
+    "flair",
+    "flairs",
+    "flairrequest",
+    "dualflair",
+    "dualflairs",
+    "dualflairrequest",
+    "triflair",
+    "triflairs",
+    "triflairrequest",
+    "multiflair",
+    "multiflairs",
+    "multiflairrequest",
+]
 
 # Create stream to add new posts to submissions queue
 def read_new_submissions():
@@ -56,18 +71,7 @@ def monitor_subreddit():
 
                 # if message is a flair request
                 subject = unread_message.subject.lower().replace(" ", "")
-                if (
-                    subject == "flair"
-                    or subject == "flairs"
-                    or subject == "flairrequest"
-                    or subject == "dualflair"
-                    or subject == "dualflairs"
-                    or subject == "dualflairrequest"
-                    or subject == "triflair"
-                    or subject == "triflairs"
-                    or subject == "triflairrequest"
-                    
-                ):
+                if subject in multiflair_request_keys:
                     handle_flair_request(sub, user, body)
         except prawcore.exceptions.ServerError as e:
             pass  # Reddit server borked, wait an interval and try again
@@ -133,6 +137,14 @@ def monitor_modmail():
             for item in sub.mod.unread():
                 item.mark_read()
                 rleb_settings.rleb_log_info("REDDIT: Modmail - {0}".format(item.id))
+
+                # Handle multiflairs from subreddit.
+                subject = item.subject.lower().replace(" ", "")
+                if subject in multiflair_request_keys:
+                    handle_flair_request(sub, item.author, item.body)
+                    continue
+
+                # Send modmail to discord.
                 rleb_settings.queues["modmail"].put(item)
             time.sleep(rleb_settings.modmail_polling_interval_seconds)
         except prawcore.exceptions.ServerError as e:

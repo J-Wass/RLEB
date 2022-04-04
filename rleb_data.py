@@ -129,22 +129,23 @@ class Data(object):
             Data._cache["logs"] = all_logs
             return all_logs
 
-    def add_dualflair(self, flair_to_add) -> list[str]:
-        """ "Yeets a dualflair out of the database."""
+    def add_triflair(self, flair_to_add) -> list[str]:
+        """ "Yeets a triflair out of the database."""
         with Data._db_lock:
             db = self.postgres_connection()
             cursor = db.cursor()
+            # NOTE: For legacy reasons, triflairs are called "dualflairs" in postgres.
             cursor.execute("""INSERT INTO dualflairs VALUES (%s)""", (flair_to_add,))
             db.commit()
 
-        Data._empty_cache("dualflairs")
+        Data._empty_cache("triflair")
 
-    def read_dualflairs(self) -> list[str]:
-        """ "Reads all the dualflairs from the database."""
+    def read_triflairs(self) -> list[str]:
+        """ "Reads all the triflair from the database."""
         with Data._db_lock:
 
-            if "dualflairs" in Data._cache:
-                return Data._cache["dualflairs"]
+            if "triflair" in Data._cache:
+                return Data._cache["triflair"]
 
             db = self.postgres_connection()
             cursor = db.cursor()
@@ -153,8 +154,8 @@ class Data(object):
             Data._cache["dualflairs"] = all_dualflairs
             return all_dualflairs
 
-    def yeet_dualflair(self, flair_to_remove) -> list[str]:
-        """ "Yeets a dualflair out of the database."""
+    def yeet_triflair(self, flair_to_remove) -> list[str]:
+        """ "Yeets a triflair out of the database."""
         with Data._db_lock:
             db = self.postgres_connection()
             cursor = db.cursor()
@@ -163,4 +164,4 @@ class Data(object):
             )
             db.commit()
 
-        Data._empty_cache("dualflairs")
+        Data._empty_cache("triflair")

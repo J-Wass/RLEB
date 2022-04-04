@@ -97,8 +97,7 @@ async def handle_group_lookup(url, channel):
                                            title="Groups")
 
     except Exception as e:
-        await channel.send("Couldn't find groups in {0}. Error: {1}".format(
-            url, e))
+        await channel.send("Couldn't find groups in {0}.".format(url))
         rleb_settings.rleb_log_info(
             "LOOKUP: Couldn't find groups in {0}. Error: {1}".format(url, e))
         rleb_settings.rleb_log_error(traceback.format_exc())
