@@ -106,6 +106,41 @@ class TestReddit(RLEBTestCase):
         modmail_from_queue = rleb_settings.queues["modmail"].get()
         self.assertEqual(modmail_from_queue, mock_modmail_item)
 
+    def test_monitor_modmail_for_multiflair(self):
+        rleb_settings.monitor_modmail_enabled = False
+        rleb_settings.modmail_polling_interval_seconds = 0
+
+        mock_user = mock.Mock()
+        mock_modmail_item = mock.Mock()
+        mock_modmail_item.id = "123"
+        mock_modmail_item.subject = "triflair"
+        mock_modmail_item.body = ":NRG: :G2:"
+        mock_modmail_item.author = mock_user
+
+        mock_sub_flair = mock.MagicMock()
+        #breakpoint()
+        rleb_settings.sub.flair = mock_sub_flair
+
+        def mock_modmail_stream(args=[]):
+            """Mock method for sub.stream.submissions()."""
+            return [mock_modmail_item]
+
+        # Mock the modmail stream to be an array of 1.
+        modmail_stream = patch.object(
+            rleb_reddit.sub.mod, "unread", new=mock_modmail_stream
+        ).start()
+        self.addCleanup(modmail_stream)
+
+        # Assert that the new modmail is in the modmail queue after the method.
+        self.assertEqual(rleb_settings.queues["modmail"].qsize(), 0)
+
+        rleb_reddit.monitor_modmail()
+        self.assertEqual(rleb_settings.queues["modmail"].qsize(), 0)
+
+        mock_sub_flair.set.assert_called_once_with(
+            mock_user, text=":NRG: :G2:", css_class=""
+        )
+
     def test_monitor_modlog(self):
         rleb_settings.monitor_modlog_enabled = False
         rleb_settings.modmail_polling_interval_seconds = 0
