@@ -49,7 +49,7 @@ async def create_paste(content, title=None):
         return response.text
 
 
-async def print_to_channel(channel: discord.channel.TextChannel, content: str, title:str=None) -> None:
+async def print_to_channel(channel: discord.channel.TextChannel, content: str, title:str=None, force_pastebin:bool=False) -> None:
     """Prints |content| in the discord |channel|. If |content| is long, it will write to pastebin or paste.ee. 
     In dire cases, |content| will be marshalled out, line by line to discord to avoid the char limit.
 
@@ -57,10 +57,11 @@ async def print_to_channel(channel: discord.channel.TextChannel, content: str, t
         channel (discord.channel.TextChannel): Discord channel to print a message in.
         content (str): The content of the message to be sent.
         title (str): Optional, the title to make the pastebin.
+        force_pastebin (bool): Forces the stdout to occur on pastebin, instead of directly in discord.
     """
-    if len(content) < 250 and rleb_settings.enable_direct_channel_messages:
+    if len(content) < 250 and rleb_settings.enable_direct_channel_messages and not force_pastebin:
         message = await channel.send(content, embed=None)
-        message.edit(suppress=True)
+        await message.edit(suppress=True)
         return
 
     try:

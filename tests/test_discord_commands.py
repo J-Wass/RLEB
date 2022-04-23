@@ -60,6 +60,22 @@ class TestDiscordCommands(RLEBAsyncTestCase):
         # Otherwise, we'd need to add !debug before each command.
         rleb_settings.RUNNING_MODE = "production"
         rleb_settings.verified_moderators = ["test_mod#1"]
+        rleb_settings.hooks = ["Hook"]
+
+    async def test_bracket(self):
+        # Not staff.
+        await self._send_message("!bracket", from_staff_user=False)
+        self.mock_channel.send.assert_not_awaited()
+        self.mock_channel.reset_mock()
+
+        # Missing liqui url.
+        await self._send_message("!bracket", from_staff_user=True)
+        self.mock_channel.send.assert_awaited_with("Couldn't understand that. Expected '!bracket liquipedia-url'.")
+        self.mock_channel.reset_mock()
+
+        # Happy path.
+        await self._send_message("!bracket https://liquipedia.net/rocketleague/Rocket_League_Championship_Series/2021-22/Winter", from_staff_user=True)
+        self.mock_channel.send.assert_awaited_with("**Hook**: https://paste.ee/p/fake_url")
 
     @mock.patch("rleb_discord.handle_flair_census")
     async def test_census(self, mock_rleb_census):
