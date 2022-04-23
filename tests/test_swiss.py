@@ -15,13 +15,6 @@ from tests.common.rleb_async_test_case import RLEBAsyncTestCase
 import discord
 
 
-class MockRequest:
-    """Mock request class for stubbing requests.get()."""
-
-    def __init__(self, content):
-        self.content = content
-
-
 class TestSwissLookup(RLEBAsyncTestCase):
     async def asyncSetUp(self):
         await super().asyncSetUp()

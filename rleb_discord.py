@@ -18,6 +18,7 @@ from rleb_census import handle_flair_census
 from rleb_calendar import handle_calendar_lookup
 from rleb_tasks import handle_task_lookup, user_names_to_ids
 from rleb_liqui.rleb_swiss import handle_swiss_lookup
+from rleb_liqui.rleb_bracket_lookup import handle_bracket_lookup
 
 responses_lock = Lock()
 
@@ -843,6 +844,24 @@ class RLEsportsBot(discord.Client):
                 )
                 return
             seconds = await handle_swiss_lookup(url, message.channel)
+            await self.add_response(message)
+
+        elif discord_message.startswith("!bracket") and is_staff(message.author):
+            if not rleb_settings.is_discord_mod(message.author):
+                return
+
+            rleb_settings.rleb_log_info("DISCORD: Starting elim bracket generation.")
+            await message.channel.send("Starting elimination bracket lookup...")
+            tokens = discord_message.split()
+            url = ""
+            try:
+                url = tokens[1]
+            except Exception:
+                await message.channel.send(
+                    "Couldn't understand that. Expected '!bracket liquipedia-url'."
+                )
+                return
+            await handle_bracket_lookup(url, message.channel)
             await self.add_response(message)
 
         elif discord_message.startswith("!groups") and is_staff(message.author):

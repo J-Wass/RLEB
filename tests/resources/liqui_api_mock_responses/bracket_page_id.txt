@@ -1,0 +1,1 @@
+{"batchcomplete":"","query":{"normalized":[{"from":"Rocket_League_Championship_Series/2021-22/Winter","to":"Rocket League Championship Series/2021-22/Winter"}],"pages":{"113085":{"pageid":113085,"ns":0,"title":"Rocket League Championship Series/2021-22/Winter"}}}}

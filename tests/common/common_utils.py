@@ -31,9 +31,11 @@ def mock_response(response_path: str) -> str:
     """Takes the name of a file in resources and returns its full path."""
     return f"tests/resources/{response_path}"
 
-
 # List of urls that need to be proxied to local files for testing.
 common_proxies = {
+    # Pastebin
+    "https://api.paste.ee/v1/pastes" :  mock_response("paste.ee_response.json"),
+
     # Page ID lookups.
     page_id_query_from_url(
         "https://liquipedia.net/rocketleague/Rocket_League_Championship_Series/2021-22/Spring/North_America/1/Closed_Qualifier"
@@ -50,6 +52,10 @@ common_proxies = {
     page_id_query_from_url(
         "https://liquipedia.net/rocketleague/Rocket_League_Championship_Series/Season_X/Spring/North_America/The_Grid/Open_Qualifier"
     ): mock_response("liqui_api_mock_responses/teams_double_elim_page_id.txt"),
+    page_id_query_from_url(
+        "https://liquipedia.net/rocketleague/Rocket_League_Championship_Series/2021-22/Winter"
+    ): mock_response("liqui_api_mock_responses/bracket_page_id.txt"),
+
     # Page content reads.
     page_content_from_id("113385"): mock_response(
         "liqui_api_mock_responses/swiss_incomplete_page_content.txt"
@@ -65,5 +71,8 @@ common_proxies = {
     ),
     page_content_from_id("104165"): mock_response(
         "liqui_api_mock_responses/teams_double_elim_page_content.txt"
+    ),
+    page_content_from_id("113085"): mock_response(
+        "liqui_api_mock_responses/bracket_page_content.txt"
     ),
 }
