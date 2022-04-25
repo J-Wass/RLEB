@@ -55,6 +55,9 @@ common_proxies = {
     page_id_query_from_url(
         "https://liquipedia.net/rocketleague/Rocket_League_Championship_Series/2021-22/Winter"
     ): mock_response("liqui_api_mock_responses/bracket_page_id.txt"),
+    page_id_query_from_url(
+        "https://liquipedia.net/rocketleague/RL_Oceania/ANZAC_Day_Invitational/2022"
+    ): mock_response("liqui_api_mock_responses/bracket_not_started_page_id.txt"),
 
     # Page content reads.
     page_content_from_id("113385"): mock_response(
@@ -74,5 +77,8 @@ common_proxies = {
     ),
     page_content_from_id("113085"): mock_response(
         "liqui_api_mock_responses/bracket_page_content.txt"
+    ),
+    page_content_from_id("122959"): mock_response(
+        "liqui_api_mock_responses/bracket_not_started_page_content.txt"
     ),
 }

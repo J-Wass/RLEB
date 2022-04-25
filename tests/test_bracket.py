@@ -39,6 +39,20 @@ class TestBracketLookup(RLEBAsyncTestCase):
                 mock_channel, expected_markup, title="Elimination Bracket", force_pastebin=True
             )
 
+    async def test_not_started_bracket(self):
+        mock_channel = mock.Mock(spec=discord.TextChannel)
+
+        with patch.object(rleb_stdout, "print_to_channel") as mocked_print_to_channel:
+            await rleb_bracket_lookup.handle_bracket_lookup(
+                "https://liquipedia.net/rocketleague/RL_Oceania/ANZAC_Day_Invitational/2022",
+                mock_channel,
+            )
+
+            expected_markup = "\n|**Elimination**|**UTC**|[**Liquipedia Bracket**](https://liquipedia.net/rocketleague/RL_Oceania/ANZAC_Day_Invitational/2022)|\n|:-|:-|:-|\n|`▼ Quarter-Finals`||`(Bo?)`|\n|`▼ Semi-Finals`||`(Bo?)`|\n|`▼ Final`||`(Bo?)`|\n|Dire Wolves|[**07:00 UTC**](https://www.google.com/search?q=07:00 UTC)|Team Bliss|\n|Kaka's Minions|[**07:45 UTC**](https://www.google.com/search?q=07:45 UTC)|Three One Two's|\n|Pioneers|[**08:30 UTC**](https://www.google.com/search?q=08:30 UTC)|TBD|\n|us r bad|[**09:30 UTC**](https://www.google.com/search?q=09:30 UTC)|TBD|\n|TBD|[**10:30 UTC**](https://www.google.com/search?q=10:30 UTC)|TBD|"
+            mocked_print_to_channel.assert_awaited_once_with(
+                mock_channel, expected_markup, title="Elimination Bracket", force_pastebin=True
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
