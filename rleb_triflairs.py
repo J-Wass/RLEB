@@ -6,7 +6,10 @@ from rleb_data import Data
 
 from praw.reddit import models as praw_models
 
-def handle_flair_request(sub: praw_models.Subreddit, user: praw_models.Redditor, body: str) -> None:
+
+def handle_flair_request(
+    sub: praw_models.Subreddit, user: praw_models.Redditor, body: str
+) -> None:
     """Read, verify, and act of dualflair messages.
 
     Args:
@@ -32,7 +35,7 @@ def handle_flair_request(sub: praw_models.Subreddit, user: praw_models.Redditor,
         allowed_flairs = [f for f in flairs if f in allowed]
 
         # take the first n flairs (n = # of allowed flairs)
-        first_n_flairs = allowed_flairs[:rleb_settings.number_of_allowed_flairs]
+        first_n_flairs = allowed_flairs[: rleb_settings.number_of_allowed_flairs]
 
         rleb_log_info("\nREDDIT: Flair request for u/{0}: {1}".format(user.name, body))
         rleb_log_info("REDDIT: Requesting: {0}".format(",".join(flairs)))
@@ -46,4 +49,6 @@ def handle_flair_request(sub: praw_models.Subreddit, user: praw_models.Redditor,
             sub.flair.set(user, text=final_flair_text, css_class="")
 
             rleb_log_info("REDDIT: Taking: {0}".format(",".join(first_n_flairs)))
-            rleb_log_info("REDDIT: Set flair for {0} to {1}".format(user.name, final_flair_text))
+            rleb_log_info(
+                "REDDIT: Set flair for {0} to {1}".format(user.name, final_flair_text)
+            )

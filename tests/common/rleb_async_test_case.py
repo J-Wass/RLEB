@@ -39,12 +39,16 @@ class RLEBAsyncTestCase(IsolatedAsyncioTestCase):
             if local_file_proxy:
                 print(f"RLEB PROXY: Redirecting {url} to {local_file_proxy}")
                 with open(local_file_proxy, encoding="utf8") as f:
-                    return common_utils.MockRequest(f.read(), status_code=self.forced_status_code)
+                    return common_utils.MockRequest(
+                        f.read(), status_code=self.forced_status_code
+                    )
             else:
                 print(f"RLEB PROXY: Did not proxy {url}, it will hit production.")
 
         self.mock_requests_get = patch.object(requests, "get", new=mock_request).start()
-        self.mock_requests_post = patch.object(requests, "post", new=mock_request).start()
+        self.mock_requests_post = patch.object(
+            requests, "post", new=mock_request
+        ).start()
         self.addCleanup(self.mock_requests_get)
         self.addCleanup(self.mock_requests_post)
 

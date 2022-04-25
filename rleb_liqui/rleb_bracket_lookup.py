@@ -15,17 +15,20 @@ BRACKET_MARKDOWN_TEMPLATE = """
 |**Elimination**|**UTC**|[**Liquipedia Bracket**]({LIQUI_URL})|
 |:-|:-|:-|"""
 
-BRACKET_ROUND_TEMPLATE = '|`▼ {ROUND_NAME}`||`(Bo?)`|'
-BRACKET_NEW_MATCH_TEMPLATE = '|{TEAM1}|[**{TIMESTRING}**](https://www.google.com/search?q={TIMESTRING})|{TEAM2}|'
-BRACKET_FINISHED_MATCH_TEMPLATE = '|{TEAM1}|**{TEAM1_SCORE} - {TEAM2_SCORE}**|{TEAM2}|'
+BRACKET_ROUND_TEMPLATE = "|`▼ {ROUND_NAME}`||`(Bo?)`|"
+BRACKET_NEW_MATCH_TEMPLATE = (
+    "|{TEAM1}|[**{TIMESTRING}**](https://www.google.com/search?q={TIMESTRING})|{TEAM2}|"
+)
+BRACKET_FINISHED_MATCH_TEMPLATE = "|{TEAM1}|**{TEAM1_SCORE} - {TEAM2_SCORE}**|{TEAM2}|"
+
 
 async def handle_bracket_lookup(url: str, channel: discord.channel.TextChannel) -> None:
     """Handle bracket lookup message.
 
-        Args:
-            channel (discord.channel.TextChannel): Channel the lookup is being used in.
-            url (str): Liquipedia URL string to look for elimination brackets.
-        """
+    Args:
+        channel (discord.channel.TextChannel): Channel the lookup is being used in.
+        url (str): Liquipedia URL string to look for elimination brackets.
+    """
     rleb_settings.rleb_log_info("DISCORD: Creating bracket lookup for {0}".format(url))
 
     try:
@@ -35,7 +38,8 @@ async def handle_bracket_lookup(url: str, channel: discord.channel.TextChannel) 
         except Exception as e:
             await channel.send("Couldn't load {0} !\nError: {1}".format(url, e))
             rleb_settings.rleb_log_info(
-                "BRACKET: Couldn't load {0}!\nError: {1}".format(url, e))
+                "BRACKET: Couldn't load {0}!\nError: {1}".format(url, e)
+            )
             rleb_settings.rleb_log_error(traceback.format_exc())
             return
 
@@ -48,11 +52,13 @@ async def handle_bracket_lookup(url: str, channel: discord.channel.TextChannel) 
             team2_score: int
             game_start_time: datetime
             is_finished: bool
-            
+
         matches: list[Match] = []
         rounds: list[str] = []
 
-        def datetime_from_liqui_timestring(liqui_timestring: str, timezone: str) -> datetime:
+        def datetime_from_liqui_timestring(
+            liqui_timestring: str, timezone: str
+        ) -> datetime:
             """Returns a datetime off of the time string from liquipedia."""
             # Make sure the hour is 0-padded.
             tz_tokens = timezone.split(":")
@@ -61,17 +67,17 @@ async def handle_bracket_lookup(url: str, channel: discord.channel.TextChannel) 
             tz = ":".join(tz_tokens)
 
             # Liqui format example: March 26, 2022 - 13:15
-            return datetime.strptime(liqui_timestring + tz, '%B %d, %Y - %H:%M%z')
+            return datetime.strptime(liqui_timestring + tz, "%B %d, %Y - %H:%M%z")
 
         def time_of_day_from_datetime(dt: datetime) -> str:
             """Returns 'hh:mm UTC' from a datetime."""
-            return datetime.strftime(dt, '%H:%M UTC')
+            return datetime.strftime(dt, "%H:%M UTC")
 
         match_elements = html.select(".brkts-round-center")
         for match in match_elements:
             timer = match.select(".timer-object")[0]
             try:
-                is_finished = timer.attrs['data-finished'] != None
+                is_finished = timer.attrs["data-finished"] != None
             except:
                 is_finished = False
 
@@ -99,7 +105,14 @@ async def handle_bracket_lookup(url: str, channel: discord.channel.TextChannel) 
             except:
                 pass
 
-            new_match = Match(team1_name, team2_name, team1_score, team2_score, start_datetime, is_finished)
+            new_match = Match(
+                team1_name,
+                team2_name,
+                team1_score,
+                team2_score,
+                start_datetime,
+                is_finished,
+            )
             matches.append(new_match)
 
         round_elements = html.select(".brkts-header.brkts-header-div")
@@ -110,7 +123,7 @@ async def handle_bracket_lookup(url: str, channel: discord.channel.TextChannel) 
         final_markdown = BRACKET_MARKDOWN_TEMPLATE.replace("{LIQUI_URL}", url)
         for r in rounds:
             new_round = BRACKET_ROUND_TEMPLATE.replace("{ROUND_NAME}", r)
-            final_markdown += f'\n{new_round}'
+            final_markdown += f"\n{new_round}"
 
         for m in matches:
             team1_name = m.team1
@@ -120,21 +133,28 @@ async def handle_bracket_lookup(url: str, channel: discord.channel.TextChannel) 
                 match_template = BRACKET_FINISHED_MATCH_TEMPLATE
                 # Bold the winning team.
                 if m.team1_score > m.team2_score:
-                    team1_name = f'**{m.team1}**'
+                    team1_name = f"**{m.team1}**"
                 else:
-                    team2_name = f'**{m.team2}**'
+                    team2_name = f"**{m.team2}**"
 
             match_row = match_template.replace("{TEAM1}", team1_name)
             match_row = match_row.replace("{TEAM2}", team2_name)
-            match_row = match_row.replace("{TIMESTRING}", time_of_day_from_datetime(m.game_start_time))
+            match_row = match_row.replace(
+                "{TIMESTRING}", time_of_day_from_datetime(m.game_start_time)
+            )
             match_row = match_row.replace("{TEAM1_SCORE}", m.team1_score)
             match_row = match_row.replace("{TEAM2_SCORE}", m.team2_score)
-    
-            final_markdown += f'\n{match_row}'
 
-        await rleb_stdout.print_to_channel(channel, final_markdown, title="Elimination Bracket", force_pastebin=True)
+            final_markdown += f"\n{match_row}"
+
+        await rleb_stdout.print_to_channel(
+            channel, final_markdown, title="Elimination Bracket", force_pastebin=True
+        )
     except Exception as e:
         await channel.send("Couldn't find brackets in {0}. Error: {1}.".format(url, e))
         rleb_settings.rleb_log_info(
-            "BRACKET: Couldn't find brackets in {0}.\nError: {1}\nTraceback: {2}".format(url, e, traceback.format_exc()))
+            "BRACKET: Couldn't find brackets in {0}.\nError: {1}\nTraceback: {2}".format(
+                url, e, traceback.format_exc()
+            )
+        )
         rleb_settings.rleb_log_error(traceback.format_exc())

@@ -70,12 +70,19 @@ class TestDiscordCommands(RLEBAsyncTestCase):
 
         # Missing liqui url.
         await self._send_message("!bracket", from_staff_user=True)
-        self.mock_channel.send.assert_awaited_with("Couldn't understand that. Expected '!bracket liquipedia-url'.")
+        self.mock_channel.send.assert_awaited_with(
+            "Couldn't understand that. Expected '!bracket liquipedia-url'."
+        )
         self.mock_channel.reset_mock()
 
         # Happy path.
-        await self._send_message("!bracket https://liquipedia.net/rocketleague/Rocket_League_Championship_Series/2021-22/Winter", from_staff_user=True)
-        self.mock_channel.send.assert_awaited_with("**Hook**: https://paste.ee/p/fake_url")
+        await self._send_message(
+            "!bracket https://liquipedia.net/rocketleague/Rocket_League_Championship_Series/2021-22/Winter",
+            from_staff_user=True,
+        )
+        self.mock_channel.send.assert_awaited_with(
+            "**Hook**: https://paste.ee/p/fake_url"
+        )
 
     @mock.patch("rleb_discord.handle_flair_census")
     async def test_census(self, mock_rleb_census):
