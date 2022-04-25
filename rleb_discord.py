@@ -563,8 +563,6 @@ class RLEsportsBot(discord.Client):
             if not rleb_settings.is_discord_mod(message.author):
                 return
 
-            
-
         elif discord_message == "!triflairs list" and is_staff(message.author):
 
             if not rleb_settings.is_discord_mod(message.author):

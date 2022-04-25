@@ -99,8 +99,9 @@ async def broadcast_tasks(
             None if u not in user_mapping else client.get_user(user_mapping[u])
         )
         if not discord_user:
-            await rleb_stdout.print_to_channel(channel,
-                f"Couldn't dm {u}! Is their name spelled correctly in the sheet?"
+            await rleb_stdout.print_to_channel(
+                channel,
+                f"Couldn't dm {u}! Is their name spelled correctly in the sheet?",
             )
             continue
 
@@ -113,7 +114,10 @@ async def broadcast_tasks(
         try:
             await discord_user.send(message)
         except Exception as e:
-            await rleb_stdout.print_to_channel(channel,f"**Couldn't dm {u}! Do they have DMs unblocked for the bot?**\n\n Underlying error: {e}")
+            await rleb_stdout.print_to_channel(
+                channel,
+                f"**Couldn't dm {u}! Do they have DMs unblocked for the bot?**\n\n Underlying error: {e}",
+            )
             continue
 
 

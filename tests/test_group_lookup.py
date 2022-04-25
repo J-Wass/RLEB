@@ -58,10 +58,13 @@ class TestGroupLookup(RLEBAsyncTestCase):
         mock_channel = mock.Mock(spec=discord.TextChannel)
         await rleb_group_lookup.handle_group_lookup("bad url", mock_channel)
 
-        self.assertEquals(mock_channel.send.mock_calls, [
-            mock.call("Couldn't load bad url!\nError: list index out of range"),
-            mock.call(f"Couldn't find groups in {bad_url}."),
-        ])
+        self.assertEquals(
+            mock_channel.send.mock_calls,
+            [
+                mock.call("Couldn't load bad url!\nError: list index out of range"),
+                mock.call(f"Couldn't find groups in {bad_url}."),
+            ],
+        )
 
 
 if __name__ == "__main__":

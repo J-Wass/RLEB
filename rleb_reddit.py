@@ -65,12 +65,12 @@ def monitor_subreddit():
                 # unbox message
                 unread_message = item
                 r.inbox.mark_read([unread_message])
-                
+
                 body = unread_message.body
                 user = unread_message.author
 
                 # if message is a flair request
-                #breakpoint
+                # breakpoint
                 subject = unread_message.subject.lower().replace(" ", "")
                 if subject in multiflair_request_keys:
                     handle_flair_request(sub, user, body)

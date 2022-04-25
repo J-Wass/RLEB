@@ -47,8 +47,12 @@ class RLEBTestCase(unittest.TestCase):
             else:
                 print(f"RLEB PROXY: Did not proxy {url}, it will hit production.")
 
-        self.mock_requests_get = patch.object(requests, "get", new=mock_request_get).start()
-        self.mock_requests_post = patch.object(requests, "post", new=mock_request_get).start()
+        self.mock_requests_get = patch.object(
+            requests, "get", new=mock_request_get
+        ).start()
+        self.mock_requests_post = patch.object(
+            requests, "post", new=mock_request_get
+        ).start()
         self.addCleanup(self.mock_requests_get)
         self.addCleanup(self.mock_requests_post)
 
