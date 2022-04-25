@@ -73,7 +73,7 @@ async def handle_bracket_lookup(url: str, channel: discord.channel.TextChannel) 
             try:
                 is_finished = timer.attrs['data-finished'] != None
             except:
-                continue
+                is_finished = False
 
             # Strip out timezone info from timer, use data-tz instead (more standard).
             liqui_timestring = timer.text
@@ -88,12 +88,16 @@ async def handle_bracket_lookup(url: str, channel: discord.channel.TextChannel) 
             team1_score = ""
             team2_name = "TBD"
             team2_score = ""
-            if teams[0].select(".name") != None:
+            try:
                 team1_name = teams[0].select(".name")[0].text
                 team1_score = teams[0].select(".brkts-opponent-score-inner")[0].text
-            if teams[1].select(".name") != None:
+            except:
+                pass
+            try:
                 team2_name = teams[1].select(".name")[0].text
                 team2_score = teams[1].select(".brkts-opponent-score-inner")[0].text
+            except:
+                pass
 
             new_match = Match(team1_name, team2_name, team1_score, team2_score, start_datetime, is_finished)
             matches.append(new_match)
