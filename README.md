@@ -2,25 +2,28 @@
 
 # Legal Disclaimer
 
-	The author(s) disclaim copyright to this source code. 
-	In place of a legal notice, here is a blessing:
+    The author(s) disclaim copyright to this source code.
+    In place of a legal notice, here is a blessing:
 
-		May you use your opportunities for good and not ill.
-		May you find forgiveness for yourself and for others.
-		May you share freely, never taking more than you give.
-     
- # r/RocketLeagueEsports Bot (RLEB)
- This is RLEB - a bot that is developed and maintained by the moderators of https://www.reddit.com/r/RocketLeagueEsports.
- 
- RLEB has many features including
- * Handling user flairs
- * Tools to build reddit threads
- * Tools to organize moderator tasks
- * Reddit <---> Discord bridges
- * A really awesome way to read posts labeled "roster news"
- * And many other small tools that mods use to improve their job
+    	May you use your opportunities for good and not ill.
+    	May you find forgiveness for yourself and for others.
+    	May you share freely, never taking more than you give.
+
+
+# r/RocketLeagueEsports Bot (RLEB)
+
+This is RLEB - a bot that is developed and maintained by the moderators of https://www.reddit.com/r/RocketLeagueEsports.
+
+RLEB has many features including
+
+- Handling user flairs
+- Tools to build reddit threads
+- Tools to organize moderator tasks
+- Reddit <---> Discord bridges
+- And many other small tools that mods use to improve their job
 
 RLEB can be run easily:
+
 1. `pip install -r requirements.txt`
 2. `python rleb_core.py`
 
