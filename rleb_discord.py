@@ -905,12 +905,16 @@ class RLEsportsBot(discord.Client):
 
             rleb_settings.rleb_log_info("DISCORD: Starting task lookup.")
             tokens = discord_message.split()
+
+            # User = the person requesting the command, unless explicitly stated.
             user = message.author.name.lower() + "#" + message.author.discriminator
+            extra = None
             try:
                 user = tokens[1]
+                extra = tokens[2]
             except Exception:
                 pass
-            await handle_task_lookup(message.channel, self, user)
+            await handle_task_lookup(message.channel, self, user, extra)
             await self.add_response(message)
 
         elif discord_message.startswith("!meme"):
