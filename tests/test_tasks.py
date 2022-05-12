@@ -7,19 +7,12 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 
 import unittest
 import unittest.mock as mock
-from unittest.mock import AsyncMock, patch, call
+from unittest.mock import patch, call
 from tests.common.rleb_async_test_case import RLEBAsyncTestCase
 
 import json
 import google
 import discord
-
-
-def common_mock_client_and_channel() -> Tuple[any, any]:
-    """
-    Sets up and returns a mock client & mock channel. The channel has two members and the client returns those members based off of user ids.
-    """
-
 
 
 class TestTasks(RLEBAsyncTestCase):
@@ -124,7 +117,9 @@ class TestTasks(RLEBAsyncTestCase):
         mock_client = mock.Mock()
         mock_client.get_user = mock_get_user
 
-        await rleb_tasks.handle_task_lookup(mock_channel, mock_client, "broadcast")
+        await rleb_tasks.handle_task_lookup(
+            mock_channel, mock_client, "broadcast", None
+        )
 
         greeting = "Incoming!\n\n"
         event1_discord_markup = "**cool event** (Tuesday 2021-06-01)\n✏️ Creator/Scheduler (Schedule UTC): **hawkkn#0408**\n🚔 Updaters/Monitors: **ds0308#9530**, **voices#6380**\n\n-----------------------------------------------------------\n\n"
@@ -167,7 +162,9 @@ class TestTasks(RLEBAsyncTestCase):
         mock_client = mock.Mock()
         mock_client.get_user = mock_get_user
 
-        await rleb_tasks.handle_task_lookup(mock_channel, mock_client, "send", extra="voices#6380")
+        await rleb_tasks.handle_task_lookup(
+            mock_channel, mock_client, "send", extra="voices#6380"
+        )
 
         greeting = "Incoming!\n\n"
         event1_discord_markup = "**cool event** (Tuesday 2021-06-01)\n✏️ Creator/Scheduler (Schedule UTC): **hawkkn#0408**\n🚔 Updaters/Monitors: **ds0308#9530**, **voices#6380**\n\n-----------------------------------------------------------\n\n"
@@ -176,8 +173,8 @@ class TestTasks(RLEBAsyncTestCase):
         mock_voices.send.assert_awaited_once_with(
             greeting + event1_discord_markup + event2_discord_markup
         )
-        
-        mock_hawkkn.send.assert_not_awaited()        
+
+        mock_hawkkn.send.assert_not_awaited()
 
 
 if __name__ == "__main__":

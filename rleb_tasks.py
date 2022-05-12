@@ -72,10 +72,14 @@ async def tasks_for_user(tasks: list[Task], user: str) -> list[Task]:
     """Returns a list of tasks for the given username."""
     return list(filter(lambda x: x.contains_user(user.lower()), tasks))
 
+
 async def send_tasks(
-    user: str, tasks: list[Task], client: discord.ClientUser, channel: discord.TextChannel
+    user: str,
+    tasks: list[Task],
+    client: discord.ClientUser,
+    channel: discord.TextChannel,
 ) -> None:
-    """DMs a user (discord name) all of their tasks."""    
+    """DMs a user (discord name) all of their tasks."""
     # Fetch the user id from mappings, and their tasks.
     user_tasks = await tasks_for_user(tasks, user)
     user_mapping = user_names_to_ids(channel)
@@ -102,6 +106,7 @@ async def send_tasks(
             channel,
             f"**Couldn't dm {user}! Do they have DMs unblocked for the bot?**\n\n Underlying error: {e}",
         )
+
 
 async def broadcast_tasks(
     tasks: list[Task], client: discord.ClientUser, channel: discord.TextChannel
@@ -184,7 +189,10 @@ def get_tasks() -> list[Task]:
 
 
 async def handle_task_lookup(
-    channel: discord.TextChannel, client: discord.ClientUser, user: str = "all", extra: str = None
+    channel: discord.TextChannel,
+    client: discord.ClientUser,
+    user: str = "all",
+    extra: str = None,
 ) -> None:
     """
     Looks up tasks in the google calendar for the provided user.
