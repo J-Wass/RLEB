@@ -72,6 +72,36 @@ async def tasks_for_user(tasks: list[Task], user: str) -> list[Task]:
     """Returns a list of tasks for the given username."""
     return list(filter(lambda x: x.contains_user(user.lower()), tasks))
 
+async def send_tasks(
+    user: str, tasks: list[Task], client: discord.ClientUser, channel: discord.TextChannel
+) -> None:
+    """DMs a user (discord name) all of their tasks."""    
+    # Fetch the user id from mappings, and their tasks.
+    user_tasks = await tasks_for_user(tasks, user)
+    user_mapping = user_names_to_ids(channel)
+    discord_user = (
+        None if user not in user_mapping else client.get_user(user_mapping[user])
+    )
+    if not discord_user:
+        await rleb_stdout.print_to_channel(
+            channel,
+            f"Couldn't dm {user}! Is their name spelled correctly in the sheet?",
+        )
+        return
+
+    message = f"{random.choice(rleb_settings.greetings)}\n\n"
+    for t in user_tasks:
+        message += t.pretty_print()
+    # Discord messages must be less than 2000 to avoid rejection.
+    if len(message) > 1990:
+        message = await rleb_stdout.create_paste(message, title=f"{u}'s tasks")
+    try:
+        await discord_user.send(message)
+    except Exception as e:
+        await rleb_stdout.print_to_channel(
+            channel,
+            f"**Couldn't dm {user}! Do they have DMs unblocked for the bot?**\n\n Underlying error: {e}",
+        )
 
 async def broadcast_tasks(
     tasks: list[Task], client: discord.ClientUser, channel: discord.TextChannel
@@ -85,40 +115,15 @@ async def broadcast_tasks(
         users.add(t.event_updater1)
         users.add(t.event_updater2)
 
+    # Remove nulls from the weekly sheet.
     users.discard("")
     users.discard("No one needed")
     users.discard("****")
     users.discard("**")
 
     # Iterate each user, and pm them their tasks.
-    user_mapping = user_names_to_ids(channel)
     for u in users:
-        # Fetch the user id from mappings, and their tasks.
-        user_tasks = await tasks_for_user(tasks, u)
-        discord_user = (
-            None if u not in user_mapping else client.get_user(user_mapping[u])
-        )
-        if not discord_user:
-            await rleb_stdout.print_to_channel(
-                channel,
-                f"Couldn't dm {u}! Is their name spelled correctly in the sheet?",
-            )
-            continue
-
-        message = f"{random.choice(rleb_settings.greetings)}\n\n"
-        for t in user_tasks:
-            message += t.pretty_print()
-        # Discord messages must be less than 2000 to avoid rejection.
-        if len(message) > 1990:
-            message = await rleb_stdout.create_paste(message, title=f"{u}'s tasks")
-        try:
-            await discord_user.send(message)
-        except Exception as e:
-            await rleb_stdout.print_to_channel(
-                channel,
-                f"**Couldn't dm {u}! Do they have DMs unblocked for the bot?**\n\n Underlying error: {e}",
-            )
-            continue
+        await send_tasks(u, tasks, client, channel)
 
 
 def get_tasks() -> list[Task]:
@@ -179,16 +184,17 @@ def get_tasks() -> list[Task]:
 
 
 async def handle_task_lookup(
-    channel: discord.TextChannel, client: discord.ClientUser, user: str = "all"
-):
+    channel: discord.TextChannel, client: discord.ClientUser, user: str = "all", extra: str = None
+) -> None:
     """
     Looks up tasks in the google calendar for the provided user.
     Not providing a user argument returns tasks for the requester.
 
     Args:
         channel (discord.TextChannel): The channel requesting !tasks.
-        client ( discord.ClientUser): The discord client of the bot.
+        client (discord.ClientUser): The discord client of the bot.
         user (str): The optional username, defined in the google sheet, to return weekly tasks for.
+        extra (str): Optional extra message argument, used for some !tasks options.
     """
     try:
         tasks = get_tasks()
@@ -200,6 +206,10 @@ async def handle_task_lookup(
             return
         elif user == "all":
             relevant_tasks = tasks
+        elif user == "send":
+            target_user = extra
+            await send_tasks(target_user, tasks, client, channel)
+            return
         else:
             relevant_tasks = await tasks_for_user(tasks, user)
 
