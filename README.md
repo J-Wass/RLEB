@@ -27,4 +27,24 @@ RLEB can be run easily:
 1. `pip install -r requirements.txt`
 2. `python rleb_core.py`
 
-Note that you will need to create an `rleb_secrets.py` file if running RLEB locally. This file contains info about API keys, usernames, etc. You can also optionally set up env vars in place of a secrets file. See [the settings file](https://github.com/J-Wass/RLEB/blob/main/rleb_settings.py) for more information on which secrets need to be added. You can also turn off some features from that same settings file if you don't need to use every API integration.
+Note that you will need to create an `rleb_secrets.py` file if running RLEB locally. This file contains info about API keys, usernames, etc. Check out the https://github.com/J-Wass/RLEB/blob/main/rleb_sample_secrets.py to see what a sample secrets file would look like.
+
+Mac users (especially on M1 chipset) may need to set certain flags to be able to install everything from requirements.txt.
+
+	# Clone rleb into a fresh directory
+
+	> brew install postgresql
+
+	# Open new terminal window
+
+	> export CPPFLAGS="-I/opt/homebrew/opt/openssl@1.1/include"
+	> export LDFLAGS="-L/opt/homebrew/opt/openssl@1.1/lib -L${HOME}/.pyenv/versions/3.8.10/lib"
+	> python3 -m venv env
+	> source env/bin/activate
+	> pip3 install -r requirements.txt
+	> pip3 install aiohttp==3.7.4
+	> pip3 install -U discord.py
+
+	# Go to MacintoshHD -> Applications -> Python3.x Folder
+	# Double click on the "Install Certificates.command".
+
