@@ -178,6 +178,9 @@ success_emojis = ["🥳", "💪", "✅", "🔥"]
 verified_moderators = json.loads(
     os.environ.get("VERIFIED_MODERATORS") or rleb_secrets.VERIFIED_MODERATORS
 )
+moderator_emails = json.loads(
+    os.environ.get("MODERATOR_EMAILS") or rleb_secrets.MODERATOR_EMAILS
+)
 
 
 def is_discord_mod(user: discord.Member):

@@ -118,7 +118,6 @@ class TestReddit(RLEBTestCase):
         mock_modmail_item.author = mock_user
 
         mock_sub_flair = mock.MagicMock()
-        # breakpoint()
         rleb_settings.sub.flair = mock_sub_flair
 
         def mock_modmail_stream(args=[]):
