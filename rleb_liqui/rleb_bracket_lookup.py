@@ -12,7 +12,7 @@ from rleb_liqui import rleb_liqui_utils
 import discord
 
 BRACKET_MARKDOWN_TEMPLATE = """
-|**Elimination**|**UTC**|[**Liquipedia Bracket**]({LIQUI_URL})|
+|**Double Elimination**|**UTC**|[**Liquipedia Bracket**]({LIQUI_URL}#Results)|
 |:-|:-|:-|"""
 
 BRACKET_ROUND_TEMPLATE = "|`▼ {ROUND_NAME}`||`(Bo?)`|"

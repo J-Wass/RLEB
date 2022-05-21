@@ -33,6 +33,7 @@ jobs:
       developer_name : 'fake_name'
       developer_discriminator : 'fake_discriminator'
       VERIFIED_MODERATORS : "[]"
+      MODERATOR_EMAILS: "[]"
 
       # PostgreSQL
       DB_NAME : 'fake_db_name'
