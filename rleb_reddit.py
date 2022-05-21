@@ -70,7 +70,6 @@ def monitor_subreddit():
                 user = unread_message.author
 
                 # if message is a flair request
-                # breakpoint
                 subject = unread_message.subject.lower().replace(" ", "")
                 if subject in multiflair_request_keys:
                     handle_flair_request(sub, user, body)
