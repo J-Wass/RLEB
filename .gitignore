@@ -9,3 +9,4 @@ ENV/
 .idea
 myenv/
 my_notes.txt
+.DS_Store
