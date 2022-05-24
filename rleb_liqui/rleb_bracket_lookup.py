@@ -22,6 +22,17 @@ BRACKET_NEW_MATCH_TEMPLATE = (
 BRACKET_FINISHED_MATCH_TEMPLATE = "|{TEAM1}|**{TEAM1_SCORE} - {TEAM2_SCORE}**|{TEAM2}|"
 
 
+def bracket_names(round):
+    correct_names = {"Upper Bracket Quarter-Finals": "Upper Quarters", "Upper Bracket Semi-Finals": "Upper Semis", "Upper Bracket Final": "Upper Final",
+                     "Lower Bracket Quarter-Finals": "Lower Quarters", "Lower Bracket Semi-Finals": "Lower Semis", "Lower Bracket Final": "Lower Final"}  # Can add to this list to change round names when needed
+    if round in correct_names:
+        output = correct_names[round]
+    else:
+        output = round
+
+    return output
+
+
 async def handle_bracket_lookup(url: str, channel: discord.channel.TextChannel) -> None:
     """Handle bracket lookup message.
 
@@ -29,7 +40,8 @@ async def handle_bracket_lookup(url: str, channel: discord.channel.TextChannel) 
         channel (discord.channel.TextChannel): Channel the lookup is being used in.
         url (str): Liquipedia URL string to look for elimination brackets.
     """
-    rleb_settings.rleb_log_info("DISCORD: Creating bracket lookup for {0}".format(url))
+    rleb_settings.rleb_log_info(
+        "DISCORD: Creating bracket lookup for {0}".format(url))
 
     try:
         content = None
@@ -63,7 +75,8 @@ async def handle_bracket_lookup(url: str, channel: discord.channel.TextChannel) 
             # Make sure the hour is 0-padded.
             tz_tokens = timezone.split(":")
             if len(tz_tokens[0]) == 2:
-                tz_tokens[0] = tz_tokens[0].replace("-", "-0").replace("+", "+0")
+                tz_tokens[0] = tz_tokens[0].replace(
+                    "-", "-0").replace("+", "+0")
             tz = ":".join(tz_tokens)
 
             # Liqui format example: March 26, 2022 - 13:15
@@ -85,8 +98,10 @@ async def handle_bracket_lookup(url: str, channel: discord.channel.TextChannel) 
             liqui_timestring = timer.text
             timezone = timer.select("abbr")[0].attrs["data-tz"]
             timezone_str = timer.select("abbr")[0].text
-            liqui_timestring = liqui_timestring.replace(timezone_str, "").strip()
-            start_datetime = datetime_from_liqui_timestring(liqui_timestring, timezone)
+            liqui_timestring = liqui_timestring.replace(
+                timezone_str, "").strip()
+            start_datetime = datetime_from_liqui_timestring(
+                liqui_timestring, timezone)
 
             # Fetch team names and scores.
             teams = match.select(".brkts-opponent-entry")
@@ -96,12 +111,14 @@ async def handle_bracket_lookup(url: str, channel: discord.channel.TextChannel) 
             team2_score = ""
             try:
                 team1_name = teams[0].select(".name")[0].text
-                team1_score = teams[0].select(".brkts-opponent-score-inner")[0].text
+                team1_score = teams[0].select(
+                    ".brkts-opponent-score-inner")[0].text
             except:
                 pass
             try:
                 team2_name = teams[1].select(".name")[0].text
-                team2_score = teams[1].select(".brkts-opponent-score-inner")[0].text
+                team2_score = teams[1].select(
+                    ".brkts-opponent-score-inner")[0].text
             except:
                 pass
 
@@ -116,12 +133,16 @@ async def handle_bracket_lookup(url: str, channel: discord.channel.TextChannel) 
             matches.append(new_match)
 
         round_elements = html.select(".brkts-header.brkts-header-div")
-        rounds = [r.select(".brkts-header-option")[0].text for r in round_elements]
+        rounds = [r.select(".brkts-header-option")
+                  [0].text for r in round_elements]
+
+        # changes liquipedia grab to our preferred round names
+        correct_rounds = list(map(bracket_names, rounds))
 
         matches.sort(key=lambda x: x.game_start_time)
 
         final_markdown = BRACKET_MARKDOWN_TEMPLATE.replace("{LIQUI_URL}", url)
-        for r in rounds:
+        for r in correct_rounds:
             new_round = BRACKET_ROUND_TEMPLATE.replace("{ROUND_NAME}", r)
             final_markdown += f"\n{new_round}"
 
