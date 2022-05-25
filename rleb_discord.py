@@ -53,10 +53,13 @@ class RLEsportsBot(discord.Client):
 
     async def on_ready(self):
         """Indicate bot has joined the discord."""
-        rleb_settings.rleb_log_info("DISCORD: Logged on as {0}".format(self.user))
-        self.new_post_channel = self.get_channel(rleb_settings.NEW_POSTS_CHANNEL_ID)
+        rleb_settings.rleb_log_info(
+            "DISCORD: Logged on as {0}".format(self.user))
+        self.new_post_channel = self.get_channel(
+            rleb_settings.NEW_POSTS_CHANNEL_ID)
         self.trello_channel = self.get_channel(rleb_settings.TRELLO_CHANNEL_ID)
-        self.modmail_channel = self.get_channel(rleb_settings.MODMAIL_CHANNEL_ID)
+        self.modmail_channel = self.get_channel(
+            rleb_settings.MODMAIL_CHANNEL_ID)
         self.bot_command_channel = self.get_channel(
             rleb_settings.BOT_COMMANDS_CHANNEL_ID
         )
@@ -107,7 +110,8 @@ class RLEsportsBot(discord.Client):
                     )
                     embed = discord.Embed(
                         title=submission.title,
-                        url="https://www.reddit.com{0}".format(submission.permalink),
+                        url="https://www.reddit.com{0}".format(
+                            submission.permalink),
                         color=random.choice(rleb_settings.colors),
                     )
                     embed.set_author(name=submission.author.name)
@@ -134,7 +138,8 @@ class RLEsportsBot(discord.Client):
                     )
                     break
                 rleb_settings.rleb_log_error(
-                    "Discord: Submissions asyncio thread failed - {0}".format(e)
+                    "Discord: Submissions asyncio thread failed - {0}".format(
+                        e)
                 )
                 rleb_settings.rleb_log_error(traceback.format_exc())
                 rleb_settings.thread_crashes["asyncio"] += 1
@@ -185,9 +190,11 @@ class RLEsportsBot(discord.Client):
         while True:
             try:
                 while not rleb_settings.queues["direct_messages"].empty():
-                    author_message_tuple = rleb_settings.queues["direct_messages"].get()
+                    author_message_tuple = rleb_settings.queues["direct_messages"].get(
+                    )
                     rleb_settings.rleb_log_info(
-                        "DISCORD: Received DM '{0}'".format(author_message_tuple)
+                        "DISCORD: Received DM '{0}'".format(
+                            author_message_tuple)
                     )
                     author = author_message_tuple[0]
                     message = author_message_tuple[1]
@@ -208,7 +215,8 @@ class RLEsportsBot(discord.Client):
                     DM = await discord_user.send(message)
                     await DM.edit(suppress=True)
 
-                rleb_settings.asyncio_threads["direct_messages"] = datetime.now()
+                rleb_settings.asyncio_threads["direct_messages"] = datetime.now(
+                )
                 if not rleb_settings.discord_check_direct_messages_enabled:
                     break
             except Exception as e:
@@ -295,9 +303,11 @@ class RLEsportsBot(discord.Client):
                     ):
                         content_array.append(f"**User**: {item.target_author}")
                     if len(item.description or "") > 0:
-                        content_array.append(f"**Description**: {item.description}")
+                        content_array.append(
+                            f"**Description**: {item.description}")
                     if len(item.details or "") > 0:
-                        content_array.append(f"**Extra Details**: {item.details}")
+                        content_array.append(
+                            f"**Extra Details**: {item.details}")
                     content_array.append(
                         "--------------------------------------------------------"
                     )
@@ -372,7 +382,8 @@ class RLEsportsBot(discord.Client):
                 while not rleb_settings.queues["trello"].empty():
                     action = rleb_settings.queues["trello"].get()
                     rleb_settings.rleb_log_info(
-                        "DISCORD: Received trello action {0}".format(action["type"])
+                        "DISCORD: Received trello action {0}".format(
+                            action["type"])
                     )
                     embed = discord.Embed(
                         title=action["message"],
@@ -466,7 +477,8 @@ class RLEsportsBot(discord.Client):
             or discord_message == "thx"
         ):
             if str(message.author) in self.responses:
-                thanks_responses = ["np", "no problem", "no worries", "you're welcome"]
+                thanks_responses = ["np", "no problem",
+                                    "no worries", "you're welcome"]
                 await message.channel.send(random.choice(thanks_responses))
                 del self.responses[str(message.author)]
 
@@ -541,7 +553,8 @@ class RLEsportsBot(discord.Client):
                 )
                 return
             await message.channel.send(
-                "Starting migration {0} -> {1}.".format(self.from_flair, self.to_flair)
+                "Starting migration {0} -> {1}.".format(
+                    self.from_flair, self.to_flair)
             )
             for flair in sub.flair(limit=None):
                 if (
@@ -633,20 +646,27 @@ class RLEsportsBot(discord.Client):
                 return
 
             tokens = discord_message.split()
-            flair = None
-            try:
-                flair = tokens[2]
-            except IndexError:
+
+            if not tokens[2].startswith(":"):
                 await message.channel.send(
                     "Couldn't understand that. Expected '!triflairs add :flair:'."
                 )
                 return
-            self.flair_to_add = flair
-            self.add_flair_time = datetime.now()
-            await message.channel.send(
-                "Type '!confirm add' to add the {0} flair.".format(flair)
-            )
-            await self.add_response(message)
+            else:
+                flair = None
+                try:
+                    flair = tokens[2]
+                except IndexError:
+                    await message.channel.send(
+                        "Couldn't understand that. Expected '!triflairs add :flair:'."
+                    )
+                    return
+                self.flair_to_add = flair
+                self.add_flair_time = datetime.now()
+                await message.channel.send(
+                    "Type '!confirm add' to add the {0} flair.".format(flair)
+                )
+                await self.add_response(message)
 
         elif discord_message == "!confirm add" and is_staff(message.author):
 
@@ -719,11 +739,11 @@ class RLEsportsBot(discord.Client):
 
             logs = None
             if datasource == "memory":
-                logs = rleb_settings.memory_log[(-1 * count) :]
+                logs = rleb_settings.memory_log[(-1 * count):]
             elif datasource == "db":
                 db_logs = Data.singleton().read_logs()
                 db_logs_as_list = list(map(lambda x: x[0], db_logs))
-                logs = db_logs_as_list[(-1 * count) :]
+                logs = db_logs_as_list[(-1 * count):]
             else:
                 await message.channel.send(
                     "The first argument should be either 'memory' or 'db'."
@@ -758,7 +778,8 @@ class RLEsportsBot(discord.Client):
             )
             for thread_type, crash_count in rleb_settings.thread_crashes.items():
                 await message.channel.send(
-                    "{0} crashes detected: {1}".format(thread_type, crash_count)
+                    "{0} crashes detected: {1}".format(
+                        thread_type, crash_count)
                 )
 
             for thread_type, last_crash in rleb_settings.last_datetime_crashed.items():
@@ -775,7 +796,8 @@ class RLEsportsBot(discord.Client):
 
             await message.channel.send(
                 "Found {0} out of 7 threads running: {1}".format(
-                    len(self.threads), list(map(lambda x: x.name, self.threads))
+                    len(self.threads), list(
+                        map(lambda x: x.name, self.threads))
                 )
             )
             await self.add_response(message)
@@ -805,7 +827,8 @@ class RLEsportsBot(discord.Client):
                 target
             )
             embed = discord.Embed(
-                title=target, url=url, color=random.choice(rleb_settings.colors)
+                title=target, url=url, color=random.choice(
+                    rleb_settings.colors)
             )
             await message.channel.send(embed=embed)
             await self.add_response(message)
@@ -832,7 +855,8 @@ class RLEsportsBot(discord.Client):
             if not rleb_settings.is_discord_mod(message.author):
                 return
 
-            rleb_settings.rleb_log_info("DISCORD: Starting swiss bracket generation.")
+            rleb_settings.rleb_log_info(
+                "DISCORD: Starting swiss bracket generation.")
             await message.channel.send("Starting swiss bracket lookup...")
             tokens = discord_message.split()
             url = ""
@@ -850,7 +874,8 @@ class RLEsportsBot(discord.Client):
             if not rleb_settings.is_discord_mod(message.author):
                 return
 
-            rleb_settings.rleb_log_info("DISCORD: Starting elim bracket generation.")
+            rleb_settings.rleb_log_info(
+                "DISCORD: Starting elim bracket generation.")
             await message.channel.send("Starting elimination bracket lookup...")
             tokens = discord_message.split()
             url = ""
@@ -886,7 +911,8 @@ class RLEsportsBot(discord.Client):
             if not rleb_settings.is_discord_mod(message.author):
                 return
 
-            rleb_settings.rleb_log_info("DISCORD: Starting prizepool generation.")
+            rleb_settings.rleb_log_info(
+                "DISCORD: Starting prizepool generation.")
             await message.channel.send("Starting prizepool lookup...")
             tokens = discord_message.split()
             url = ""
@@ -915,7 +941,6 @@ class RLEsportsBot(discord.Client):
                 return
             await handle_mvp_lookup(urls, message.channel)
             await self.add_response(message)
-
 
         elif discord_message.startswith("!events") and is_staff(message.author):
             if not rleb_settings.is_discord_mod(message.author):
@@ -982,7 +1007,8 @@ class RLEsportsBot(discord.Client):
 
         elif discord_message.startswith("!echo"):
             discord_message.remove("!echo")
-            message_without_command = "> {0}".format(discord_message.remove("!echo"))
+            message_without_command = "> {0}".format(
+                discord_message.remove("!echo"))
             await message.channel.send(message_without_command)
             await self.add_response(message)
 
