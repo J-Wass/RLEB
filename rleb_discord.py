@@ -19,7 +19,7 @@ from rleb_calendar import handle_calendar_lookup
 from rleb_tasks import handle_task_lookup, user_names_to_ids
 from rleb_liqui.rleb_swiss import handle_swiss_lookup
 from rleb_liqui.rleb_bracket_lookup import handle_bracket_lookup
-from rleb_liqui.rleb_mvp_lookup import handle_mvp_lookup
+from rleb_liqui.rleb_mvp_lookup import handle_mvp_form_creation, handle_mvp_results_lookup
 from rleb_liqui.rleb_prizepool_lookup import handle_prizepool_lookup
 
 responses_lock = Lock()
@@ -904,16 +904,34 @@ class RLEsportsBot(discord.Client):
             if not rleb_settings.is_discord_mod(message.author):
                 return
 
-            rleb_settings.rleb_log_info("DISCORD: Starting mvp generation.")
-            await message.channel.send("Creating MVP voting form...")
+            rleb_settings.rleb_log_info(f"DISCORD: Starting mvp generation: {discord_message}")
+            
             tokens = discord_message.split()
-            urls = tokens[1:]
-            if len(urls) < 1:
+
+            if len(tokens) < 3:
                 await message.channel.send(
-                    "Couldn't understand that. Expected '!mvp liquipedia-url-1 liquipedia-url-2 liquipedia-url-3 etc...'."
+                    "Couldn't understand that. Expected '!mvp [create OR results] [list of liqui urls OR form url].'."
                 )
                 return
-            await handle_mvp_lookup(urls, message.channel)
+
+            option = tokens[1]
+            if option == 'create':
+                urls = tokens[2:]
+                if len(urls) < 1:
+                    await message.channel.send(
+                        "Couldn't understand that. Expected '!mvp create liquipedia-url-1 liquipedia-url-2 liquipedia-url-3 etc...'."
+                    )
+                    return
+                await message.channel.send("Creating MVP voting form...")
+                await handle_mvp_form_creation(urls, message.channel)
+            elif option == 'results':
+                form_url = tokens[2]
+                await message.channel.send("Generating MVP results...")
+                await handle_mvp_results_lookup(form_url, message.channel)
+            else:
+                await message.channel.send(
+                        "Couldn't understand that. Expected either 'create' or 'results' in the second parameter. Ex) '!mvp create liqui_url_1 liqui_url_2'."
+                    )
             await self.add_response(message)
 
 
