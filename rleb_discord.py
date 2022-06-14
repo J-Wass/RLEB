@@ -647,26 +647,25 @@ class RLEsportsBot(discord.Client):
 
             tokens = discord_message.split()
 
-            if not tokens[2].startswith(":"):
+            flair = None
+            try:
+                flair = tokens[2]
+            except IndexError:
                 await message.channel.send(
                     "Couldn't understand that. Expected '!triflairs add :flair:'."
                 )
                 return
-            else:
-                flair = None
-                try:
-                    flair = tokens[2]
-                except IndexError:
-                    await message.channel.send(
-                        "Couldn't understand that. Expected '!triflairs add :flair:'."
-                    )
-                    return
-                self.flair_to_add = flair
-                self.add_flair_time = datetime.now()
+            if not flair.startswith(":"):
                 await message.channel.send(
-                    "Type '!confirm add' to add the {0} flair.".format(flair)
+                    "Couldn't understand that. Make sure you are passing a :flair_code: and not an emoji 😭. You may have to disable Discord Nitro."
                 )
-                await self.add_response(message)
+                return
+            self.flair_to_add = flair
+            self.add_flair_time = datetime.now()
+            await message.channel.send(
+                "Type '!confirm add' to add the {0} flair.".format(flair)
+            )
+            await self.add_response(message)
 
         elif discord_message == "!confirm add" and is_staff(message.author):
 
