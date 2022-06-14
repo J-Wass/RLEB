@@ -1,16 +1,13 @@
 # Dumb hack to be able to access source code files on both windows and linux
+from threading import Thread
+import discord
+from tests.common.rleb_async_test_case import RLEBAsyncTestCase
+from unittest.mock import patch, call
+import unittest.mock as mock
 import sys
 import os
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
-
-import unittest.mock as mock
-from unittest.mock import patch, call
-
-from tests.common.rleb_async_test_case import RLEBAsyncTestCase
-
-import discord
-from threading import Thread
 
 
 class TestDiscordCommands(RLEBAsyncTestCase):
@@ -104,3 +101,11 @@ class TestDiscordCommands(RLEBAsyncTestCase):
         mock_rleb_census.assert_awaited_once_with(
             rleb_settings.sub, 10, self.mock_channel, ","
         )
+
+    async def test_triflairs(self):
+        # sending emoji instead of ":flair:"
+        await self._send_message("!triflairs add 😄", from_staff_user=True)
+        self.mock_channel.send.assert_awaited_with(
+            "Couldn't understand that. Make sure you are passing a :flair_code: and not an emoji 😭. You may have to disable Discord Nitro or auto emoji."
+        )
+        self.mock_channel.reset_mock()
