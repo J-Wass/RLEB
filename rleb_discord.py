@@ -657,7 +657,7 @@ class RLEsportsBot(discord.Client):
                 return
             if not flair.startswith(":"):
                 await message.channel.send(
-                    "Couldn't understand that. Make sure you are passing a :flair_code: and not an emoji 😭. You may have to disable Discord Nitro."
+                    "Couldn't understand that. Make sure you are passing a :flair_code: and not an emoji 😭. You may have to disable Discord Nitro or auto emoji."
                 )
                 return
             self.flair_to_add = flair
