@@ -5,9 +5,7 @@
 # Reddit
 REDDIT_CLIENT_ID = "asdDwdasdA"
 REDDIT_CLIENT_SECRET = "asdaADadasdaDWdadaFG"
-REDDIT_USER_AGENT = (
-    "This is my awesome bot, by u/RedditUserName"
-)
+REDDIT_USER_AGENT = "This is my awesome bot, by u/RedditUserName"
 REDDIT_USERNAME = "RedditBotUsername"
 REDDIT_PASSWORD = "RedditBotPassword"
 
@@ -45,7 +43,7 @@ PASTEEE_APP_KEY = "awdawd6096awd9"
 
 # Google
 CALENDAR_ID = "awd876wa8aawdwa6d098@group.calendar.google.com"
-GOOGLE_CREDENTIALS_JSON = 'long, stringified json representing your google creds'
+GOOGLE_CREDENTIALS_JSON = "long, stringified json representing your google creds"
 SHEETS_ID = "ASDD87aSd8797adad43"
 
 # Indicator for Running Mode (either production or local)
