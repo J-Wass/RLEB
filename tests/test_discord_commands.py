@@ -108,4 +108,3 @@ class TestDiscordCommands(RLEBAsyncTestCase):
         self.mock_channel.send.assert_awaited_with(
             "Couldn't understand that. Make sure you are passing a :flair_code: and not an emoji 😭. You may have to disable Discord Nitro or auto emoji."
         )
-        self.mock_channel.reset_mock()
