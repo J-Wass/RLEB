@@ -43,6 +43,10 @@ class TestTasks(RLEBAsyncTestCase):
         self.mock_credentials = mock.Mock()
 
         rleb_settings.greetings = ["Incoming!"]
+        rleb_settings.user_names_to_ids = {
+            "voices#6380": 345639629459816458,
+            "hawkkn#0408": 364941319296253954,
+        }
 
         def mock_from_service_account_info(args=[], scopes=None):
             return self.mock_credentials

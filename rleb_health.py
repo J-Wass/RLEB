@@ -208,8 +208,11 @@ def health_check(threads):
                     )
                 )
                 rleb_settings.queues["alerts"].put(
-                    "Thread has died: {0} ({1} crashes)".format(
-                        t.name, rleb_settings.thread_crashes["thread"]
+                    (
+                        "Thread has died: {0} ({1} crashes)".format(
+                            t.name, rleb_settings.thread_crashes["thread"]
+                        ),
+                        rleb_settings.BOT_COMMANDS_CHANNEL_ID,
                     )
                 )
                 threads.remove(t)
@@ -228,8 +231,11 @@ def health_check(threads):
                     )
                 )
                 rleb_settings.queues["alerts"].put(
-                    "{0} asyncio thread has stopped responding! ({1} crashes)".format(
-                        asyncio_thread, rleb_settings.thread_crashes["asyncio"]
+                    (
+                        "{0} asyncio thread has stopped responding! ({1} crashes)".format(
+                            asyncio_thread, rleb_settings.thread_crashes["asyncio"]
+                        ),
+                        rleb_settings.BOT_COMMANDS_CHANNEL_ID,
                     )
                 )
                 dead_asyncio_threads.append(asyncio_thread)

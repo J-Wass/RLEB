@@ -35,6 +35,7 @@ class TestHealth(RLEBTestCase):
         rleb_settings.asyncio_health_check_enabled = False
         rleb_settings.thread_health_check_enabled = False
         rleb_settings.chrome_health_check_enabled = False
+        rleb_settings.BOT_COMMANDS_CHANNEL_ID = 1234321
 
         self.mock_rleb_log_error = mock.Mock()
         rleb_settings.rleb_log_error = self.mock_rleb_log_error
@@ -53,9 +54,15 @@ class TestHealth(RLEBTestCase):
             mock_log_error.assert_called_with(
                 "HEALTH: Thread has died: Bad thread (3 crashes)"
             )
+
+        alert = rleb_settings.queues["alerts"].get()
         self.assertEqual(
             "Thread has died: Bad thread (3 crashes)",
-            rleb_settings.queues["alerts"].get(),
+            alert[0],
+        )
+        self.assertEqual(
+            rleb_settings.BOT_COMMANDS_CHANNEL_ID,
+            alert[1],
         )
 
     def test_alerts_on_dead_asyncio_thread(self):
@@ -76,7 +83,7 @@ class TestHealth(RLEBTestCase):
             )
         self.assertEqual(
             "submissions asyncio thread has stopped responding! (2 crashes)",
-            rleb_settings.queues["alerts"].get(),
+            rleb_settings.queues["alerts"].get()[0],
         )
 
 
