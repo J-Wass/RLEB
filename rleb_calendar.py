@@ -30,7 +30,7 @@ TABLE_HEADER = """
 |Scroll to view start times / links >>|**EDT**|**CET**|**AEST**|**Streams**|**Matches**|
 |:-|:-|:-|:-|:-|:-|"""
 
-TABLE_ROW = """|[**{title}**]({link}) |[**{ET}**](https://www.google.com/search?q={ET}+ET) |{CET} |{AET} | {STREAM} |[**Bracket**]({BRACKET})|"""
+TABLE_ROW = """|⚪ [**{title}**]({link}) |[**{ET}**](https://www.google.com/search?q={ET}+ET) |{CET} |{AET} | {STREAM} |[**Bracket**]({BRACKET})|"""
 
 BOTTOM_SECTION = """
 
@@ -77,7 +77,7 @@ def timestring(datetime, relative_datetime, offset_hours=0):
 
 def process_calendar_events(calendar_event):
     """Builds the list of calendar event objects from the google calendar api response."""
-    calendar_event.title = "⚪ " + calendar_event.rawtext.split("**")[1].replace("|", "-")
+    calendar_event.title = calendar_event.rawtext.split("**")[1].replace("|", "-")
     calendar_event.link = calendar_event.rawtext.split("(")[1].split(")")[0]
     calendar_event.bracket_link = calendar_event.link + "#Results"
 
