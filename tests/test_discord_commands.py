@@ -1,8 +1,11 @@
 # Dumb hack to be able to access source code files on both windows and linux
-from threading import Thread
+import queue
+from threading import Thread, Timer
+import time
 import discord
+from rleb_data import Remindme
 from tests.common.rleb_async_test_case import RLEBAsyncTestCase
-from unittest.mock import patch, call
+from unittest.mock import MagicMock, patch, call
 import unittest.mock as mock
 import sys
 import os
@@ -46,6 +49,12 @@ class TestDiscordCommands(RLEBAsyncTestCase):
 
         self.discord_client = rleb_discord.RLEsportsBot([])
         self.mock_channel = mock.MagicMock(discord.TextChannel)
+        self.mock_channel.id = 1
+
+        self.discord_client.bot_command_channel = mock.AsyncMock()
+        self.discord_client.get_channel = MagicMock(
+            return_value=self.discord_client.bot_command_channel
+        )
 
         self.discord_thread = Thread(
             target=self.discord_client.run,
@@ -57,7 +66,13 @@ class TestDiscordCommands(RLEBAsyncTestCase):
         # Otherwise, we'd need to add !debug before each command.
         rleb_settings.RUNNING_MODE = "production"
         rleb_settings.verified_moderators = ["test_mod#1"]
+
+        # Remove randomness.
         rleb_settings.hooks = ["Hook"]
+        rleb_settings.success_emojis = ["!"]
+
+        rleb_settings.discord_async_interval_seconds = 1
+        rleb_settings.user_names_to_ids = {"test_mod#1": 567}
 
     async def test_bracket(self):
         # Not staff.
@@ -108,3 +123,30 @@ class TestDiscordCommands(RLEBAsyncTestCase):
         self.mock_channel.send.assert_awaited_with(
             "Couldn't understand that. Make sure you are passing a :flair_code: and not an emoji 😭. You may have to disable Discord Nitro or auto emoji."
         )
+
+    async def test_remindme(self):
+        rleb_settings.queues["alerts"] = queue.Queue()
+
+        # Only used by mods.
+        await self._send_message("!remindme", from_staff_user=False)
+        self.mock_channel.send.assert_not_awaited()
+        self.mock_channel.reset_mock()
+
+        # Create a timer.
+        await self._send_message("!remindme 1s yo", from_staff_user=True)
+        self.mock_channel.send.assert_awaited_with(
+            "! reminder set.\nUse `!remindme list` to see all reminders."
+        )
+        rleb_settings.remindme_timers[1].cancel()
+        del rleb_settings.remindme_timers[1]
+        self.mock_channel.reset_mock()
+
+        # Delete a timer.
+        rleb_settings.schedule_remindme(
+            Remindme(2, "test#mod", "msg", time.time() + 60, self.mock_channel.id)
+        )
+        self.assertEqual(len(rleb_settings.remindme_timers), 1)
+        await self._send_message("!remindme delete 2", from_staff_user=True)
+        self.assertEqual(len(rleb_settings.remindme_timers), 0)
+        self.mock_channel.send.assert_awaited_with("Deleted reminder.")
+        self.mock_channel.reset_mock()

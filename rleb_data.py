@@ -1,4 +1,6 @@
 from threading import Lock
+import time
+from typing import NamedTuple
 import psycopg2
 from psycopg2.extras import execute_values
 import os
@@ -9,6 +11,16 @@ try:
 except Exception as e:
     rleb_secrets = {}
     print("rleb_secrets.py not found, using keys in environment settings.")
+
+
+class Remindme(NamedTuple):
+    """Encapsulation of data needed to trigger a !remindme notification."""
+
+    remindme_id: int
+    discord_username: str
+    message: str
+    trigger_timestamp: int
+    channel_id: str
 
 
 class Data(object):
@@ -49,6 +61,47 @@ class Data(object):
         )
         Data._cache["connection"] = connection
         return connection
+
+    def write_remindme(
+        self, user: str, message: str, total_time: int, channel_id: int
+    ) -> Remindme:
+        """Adds a remindme notification to the database."""
+        target_timestamp = total_time + time.time()
+        remindme_id = -1
+        with Data._db_lock:
+
+            db = self.postgres_connection()
+            cursor = db.cursor()
+            cursor.execute(
+                """INSERT INTO remindme (discord_username, remindme_message, channel_id, trigger_timestamp) VALUES (%s, %s, %s, %s) RETURNING remindme_id;""",
+                (user, message, channel_id, target_timestamp),
+            )
+            remindme_id = cursor.fetchone()[0]
+            db.commit()
+        return Remindme(remindme_id, user, message, target_timestamp, channel_id)
+
+    def delete_remindme(self, remindme_id: int) -> None:
+        """Deletes a remindme notification from db. Should be used after a remindme is triggered."""
+        with Data._db_lock:
+            db = self.postgres_connection()
+            cursor = db.cursor()
+            cursor.execute(
+                """DELETE FROM remindme WHERE remindme_id = %s;""",
+                (remindme_id,),
+            )
+            db.commit()
+
+    def read_remindmes(self) -> list[Remindme]:
+        """Returns all remindmes stored in the db."""
+        with Data._db_lock:
+            db = self.postgres_connection()
+            cursor = db.cursor()
+            cursor.execute("""SELECT * FROM remindme""")
+            remindmes = []
+            for r in list(cursor.fetchall()):
+                # Unpack the sql columns into the Remindme object.
+                remindmes.append(Remindme(r[0], r[1], r[2], r[4], r[3]))
+            return remindmes
 
     def write_already_warned_scheduled_post(
         self, log_id: int, seconds_since_epoch: int
