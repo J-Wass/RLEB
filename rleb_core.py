@@ -2,6 +2,7 @@ import time
 import asyncio
 from queue import Queue
 from threading import Thread
+from rleb_data import Data, Remindme
 from tornado.platform.asyncio import AnyThreadEventLoopPolicy
 from datetime import datetime, timedelta, timezone
 import traceback
@@ -113,6 +114,8 @@ def start():
     if rleb_settings.task_alerts_enabled:
         rleb_log_info("Starting task alert thread.")
         task_alert_thread.start()
+
+    rleb_settings.refresh_remindmes()
 
     # Start the discord thread, running on main thread.
     rleb_log_info("Starting discord thread.")

@@ -6,7 +6,7 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 
 import unittest
 import unittest.mock as mock
-from unittest.mock import patch, call
+from unittest.mock import MagicMock, patch, call
 
 from tests.common.rleb_async_test_case import RLEBAsyncTestCase
 
@@ -32,6 +32,16 @@ class TestDiscord(RLEBAsyncTestCase):
         self.discord_client.modmail_channel = mock.AsyncMock()
         self.discord_client.modlog_channel = mock.AsyncMock()
         self.discord_client.bot_command_channel = mock.AsyncMock()
+        self.discord_client.get_channel = MagicMock(
+            return_value=self.discord_client.bot_command_channel
+        )
+
+        self.discord_thread = Thread(
+            target=self.discord_client.run,
+            args=(rleb_settings.TOKEN,),
+            name="Discord Test Thread",
+        )
+        self.discord_thread.setDaemon(True)
 
         # Used for passing reddit submissions from reddit to discord.
         submissions_queue = Queue()
@@ -162,14 +172,13 @@ class TestDiscord(RLEBAsyncTestCase):
 
     async def test_reads_new_alerts(self):
         # Add the alert to the queue.
-        rleb_settings.queues["alerts"].put("this is a test alert")
+        rleb_settings.queues["alerts"].put(("this is a test alert", 123))
 
         rleb_settings.discord_check_new_alerts_enabled = False
 
         await self.discord_client.check_new_alerts()
-
         self.discord_client.bot_command_channel.send.assert_awaited_with(
-            "ALERT: this is a test alert"
+            "this is a test alert"
         )
 
     async def test_reads_new_roster_change_submission(self):

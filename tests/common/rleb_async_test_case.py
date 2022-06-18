@@ -56,6 +56,7 @@ class RLEBAsyncTestCase(IsolatedAsyncioTestCase):
         mock_cursor = mock.Mock()
         mock_cursor.execute.return_value = ""
         mock_cursor.fetchall.return_value = [(":NRG:",), (":G2:",), (":C9:",)]
+        mock_cursor.fetchone.return_value = [1]
 
         self.mock_db.return_value.cursor.return_value = mock_cursor
 

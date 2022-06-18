@@ -1,3 +1,5 @@
+import os
+import signal
 import discord
 import random
 from datetime import datetime
@@ -10,13 +12,13 @@ import math
 import rleb_health
 import rleb_settings
 import rleb_stdout
-from rleb_data import Data
-from rleb_settings import sub
+from rleb_data import Data, Remindme
+from rleb_settings import sub, user_names_to_ids
 from rleb_liqui.rleb_team_lookup import handle_team_lookup
 from rleb_liqui.rleb_group_lookup import handle_group_lookup
 from rleb_census import handle_flair_census
 from rleb_calendar import handle_calendar_lookup
-from rleb_tasks import handle_task_lookup, user_names_to_ids
+from rleb_tasks import handle_task_lookup
 from rleb_liqui.rleb_swiss import handle_swiss_lookup
 from rleb_liqui.rleb_bracket_lookup import handle_bracket_lookup
 from rleb_liqui.rleb_mvp_lookup import (
@@ -70,6 +72,12 @@ class RLEsportsBot(discord.Client):
             rleb_settings.ROSTER_NEWS_CHANNEL_ID
         )
         self.modlog_channel = self.get_channel(rleb_settings.MODLOG_CHANNEL_ID)
+
+        # Create a mapping of discord usernames to discord ids for future use.
+        for m in self.new_post_channel.members:
+            rleb_settings.user_names_to_ids[
+                m.name.lower() + "#" + m.discriminator
+            ] = m.id
 
         # If testing, ping the discord channel.
         if rleb_settings.RUNNING_MODE != "production":
@@ -194,7 +202,7 @@ class RLEsportsBot(discord.Client):
                     )
                     author = author_message_tuple[0]
                     message = author_message_tuple[1]
-                    user_mapping = user_names_to_ids(self.bot_command_channel)
+                    user_mapping = rleb_settings.user_names_to_ids
                     if user_mapping == None or len(user_mapping) == 0:
                         continue
                     discord_user = self.get_user(user_mapping[author])
@@ -242,10 +250,14 @@ class RLEsportsBot(discord.Client):
             try:
                 while not rleb_settings.queues["alerts"].empty():
                     alert = rleb_settings.queues["alerts"].get()
+                    message = alert[0]
+                    channel_id = alert[1]
+
                     rleb_settings.rleb_log_info(
                         "DISCORD: Received alert '{0}'".format(alert)
                     )
-                    await self.bot_command_channel.send("ALERT: " + alert)
+                    channel = self.get_channel(channel_id)
+                    await channel.send(message)
                 rleb_settings.asyncio_threads["alerts"] = datetime.now()
                 if not rleb_settings.discord_check_new_alerts_enabled:
                     break
@@ -751,6 +763,12 @@ class RLEsportsBot(discord.Client):
                     "Couldn't send logs over! (tip: there's a limit to the number of characters that can be sent. Make sure you aren't requesting too many logs. Use '!logs [db/memory] [n]', where n is a small number to avoid the character limit.)"
                 )
             await self.add_response(message)
+        elif discord_message.startswith("!restart") and is_staff(message.author):
+            if not rleb_settings.is_discord_mod(message.author):
+                return
+
+            # Absolutely shrek the running process.
+            os.kill(os.getpid(), signal.SIGTERM)
 
         elif discord_message == "!status" and is_staff(message.author):
 
@@ -962,6 +980,91 @@ class RLEsportsBot(discord.Client):
                 )
                 return
             await handle_calendar_lookup(message.channel, formatter, days)
+            await self.add_response(message)
+
+        elif discord_message.startswith("!remindme") and is_staff(message.author):
+            rleb_settings.rleb_log_info("DISCORD: Handling remindme.")
+            tokens = discord_message.split()
+
+            if len(tokens) < 1:
+                await message.channel.send(
+                    "Couldn't understand that. Expected `!remindme [timespan] [message].` ex) `!remindme 6h Do laundry`. Allowed time units are s, m, d, w"
+                )
+                return
+
+            if tokens[1] == "delete":
+                try:
+                    remindme_id = int(tokens[2])
+                except:
+                    await message.channel.send(
+                        "Couldn't understand that. Expected `!remindme delete [id].`\n**Example**: `!remindme delete 152`.\nUse `!remindme list` to see all valid ids."
+                    )
+                    return
+
+                if remindme_id not in rleb_settings.remindme_timers:
+                    await message.channel.send(
+                        f"Couldn't find reminder with id `{remindme_id}`. Use `!remindme list` to view all reminder ids."
+                    )
+                    return
+
+                rleb_settings.remindme_timers[remindme_id].cancel()
+                del rleb_settings.remindme_timers[remindme_id]
+                Data.singleton().delete_remindme(remindme_id)
+
+                await message.channel.send("Deleted reminder.")
+                await self.add_response(message)
+                return
+
+            if tokens[1] == "list":
+                remindmes: list[Remindme] = Data.singleton().read_remindmes()
+                output = ""
+                for remindme in remindmes:
+                    seconds_left = remindme.trigger_timestamp - time.time()
+                    minutes_left = round(seconds_left / 60, 1)
+                    msg = remindme.message
+                    author = remindme.discord_username
+                    output += f"[id {remindme.remindme_id}] - `{msg}` for {author} in {minutes_left} minutes\n"
+                if len(remindmes) == 0:
+                    output = "No reminders are set. Use `!remindme [time] [msg]` to schedule one. Example times: `5h`, `80s`, `1d`, `2w`, `8m`.\n"
+                output += "Use `!remindme delete [id]` to cancel a reminder."
+                await message.channel.send(output)
+                await self.add_response(message)
+                return
+
+            user = message.author.name.lower() + "#" + message.author.discriminator
+            extra = None
+            try:
+                target_time = tokens[1]
+                reminder_message = " ".join(tokens[2:])
+            except Exception:
+                await message.channel.send(
+                    "Couldn't understand that. Expected `!remindme [timespan] [message].` ex) `!remindme 6h Do laundry`. Allowed time units are s, m, h, d, w."
+                )
+                return
+
+            seconds_multiplier = {
+                "s": 1,
+                "m": 60,
+                "h": 60 * 60,
+                "d": 60 * 60 * 24,
+                "w": 60 * 60 * 24 * 7,
+            }
+            last_char = target_time[-1]
+            units = target_time[:-1]
+            if not units.isdigit() or last_char not in seconds_multiplier:
+                await message.channel.send(
+                    "Couldn't understand that. Expected `!remindme [timespan] [message].` ex) `!remindme 6h Do laundry`. Allowed time units are s, m, h, d, w."
+                )
+                return
+            total_time = seconds_multiplier[last_char] * int(units)
+            remindme: Remindme = Data.singleton().write_remindme(
+                user, reminder_message, total_time, message.channel.id
+            )
+            rleb_settings.schedule_remindme(remindme)
+            await message.channel.send(
+                random.choice(rleb_settings.success_emojis)
+                + " reminder set.\nUse `!remindme list` to see all reminders."
+            )
             await self.add_response(message)
 
         elif discord_message.startswith("!tasks") and is_staff(message.author):

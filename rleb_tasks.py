@@ -53,21 +53,6 @@ class Task:
         )
 
 
-def user_names_to_ids(channel: discord.TextChannel) -> dict[str, int]:
-    """Returns a mapping of discord staff usernames to their ids.
-
-    Args:
-        channel (discord.channel.TextChannel): Discord channel to make mapping from.
-
-    Returns:
-        dict[str,int]: Mapping from discord username (user#tag) to their discord ids.
-    """
-    user_mappings = {}
-    for m in channel.members:
-        user_mappings[m.name.lower() + "#" + m.discriminator] = m.id
-    return user_mappings
-
-
 async def tasks_for_user(tasks: list[Task], user: str) -> list[Task]:
     """Returns a list of tasks for the given username."""
     return list(filter(lambda x: x.contains_user(user.lower()), tasks))
@@ -82,7 +67,7 @@ async def send_tasks(
     """DMs a user (discord name) all of their tasks."""
     # Fetch the user id from mappings, and their tasks.
     user_tasks = await tasks_for_user(tasks, user)
-    user_mapping = user_names_to_ids(channel)
+    user_mapping = rleb_settings.user_names_to_ids
     discord_user = (
         None if user not in user_mapping else client.get_user(user_mapping[user])
     )
@@ -100,6 +85,7 @@ async def send_tasks(
     if len(message) > 1990:
         message = await rleb_stdout.create_paste(message, title=f"{u}'s tasks")
     try:
+
         await discord_user.send(message)
     except Exception as e:
         await rleb_stdout.print_to_channel(

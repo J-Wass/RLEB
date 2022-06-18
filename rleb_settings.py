@@ -1,4 +1,5 @@
 # Utilities file. Houses methods that are used throughout rleb.
+import time
 import praw
 import psycopg2
 from psycopg2.extras import execute_values
@@ -6,13 +7,14 @@ import datetime
 import requests
 import json
 from datetime import datetime
-from threading import Lock
+from threading import Lock, Timer
 from queue import Queue
 import os
 from sys import platform
 import discord
+from sched import scheduler
 
-from rleb_data import Data
+from rleb_data import Data, Remindme
 
 # This is bad code, don't tell anyone I wrote this.
 try:
@@ -53,6 +55,41 @@ asyncio_threads = {
     "direct_messages": datetime.now(),
     "schedule_chat": datetime.now(),
 }
+
+# Mapping of reminder_ids to Timers
+remindme_timers = {}
+
+
+def _trigger_remindme(remindme: Remindme) -> None:
+    """Executes a remindme and removes it from the db."""
+    user_id = user_names_to_ids[remindme.discord_username]
+    msg = f"**Reminder for <@{user_id}>:** {remindme.message}"
+    queues["alerts"].put((msg, remindme.channel_id))
+    Data.singleton().delete_remindme(remindme.remindme_id)
+    del remindme_timers[remindme.remindme_id]
+
+    rleb_log_info(f"REMINDME: Triggered remindme {remindme.remindme_id}")
+
+
+def schedule_remindme(remindme: Remindme) -> None:
+    """Starts a new timer for the readme and adds it to the readme_timers."""
+
+    seconds_remaining = remindme.trigger_timestamp - time.time()
+    delay = max(1, seconds_remaining)
+    timer = Timer(delay, _trigger_remindme, args=(remindme,))
+    remindme_timers[remindme.remindme_id] = timer
+    timer.start()
+
+    rleb_log_info(f"REMINDME: Created remindme {remindme.remindme_id} due in {delay}s.")
+
+
+def refresh_remindmes() -> None:
+    """Loads !remindme schedulers from db."""
+
+    remindmes = Data.singleton().read_remindmes()
+    for remindme in remindmes:
+        schedule_remindme(remindme)
+
 
 # The number of times a thread or asyncio thread crashed and had to be restarted.
 thread_crashes = {"asyncio": 0, "thread": 0}
@@ -181,6 +218,21 @@ verified_moderators = json.loads(
 moderator_emails = json.loads(
     os.environ.get("MODERATOR_EMAILS") or rleb_secrets.MODERATOR_EMAILS
 )
+
+# Mapping of discord staff usernames to their ids
+user_names_to_ids = {}
+
+
+def refresh_discord_username_id_mapping(channel: discord.TextChannel) -> None:
+    """Refreshes user_names_to_ids mapping.
+
+    Args:
+        channel (discord.channel.TextChannel): Discord channel to make mapping from.
+    """
+    user_mappings = {}
+    for m in channel.members:
+        user_mappings[m.name.lower() + "#" + m.discriminator] = m.id
+    user_names_to_ids = user_mappings
 
 
 def is_discord_mod(user: discord.Member):
