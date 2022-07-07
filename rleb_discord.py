@@ -256,8 +256,14 @@ class RLEsportsBot(discord.Client):
                     rleb_settings.rleb_log_info(
                         "DISCORD: Received alert '{0}'".format(alert)
                     )
-                    channel = self.get_channel(channel_id)
-                    await channel.send(message)
+
+                    # Send to specific channel. If any issue arrises, send to bot commands instead.
+                    try:
+                        channel = self.get_channel(channel_id)
+                        await channel.send(message)
+                    except:
+                        channel = self.bot_command_channel
+                        await channel.send(message)
                 rleb_settings.asyncio_threads["alerts"] = datetime.now()
                 if not rleb_settings.discord_check_new_alerts_enabled:
                     break
@@ -1051,12 +1057,24 @@ class RLEsportsBot(discord.Client):
             }
             last_char = target_time[-1]
             units = target_time[:-1]
-            if not units.isdigit() or last_char not in seconds_multiplier:
+
+            # Ensure that units are numeric & last char is a valid time unit.
+            should_exit_early = False
+            if last_char not in seconds_multiplier:
+                should_exit_early = True
+
+            try:
+                units = float(units)
+            except:
+                should_exit_early = True
+
+            if should_exit_early:
                 await message.channel.send(
                     "Couldn't understand that. Expected `!remindme [timespan] [message].` ex) `!remindme 6h Do laundry`. Allowed time units are s, m, h, d, w."
                 )
                 return
-            total_time = seconds_multiplier[last_char] * int(units)
+
+            total_time = seconds_multiplier[last_char] * units
             remindme: Remindme = Data.singleton().write_remindme(
                 user, reminder_message, total_time, message.channel.id
             )

@@ -141,6 +141,15 @@ class TestDiscordCommands(RLEBAsyncTestCase):
         del rleb_settings.remindme_timers[1]
         self.mock_channel.reset_mock()
 
+        # Create a timer with a floating value.
+        await self._send_message("!remindme 1.5s yoyo", from_staff_user=True)
+        self.mock_channel.send.assert_awaited_with(
+            "! reminder set.\nUse `!remindme list` to see all reminders."
+        )
+        rleb_settings.remindme_timers[1].cancel()
+        del rleb_settings.remindme_timers[1]
+        self.mock_channel.reset_mock()
+
         # Delete a timer.
         rleb_settings.schedule_remindme(
             Remindme(2, "test#mod", "msg", time.time() + 60, self.mock_channel.id)
