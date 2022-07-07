@@ -30,7 +30,7 @@ TABLE_HEADER = """
 |Scroll to view start times / links >>|**EDT**|**CET**|**AEST**|**Streams**|**Matches**|
 |:-|:-|:-|:-|:-|:-|"""
 
-TABLE_ROW = """|[**{title}**]({link}) |[**{ET}**](https://www.google.com/search?q={ET}+ET) |{CET} |{AET} | {STREAM} |[**Bracket**]({BRACKET})|"""
+TABLE_ROW = """|⚪ [**{title}**]({link}) |[**{ET}**](https://www.google.com/search?q={ET}+ET) |{CET} |{AET} | {STREAM} |[**Bracket**]({BRACKET})|"""
 
 BOTTOM_SECTION = """
 
