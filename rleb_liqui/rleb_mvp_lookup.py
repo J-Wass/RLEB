@@ -214,7 +214,7 @@ def _get_mvp_form_responses(form_link: str) -> Dict[str, List[Tuple[str, float]]
     result = service.forms().get(formId=form_id).execute()
     for item in result["items"]:
         question_id = item["questionItem"]["question"]["questionId"]
-        question_name = item["title"].split("|")[-2].strip()
+        question_name = item["title"]
         question_names[question_id] = question_name
 
     # Mapping of question_id to list of answers
