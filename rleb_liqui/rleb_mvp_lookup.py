@@ -72,7 +72,7 @@ async def handle_mvp_results_lookup(form_url: str, channel) -> None:
         top_5_for_each_region = _get_mvp_form_responses(form_url)
     except Exception as e:
         await channel.send(f"\nCouldn't get form responses for {form_url}.")
-        await channel.send(f'Full error: {str(e)}\n{traceback.format_exc()}')
+        await channel.send(f"Full error: {str(e)}\n{traceback.format_exc()}")
         return
 
     # For each region, create markdown using the form responses.
@@ -222,7 +222,7 @@ def _get_mvp_form_responses(form_link: str) -> Dict[str, List[Tuple[str, float]]
     result = service.forms().responses().list(formId=form_id).execute()
     responses = result["responses"]
     for r in responses:
-        if not 'answers' in r:
+        if not "answers" in r:
             continue
         for question_id, answers in r["answers"].items():
             # If question_id hasn't been seen, add a bucket.

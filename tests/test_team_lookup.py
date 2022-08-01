@@ -67,6 +67,20 @@ class TestTeamLookup(RLEBAsyncTestCase):
                 mock_channel, expected_markup, title="Teams"
             )
 
+    async def test_team_lookup_with_new_liqui_roster_table(self):
+        mock_channel = mock.Mock(spec=discord.TextChannel)
+
+        with patch.object(rleb_stdout, "print_to_channel") as mocked_print_to_channel:
+            await rleb_team_lookup.handle_team_lookup(
+                "https://liquipedia.net/rocketleague/Rocket_League_Championship_Series/2021-22",
+                mock_channel,
+            )
+
+            expected_markup = "|Team|\n:--|\n[**G2 Esports**](https://liquipedia.net/rocketleague/G2_Esports) - JKnaps, Chicago, Atomic|\n[**FaZe Clan**](https://liquipedia.net/rocketleague/FaZe_Clan) - AYYJAYY, Firstkiller, Sypical|\n[**The General NRG**](https://liquipedia.net/rocketleague/NRG) - GarrettG, jstn., SquishyMuffinz|\n[**Moist Esports**](https://liquipedia.net/rocketleague/Moist_Esports) - Joyo, Vatira, rise.|\n[**Team BDS**](https://liquipedia.net/rocketleague/Team_BDS) - M0nkey M00n, Extra, Seikoo|\n[**Endpoint CeX**](https://liquipedia.net/rocketleague/Endpoint) - RelatingWave, Metsanauris, archie|\n[**FURIA Esports**](https://liquipedia.net/rocketleague/FURIA_Esports) - CaioTG1, caard, yanxnz|\n[**Team Falcons**](https://liquipedia.net/rocketleague/Team_Falcons) - Ahmad, oKhaliD, trk511|\n[**Version1**](https://liquipedia.net/rocketleague/Version1) - Torment, Comm, BeastMode|\n[**Spacestation Gaming**](https://liquipedia.net/rocketleague/Spacestation_Gaming) - Arsenal, retals, Daniel|\n[**OpTic Gaming**](https://liquipedia.net/rocketleague/OpTic_Gaming) - mist, dreaz, Allushin|\n[**Dignitas**](https://liquipedia.net/rocketleague/Dignitas) - Joreuz, ApparentlyJack, Scrub Killa|\n[**Karmine Corp**](https://liquipedia.net/rocketleague/Karmine_Corp) - itachi, AztraL, noly|\n[**SMPR Esports**](https://liquipedia.net/rocketleague/SMPR_Esports) - Kassio, Chausette45, ExoTiiK|\n[**Renegades**](https://liquipedia.net/rocketleague/Renegades) - Kamii, CJCJ, Fever|\n[**Pioneers**](https://liquipedia.net/rocketleague/Pioneers) - Scrub, Superlachie, Bananahead|\n[**Team Secret**](https://liquipedia.net/rocketleague/Team_Secret) - Sad, nxghtt, math|\n[**The Club**](https://liquipedia.net/rocketleague/The_Club) - AztromicK, kv1, Lostt|\n[**Tokyo Verdy Esports**](https://liquipedia.net/rocketleague/Tokyo_Verdy_Esports) - ReaLize, Tenhow, sigms|\n[**Gaimin Gladiators**](https://liquipedia.net/rocketleague/Gaimin_Gladiators) - LCT, Maxeew, Commutator|\n[**Veloce Esports**](https://liquipedia.net/rocketleague/Veloce_Esports) - Twiz, Smw., Senzo|\n[**01 Esports**](https://liquipedia.net/rocketleague/01_Esports) - Zez0nix, ams., M7sN|\n[**Orlando Pirates Exdee**](https://liquipedia.net/rocketleague/Orlando_Pirates_Exdee) - Snowyy, SkillSteal, Darth|\n[**Bravado Gaming**](https://liquipedia.net/rocketleague/Bravado_Gaming) - Daisy, Happymeal, 2Die4|\n"
+            mocked_print_to_channel.assert_awaited_once_with(
+                mock_channel, expected_markup, title="Teams"
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
