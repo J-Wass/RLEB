@@ -774,7 +774,9 @@ class RLEsportsBot(discord.Client):
                 return
 
             # Absolutely shrek the running process.
+            await message.channel.send("Later nerds.")
             os.kill(os.getpid(), signal.SIGTERM)
+
 
         elif discord_message == "!status" and is_staff(message.author):
 
