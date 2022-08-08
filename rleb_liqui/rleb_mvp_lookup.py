@@ -194,7 +194,11 @@ async def _create_mvp_form(
     credentials = service_account.Credentials.from_service_account_info(
         credential_info, scopes=SCOPES
     )
-    form_data = _create_form(candidate_groups, credentials)
+    try:
+        form_data = _create_form(candidate_groups, credentials)
+    except:
+        await channel.send(f"Couldn't build google form, are all the liquipedia pages formatted correctly?")
+        return None
     if form_data is None:
         return None
     if not "responderUri" in form_data or not "formId" in form_data:
