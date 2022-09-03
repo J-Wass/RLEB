@@ -146,7 +146,7 @@ thread_restart_interval_seconds = 30
 GOOGLE_CALENDAR_ID = os.environ.get("CALENDAR_ID") or rleb_secrets.CALENDAR_ID
 GOOGLE_CREDENTIALS_JSON = (
     os.environ.get("GOOGLE_CREDENTIALS_JSON") or rleb_secrets.GOOGLE_CREDENTIALS_JSON
-)
+).replace("\\\\n", "\\n")
 SHEETS_ID = os.environ.get("SHEETS_ID") or rleb_secrets.SHEETS_ID
 
 weekly_schedule_sheets_range = (

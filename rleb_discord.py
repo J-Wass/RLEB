@@ -1,5 +1,6 @@
 import os
 import signal
+import sys
 import discord
 import random
 from datetime import datetime
@@ -769,20 +770,27 @@ class RLEsportsBot(discord.Client):
                     "Couldn't send logs over! (tip: there's a limit to the number of characters that can be sent. Make sure you aren't requesting too many logs. Use '!logs [db/memory] [n]', where n is a small number to avoid the character limit.)"
                 )
             await self.add_response(message)
-        elif discord_message.startswith("!restart") and is_staff(message.author):
+        elif discord_message.startswith("!shutdown") and is_staff(message.author):
             if not rleb_settings.is_discord_mod(message.author):
                 return
 
             # Absolutely shrek the running process.
             await message.channel.send("Later nerds.")
-            os.kill(os.getpid(), signal.SIGTERM)
+            os.popen("pkill -9 -f rleb_core.py")
 
+        elif discord_message.startswith("!restart") and is_staff(message.author):
+            if not rleb_settings.is_discord_mod(message.author):
+                return
+
+            await message.channel.send("Later nerds.")
+            os.popen("sudo reboot now")
 
         elif discord_message == "!status" and is_staff(message.author):
 
             if not rleb_settings.is_discord_mod(message.author):
                 return
 
+            # Runtime
             delta = datetime.now() - self.start_datetime
             seconds_uptime = delta.total_seconds()
             hours_uptime = round(seconds_uptime / 60 / 60, 0)
@@ -791,6 +799,42 @@ class RLEsportsBot(discord.Client):
                     math.floor(hours_uptime / 24), hours_uptime % 24
                 )
             )
+
+            # Hardware specs.
+            try:
+                cpu_temp = round(
+                    int(
+                        os.popen("cat /sys/class/thermal/thermal_zone*/temp")
+                        .read()
+                        .strip()
+                    )
+                    / 1000,
+                    1,
+                )
+                await message.channel.send(f"CPU Temp: {cpu_temp} C")
+            except:
+                pass
+
+            try:
+                total_memory = int(
+                    os.popen("cat /proc/meminfo | grep MemTotal")
+                    .read()
+                    .replace("MemTotal:", "")
+                    .replace("kB", "")
+                    .strip()
+                )
+                available_memory = int(
+                    os.popen("cat /proc/meminfo | grep MemAvailable")
+                    .read()
+                    .replace("MemAvailable:", "")
+                    .replace("kB", "")
+                    .strip()
+                )
+                memory_usage = round((1 - available_memory / total_memory) * 100, 1)
+                await message.channel.send(f"RAM Usage: {memory_usage}%")
+            except:
+                pass
+
             for thread_type, crash_count in rleb_settings.thread_crashes.items():
                 await message.channel.send(
                     "{0} crashes detected: {1}".format(thread_type, crash_count)
