@@ -778,11 +778,18 @@ class RLEsportsBot(discord.Client):
             await message.channel.send("Later nerds.")
             os.popen("pkill -9 -f rleb_core.py")
 
+        elif discord_message.startswith("!deploy") and is_staff(message.author):
+            if not rleb_settings.is_discord_mod(message.author):
+                return
+
+            await message.channel.send("See ya in a few minutes <3")
+            os.popen("./deploy.sh")
+
         elif discord_message.startswith("!restart") and is_staff(message.author):
             if not rleb_settings.is_discord_mod(message.author):
                 return
 
-            await message.channel.send("Later nerds.")
+            await message.channel.send("brb")
             os.popen("sudo reboot now")
 
         elif discord_message == "!status" and is_staff(message.author):
