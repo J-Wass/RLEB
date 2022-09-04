@@ -1,4 +1,5 @@
 import os
+import pathlib
 import signal
 import sys
 import discord
@@ -776,21 +777,33 @@ class RLEsportsBot(discord.Client):
 
             # Absolutely shrek the running process.
             await message.channel.send("Later nerds.")
-            os.popen("pkill -9 -f rleb_core.py")
+
+            if rleb_settings.RUNNING_ENVIRONMENT == "windows":
+                os.kill(os.getpid(), signal.SIGTERM)
+            else:
+                os.popen("pkill -9 -f rleb_core.py")
 
         elif discord_message.startswith("!deploy") and is_staff(message.author):
             if not rleb_settings.is_discord_mod(message.author):
                 return
 
             await message.channel.send("See ya in a few minutes <3")
-            os.popen("./deploy.sh")
+
+            if rleb_settings.RUNNING_ENVIRONMENT == "windows":
+                os.kill(os.getpid(), signal.SIGTERM) # just shutdown
+            else:
+                current_path=str(pathlib.Path(__file__).parent.resolve())
+                os.popen(f".{current_path}/deploy.sh")
 
         elif discord_message.startswith("!restart") and is_staff(message.author):
             if not rleb_settings.is_discord_mod(message.author):
                 return
 
             await message.channel.send("brb")
-            os.popen("sudo reboot now")
+            if rleb_settings.RUNNING_ENVIRONMENT == "windows":
+                os.kill(os.getpid(), signal.SIGTERM) # just shutdown
+            else:
+                os.popen("sudo reboot now")
 
         elif discord_message == "!status" and is_staff(message.author):
 
