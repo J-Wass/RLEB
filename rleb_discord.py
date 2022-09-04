@@ -793,7 +793,7 @@ class RLEsportsBot(discord.Client):
                 os.kill(os.getpid(), signal.SIGTERM) # just shutdown
             else:
                 current_path=str(pathlib.Path(__file__).parent.resolve())
-                os.popen(f".{current_path}/deploy.sh")
+                os.popen(f"{current_path}/deploy.sh")
 
         elif discord_message.startswith("!restart") and is_staff(message.author):
             if not rleb_settings.is_discord_mod(message.author):
