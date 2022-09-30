@@ -17,7 +17,7 @@ def _get_page_id_from_url(liquipedia_url: str) -> str:
     request = f"https://liquipedia.net/rocketleague/api.php?action=query&format=json&titles={liquipedia_page_title}"
     response = requests.get(request, headers=headers)
     # Uncomment to generate the response text for testing.
-    # with open("new_content.txt", "w") as f:
+    # with open("new_id.txt", "w") as f:
     #     f.write(response.text)
     if response.status_code >= 300:
         raise Exception(response.text)

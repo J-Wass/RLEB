@@ -1,0 +1,1 @@
+{"batchcomplete":"","query":{"normalized":[{"from":"Rocket_League_Championship_Series/2021-22/Spring/North_America/1","to":"Rocket League Championship Series/2021-22/Spring/North America/1"}],"pages":{"113384":{"pageid":113384,"ns":0,"title":"Rocket League Championship Series/2021-22/Spring/North America/1"}}}}
