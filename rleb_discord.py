@@ -790,9 +790,9 @@ class RLEsportsBot(discord.Client):
             await message.channel.send("See ya in a few minutes <3")
 
             if rleb_settings.RUNNING_ENVIRONMENT == "windows":
-                os.kill(os.getpid(), signal.SIGTERM) # just shutdown
+                os.kill(os.getpid(), signal.SIGTERM)  # just shutdown
             else:
-                current_path=str(pathlib.Path(__file__).parent.resolve())
+                current_path = str(pathlib.Path(__file__).parent.resolve())
                 os.popen(f"{current_path}/deploy.sh")
 
         elif discord_message.startswith("!restart") and is_staff(message.author):
@@ -801,7 +801,7 @@ class RLEsportsBot(discord.Client):
 
             await message.channel.send("brb")
             if rleb_settings.RUNNING_ENVIRONMENT == "windows":
-                os.kill(os.getpid(), signal.SIGTERM) # just shutdown
+                os.kill(os.getpid(), signal.SIGTERM)  # just shutdown
             else:
                 os.popen("sudo reboot now")
 
@@ -1167,6 +1167,9 @@ class RLEsportsBot(discord.Client):
             except Exception:
                 pass
             await handle_task_lookup(message.channel, self, user, extra)
+            await message.channel.send(
+                random.choice(rleb_settings.success_emojis) + " tasks are sent."
+            )
             await self.add_response(message)
 
         elif discord_message.startswith("!meme"):
