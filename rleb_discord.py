@@ -1167,9 +1167,10 @@ class RLEsportsBot(discord.Client):
             except Exception:
                 pass
             await handle_task_lookup(message.channel, self, user, extra)
-            await message.channel.send(
-                random.choice(rleb_settings.success_emojis) + " tasks are sent."
-            )
+            if user == "broadcast" or user == "send":
+                await message.channel.send(
+                    random.choice(rleb_settings.success_emojis) + " tasks are sent."
+                )
             await self.add_response(message)
 
         elif discord_message.startswith("!meme"):
