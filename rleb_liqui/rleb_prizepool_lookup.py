@@ -16,6 +16,7 @@ async def handle_prizepool_lookup(liquipedia_url: str, channel: str) -> str:
         "Prizepool: Creating prizepool lookup for {0}".format(liquipedia_url)
     )
 
+    
     page = None
     try:
         page = rleb_liqui_utils.get_page_html_from_url(liquipedia_url)
@@ -29,7 +30,10 @@ async def handle_prizepool_lookup(liquipedia_url: str, channel: str) -> str:
     html = BeautifulSoup(page, "html.parser")
 
     # Get all rows of prizepool table, ignore the first row which contains table headers.
-    team_rows = html.select("table.prizepooltable")[0].select("tr:not(:first-child)")
+    try:    
+        team_rows = html.select("div.prizepooltable")[0].select(".csstable-widget-row:not(:first-child)")
+    except:
+        team_rows = html.select("table.prizepooltable")[0].select("tr:not(:first-child)")
 
     markdown = "|**Place**|**Prize**|**Team**|**RLCS Points**|\n|:-|:-|:-|:-|"
 
@@ -39,10 +43,10 @@ async def handle_prizepool_lookup(liquipedia_url: str, channel: str) -> str:
     prize = None
     new_points = None
     # Iterate the first 8 from the prizepool.
-    for i in range(min(8, len(team_rows))):
-        team_data = team_rows[i].select("td")
-        # Partially down the prizepool, there's a row that just houses a toggle for the UI,
-        if team_data[0].get("class") == "prizepooltabletoggle":
+    for i in range(min(9, len(team_rows))):
+        team_data = team_rows[i].select(".csstable-widget-cell")
+        # Partially down the prizepool, there's a row "expand" that just houses a toggle for the UI,
+        if team_data[0].get("class") == "prizepooltabletoggle" or "general-collapsible-expand-button" in team_data[0].get("class"):
             continue
         team_name = None
         if len(team_data) == 4:
@@ -57,4 +61,5 @@ async def handle_prizepool_lookup(liquipedia_url: str, channel: str) -> str:
         markdown += (
             f"\n|**{team_place}** | {prize} | {team_name} | +{new_points} **()** |"
         )
+
     await print_to_channel(channel, markdown)

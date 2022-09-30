@@ -61,6 +61,9 @@ common_proxies = {
     page_id_query_from_url(
         "https://liquipedia.net/rocketleague/Rocket_League_Championship_Series/2021-22"
     ): mock_response("liqui_api_mock_responses/teams_new_liquipedia_roster_id.txt"),
+    page_id_query_from_url(
+        "https://liquipedia.net/rocketleague/Rocket_League_Championship_Series/2021-22/Spring/North_America/1"
+    ): mock_response("liqui_api_mock_responses/prizepool_divs_id.txt"),
     # Page content reads.
     page_content_from_id("113385"): mock_response(
         "liqui_api_mock_responses/swiss_incomplete_page_content.txt"
@@ -85,5 +88,8 @@ common_proxies = {
     ),
     page_content_from_id("112982"): mock_response(
         "liqui_api_mock_responses/teams_new_liquipedia_roster_content.txt"
+    ),
+    page_content_from_id("113384"): mock_response(
+        "liqui_api_mock_responses/prizepool_divs_content.txt"
     ),
 }
