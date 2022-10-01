@@ -19,15 +19,10 @@ async def handle_swiss_lookup(url, channel: discord.channel.TextChannel):
     """
     rleb_settings.rleb_log_info("DISCORD: Creating lookup for {0}".format(url))
 
-    start = time.time()
-    await channel.send(f"1 @ {round(time.time()-start,1)} seconds")
-
     try:
         content = None
         try:
-            await channel.send(f"2 @ {round(time.time()-start,1)} seconds")
             content = rleb_liqui_utils.get_page_html_from_url(url)
-            await channel.send(f"3 @ {round(time.time()-start,1)} seconds")
         except Exception as e:
             await channel.send("Couldn't load {0} !\nError: {1}".format(url, e))
             rleb_settings.rleb_log_info(
@@ -37,7 +32,6 @@ async def handle_swiss_lookup(url, channel: discord.channel.TextChannel):
             return
 
         html = BeautifulSoup(content, 'lxml')
-        await channel.send(f"3.5 @ {round(time.time()-start,1)} seconds")
 
         # The indicator that each cell in the swiss table starts with.
         indicator = {
@@ -50,7 +44,6 @@ async def handle_swiss_lookup(url, channel: discord.channel.TextChannel):
         acronym_map = {}
 
         # Find all cells that mention both team name and acronym.
-        await channel.send(f"4 @ {round(time.time()-start,1)} seconds")
         teams = html.select("div.brkts-matchlist-cell.brkts-matchlist-opponent")
         for t in teams:
             raw_team_name = t.get("aria-label")
@@ -64,7 +57,6 @@ async def handle_swiss_lookup(url, channel: discord.channel.TextChannel):
             # Add to mapping.
             acronym_map[team_name] = team_acronym
 
-        await channel.send(f"5 @ {round(time.time()-start,1)} seconds")
 
         def name_to_acronym(full_team_name):
             """Takes a team name and returns it's acroynm. If the acronym isn't found, returns the full name."""
@@ -105,11 +97,9 @@ async def handle_swiss_lookup(url, channel: discord.channel.TextChannel):
             rows.insert(int(len(rows) / 2) + 1, "|\-|\- - - - -|\- - -||||||")
             table = "\n".join(rows)
             tables.append(table)
-        await channel.send(f"6 @ {round(time.time()-start,1)} seconds")
         await rleb_stdout.print_to_channel(
             channel, "\n".join(tables), title="Swiss Bracket"
         )
-        await channel.send(f"7 @ {round(time.time()-start,1)} seconds")
     except Exception as e:
         await channel.send(
             "Couldn't find swiss group in {0}. Error: {1}.".format(url, e)
