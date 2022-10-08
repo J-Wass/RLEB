@@ -45,11 +45,11 @@ class RLEBAsyncTestCase(IsolatedAsyncioTestCase):
             else:
                 print(f"RLEB PROXY: Did not proxy {url}, it will hit production.")
 
-        #self.mock_requests_get = patch.object(requests, "get", new=mock_request).start()
+        self.mock_requests_get = patch.object(requests, "get", new=mock_request).start()
         self.mock_requests_post = patch.object(
             requests, "post", new=mock_request
         ).start()
-        #self.addCleanup(self.mock_requests_get)
+        self.addCleanup(self.mock_requests_get)
         self.addCleanup(self.mock_requests_post)
 
     def stub_psycopg2(self):
