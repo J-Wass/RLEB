@@ -787,7 +787,7 @@ class RLEsportsBot(discord.Client):
             if not rleb_settings.is_discord_mod(message.author):
                 return
 
-            await message.channel.send("See ya in a few minutes <3")
+            await message.channel.send("brb")
 
             if rleb_settings.RUNNING_ENVIRONMENT == "windows":
                 os.kill(os.getpid(), signal.SIGTERM)  # just shutdown
@@ -799,7 +799,7 @@ class RLEsportsBot(discord.Client):
             if not rleb_settings.is_discord_mod(message.author):
                 return
 
-            await message.channel.send("brb")
+            await message.channel.send("See ya in a few minutes <3")
             if rleb_settings.RUNNING_ENVIRONMENT == "windows":
                 os.kill(os.getpid(), signal.SIGTERM)  # just shutdown
             else:

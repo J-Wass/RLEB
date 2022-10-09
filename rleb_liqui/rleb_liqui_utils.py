@@ -32,12 +32,13 @@ def _get_page_id_from_url(liquipedia_url: str) -> str:
     # Just pull out the only key, which is the pageid.
     return random.choice(list(pages.keys()))
 
+def _get_content_api_url_from_liqui_url(liquipedia_url: str) -> str:
+    pageid = _get_page_id_from_url(liquipedia_url)
+    return f"https://liquipedia.net/rocketleague/api.php?action=parse&format=json&pageid={pageid}"
 
 def get_page_html_from_url(liquipedia_url: str) -> str:
     """Accepts a liquipedia_url and returns the html for that page."""
-    pageid = _get_page_id_from_url(liquipedia_url)
-
-    request = f"https://liquipedia.net/rocketleague/api.php?action=parse&format=json&pageid={pageid}"
+    request = _get_content_api_url_from_liqui_url(liquipedia_url)
     response = requests.get(request, headers=headers)
     # Uncomment to generate the response text for testing.
     # with open("new_content.txt", "w") as f:

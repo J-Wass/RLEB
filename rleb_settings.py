@@ -1,18 +1,14 @@
 # Utilities file. Houses methods that are used throughout rleb.
 import time
 import praw
-import psycopg2
-from psycopg2.extras import execute_values
 import datetime
 import requests
 import json
 from datetime import datetime
 from threading import Lock, Timer
-from queue import Queue
 import os
 from sys import platform
 import discord
-from sched import scheduler
 
 from rleb_data import Data, Remindme
 
