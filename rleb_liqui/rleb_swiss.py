@@ -1,9 +1,10 @@
-import time
 from bs4 import BeautifulSoup
-import requests
 import re
 import traceback
 import discord
+import requests
+import base64
+import os
 
 import rleb_settings
 import rleb_stdout
@@ -19,7 +20,20 @@ async def handle_swiss_lookup(url, channel: discord.channel.TextChannel):
     """
     rleb_settings.rleb_log_info("DISCORD: Creating lookup for {0}".format(url))
 
+    # Attempt to load markdown from Diesel.
     try:
+        await channel.send("Building swiss table from Diesel...")
+        response = requests.get(f"http://127.0.0.1:8080/swiss/{base64.b64encode(url.encode('utf-8')).decode('utf-8')}")
+        markdown = base64.b64decode(response.content).decode('utf-8').strip()
+        await rleb_stdout.print_to_channel(channel, markdown , title="Swiss Bracket")
+        return
+    except Exception as e:
+        await channel.send("Diesel failed :(")
+        await channel.send(e)
+
+    # If Diesel fails, fallback to RLEB, python parsing.
+    try:
+        await channel.send("Building swiss table from Python...")
         content = None
         try:
             content = rleb_liqui_utils.get_page_html_from_url(url)
