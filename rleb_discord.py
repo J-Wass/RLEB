@@ -27,6 +27,7 @@ from rleb_liqui.rleb_mvp_lookup import (
     handle_mvp_form_creation,
     handle_mvp_results_lookup,
 )
+from rleb_liqui.diesel import handle_stream_lookup
 from rleb_liqui.rleb_prizepool_lookup import handle_prizepool_lookup
 
 responses_lock = Lock()
@@ -943,6 +944,24 @@ class RLEsportsBot(discord.Client):
                 )
                 return
             seconds = await handle_swiss_lookup(url, message.channel)
+            await self.add_response(message)
+
+        elif (discord_message.startswith("!streams") or discord_message.startswith("!stream")) and is_staff(message.author):
+            if not rleb_settings.is_discord_mod(message.author):
+                return
+
+            rleb_settings.rleb_log_info("DISCORD: Starting stream generation.")
+            await message.channel.send("Starting stream lookup...")
+            tokens = discord_message.split()
+            url = ""
+            try:
+                url = tokens[1]
+            except Exception:
+                await message.channel.send(
+                    "Couldn't understand that. Expected '!streams liquipedia-url'."
+                )
+                return
+            seconds = await handle_stream_lookup(url, message.channel)
             await self.add_response(message)
 
         elif discord_message.startswith("!bracket") and is_staff(message.author):

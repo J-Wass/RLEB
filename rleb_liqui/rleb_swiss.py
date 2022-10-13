@@ -4,7 +4,6 @@ import traceback
 import discord
 import requests
 import base64
-import os
 
 import rleb_settings
 import rleb_stdout
