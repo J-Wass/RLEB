@@ -27,7 +27,7 @@ from rleb_liqui.rleb_mvp_lookup import (
     handle_mvp_form_creation,
     handle_mvp_results_lookup,
 )
-from rleb_liqui.diesel import handle_stream_lookup
+from rleb_liqui.diesel import handle_stream_lookup, healthcheck
 from rleb_liqui.rleb_prizepool_lookup import handle_prizepool_lookup
 
 responses_lock = Lock()
@@ -821,6 +821,13 @@ class RLEsportsBot(discord.Client):
                 )
             )
 
+            # Diesel.
+            before = time.time()*1000
+            health = await healthcheck()
+            after = time.time()*1000
+            elapsed_time = round(after-before)
+            await message.channel.send(f"**Diesel Status:** {health} ({elapsed_time}ms response time)")
+
             # Hardware specs.
             try:
                 cpu_temp = round(
@@ -832,7 +839,7 @@ class RLEsportsBot(discord.Client):
                     / 1000,
                     1,
                 )
-                await message.channel.send(f"CPU Temp: {cpu_temp} C")
+                await message.channel.send(f"**CPU Temp:** {cpu_temp} C")
             except:
                 pass
 
@@ -852,13 +859,13 @@ class RLEsportsBot(discord.Client):
                     .strip()
                 )
                 memory_usage = round((1 - available_memory / total_memory) * 100, 1)
-                await message.channel.send(f"RAM Usage: {memory_usage}%")
+                await message.channel.send(f"**RAM Usage:** {memory_usage}%")
             except:
                 pass
 
             for thread_type, crash_count in rleb_settings.thread_crashes.items():
                 await message.channel.send(
-                    "{0} crashes detected: {1}".format(thread_type, crash_count)
+                    "**{0} crashes detected:** {1}".format(thread_type, crash_count)
                 )
 
             for thread_type, last_crash in rleb_settings.last_datetime_crashed.items():
@@ -868,16 +875,17 @@ class RLEsportsBot(discord.Client):
                     last_crash_string = delta.total_seconds() / 3600
                     last_crash_string = round(last_crash_string, 1)
                 await message.channel.send(
-                    "{0} last crashed {1} hours ago.".format(
+                    "**{0} last crashed:** {1} hours ago.".format(
                         thread_type, last_crash_string
                     )
                 )
 
             await message.channel.send(
-                "Found {0} out of 7 threads running: {1}".format(
+                "**Found {0} out of 7 threads running:** {1}".format(
                     len(self.threads), list(map(lambda x: x.name, self.threads))
                 )
             )
+
             await self.add_response(message)
 
         elif discord_message == "!reset crashes" and is_staff(message.author):
