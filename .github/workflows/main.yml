@@ -76,6 +76,24 @@ jobs:
 
       - name: Print ENV
         run: python -c "import os; print(os.environ)"
-
+        
       - name: Run Tests
         run: python -m unittest -f --locals -v
+        
+      - name: Generate Codecov Report
+        run: |
+          pip install pytest
+          pip install pytest-cov
+          pytest --cov=./ --cov-report=xml
+        
+      - name: Upload Codecov Report
+        uses: codecov/codecov-action@v3.1.1
+        with:
+          directory: ./coverage/reports/
+          env_vars: OS,PYTHON
+          fail_ci_if_error: true
+          files: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          path_to_write_report: ./coverage/codecov_report.txt
+          verbose: true
