@@ -22,3 +22,9 @@ async def handle_stream_lookup(url: str, channel: discord.channel.TextChannel) -
     except Exception as e:
         await channel.send("Failed to build streams table :(")
         await channel.send(e)
+
+async def healthcheck() -> str:
+    try:
+        return requests.get(f"http://127.0.0.1:8080/healthcheck").content.decode('utf-8').strip()
+    except Exception as e:
+        return f"Diesel is not running properly: {e}"
