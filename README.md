@@ -1,4 +1,5 @@
 [![Python Tests](https://github.com/J-Wass/RLEB/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/J-Wass/RLEB/actions/workflows/main.yml)
+[![codecov](https://codecov.io/github/J-Wass/RLEB/branch/main/graph/badge.svg?token=51JCI81BGZ)](https://codecov.io/github/J-Wass/RLEB) 
 
 # Legal Disclaimer
 
