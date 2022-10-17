@@ -1038,7 +1038,7 @@ class RLEsportsBot(discord.Client):
 
             if len(tokens) < 3:
                 await message.channel.send(
-                    "Couldn't understand that. Expected '!mvp [create OR results] [list of liqui urls OR form url].'."
+                    "Couldn't understand that. Expected '!mvp [create OR results] [list of liqui urls OR form url]'."
                 )
                 return
 

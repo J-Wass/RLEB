@@ -1,3 +1,4 @@
+import base64
 import requests
 import json
 import random
@@ -52,3 +53,9 @@ def get_page_html_from_url(liquipedia_url: str) -> str:
         raise Exception(f"Couldn't parse {liquipedia_url}.")
 
     return content
+
+def string_to_base64(in_string: str) -> str:
+    return base64.b64encode(in_string.encode('utf-8')).decode('utf-8')
+
+def base64_to_string(in_string: str) -> str:
+    return base64.b64decode(in_string).decode('utf-8').strip()
