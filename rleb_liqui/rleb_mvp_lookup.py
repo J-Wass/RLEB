@@ -11,7 +11,9 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.errors import HttpError
 from bs4 import BeautifulSoup
 import discord
+from rleb_settings import rleb_log_error
 
+import rleb_liqui
 from rleb_liqui import rleb_liqui_utils
 import rleb_settings
 import rleb_stdout
@@ -110,12 +112,17 @@ async def _get_mvp_candidates(
     return candidate_groups
 
 
-async def _get_single_mvp_candidate_group(
-    liquipedia_url: str, channel, teams_allowed: int = 4
-) -> Optional[MVPCandidates]:
-    """Gets an MVPCandidate group from the liquipedia_url."""
-    page = None
+async def _get_eligible_candidates(liquipedia_url: str, channel, teams_allowed=4) -> list[str]:
     try:
+        await channel.send("Loading mvp candidates from Diesel...")
+        eligible_candidates = await rleb_liqui.diesel.get_mvp_candidates(liquipedia_url, teams_allowed=teams_allowed)
+        return eligible_candidates.split("\n")
+    except Exception as e:
+        rleb_log_error(f"Failed to load mvp candidates from Diesel: {e}")
+        await channel.send("Diesel failed :(")
+
+    try:
+        await channel.send("Loading mvp candidates from Python (this may take a few minutes)...")
         page = rleb_liqui_utils.get_page_html_from_url(liquipedia_url)
     except Exception as e:
         await channel.send("Couldn't load {0}!\nError: {1}".format(liquipedia_url, e))
@@ -171,7 +178,13 @@ async def _get_single_mvp_candidate_group(
         if team_name == "TBD" or  team_name == "":
             continue
         eligible_candidates = eligible_candidates + mvp_candidates[team_name]
+    return eligible_candidates
 
+async def _get_single_mvp_candidate_group(
+    liquipedia_url: str, channel, teams_allowed: int = 4
+) -> Optional[MVPCandidates]:
+    """Gets an MVPCandidate group from the liquipedia_url."""
+    eligible_candidates = await _get_eligible_candidates(liquipedia_url, channel, teams_allowed)
     title = " | ".join(liquipedia_url.split("/")[4:]).replace("_", " ")
     return MVPCandidates(title, eligible_candidates)
 
