@@ -1,7 +1,6 @@
 import os
 import pathlib
 import signal
-import sys
 import discord
 import random
 from datetime import datetime

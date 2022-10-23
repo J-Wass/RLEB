@@ -5,15 +5,10 @@ from data_bridge import Remindme
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 
-import unittest
-import unittest.mock as mock
-from unittest.mock import patch
 from tests.common.rleb_test_case import RLEBTestCase
 
-from threading import Thread, Timer
+from threading import Timer
 from queue import Queue
-from datetime import datetime, timedelta
-import subprocess
 
 
 class TestRemindme(RLEBTestCase):

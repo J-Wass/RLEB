@@ -1,6 +1,5 @@
 import unittest
 import unittest.mock as mock
-from unittest import IsolatedAsyncioTestCase
 from unittest.mock import patch
 
 import psycopg2

@@ -3,7 +3,7 @@
 # Dumb hack to be able to access source code files on both windows and linux
 import discord
 from tests.common.rleb_async_test_case import RLEBAsyncTestCase
-from unittest.mock import patch, call
+from unittest.mock import patch
 import unittest.mock as mock
 import unittest
 import sys

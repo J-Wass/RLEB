@@ -1,7 +1,6 @@
 # Dumb hack to be able to access source code files on both windows and linux
 import sys
 import os
-from typing import Tuple
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 

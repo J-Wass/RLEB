@@ -1,11 +1,11 @@
 # Dumb hack to be able to access source code files on both windows and linux
 import queue
-from threading import Thread, Timer
+from threading import Thread
 import time
 import discord
 from data_bridge import Remindme
 from tests.common.rleb_async_test_case import RLEBAsyncTestCase
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock
 import unittest.mock as mock
 import sys
 import os

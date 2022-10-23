@@ -13,8 +13,6 @@ from tests.common.rleb_async_test_case import RLEBAsyncTestCase
 import requests
 import discord
 from discord import TextChannel
-import asyncio
-import tracemalloc
 
 
 class TestStandardOut(RLEBAsyncTestCase):
