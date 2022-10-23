@@ -20,16 +20,16 @@ class TestSwissLookup(RLEBAsyncTestCase):
         await super().asyncSetUp()
 
         # Import rleb_swiss after setUp is done so that rleb_settings loads with mocks/patches.
-        global rleb_stdout
-        global rleb_swiss
-        import rleb_stdout
-        from rleb_liqui import rleb_swiss
+        global stdout
+        global swiss_lookup
+        import stdout
+        from liqui import swiss_lookup
 
     async def test_swiss_complete(self):
         mock_channel = mock.Mock(spec=discord.TextChannel)
 
-        with patch.object(rleb_stdout, "print_to_channel") as mocked_print_to_channel:
-            await rleb_swiss.handle_swiss_lookup(
+        with patch.object(stdout, "print_to_channel") as mocked_print_to_channel:
+            await swiss_lookup.handle_swiss_lookup(
                 "https://liquipedia.net/rocketleague/Rocket_League_Championship_Series/2021-22/Fall/North_America/2",
                 mock_channel,
             )
@@ -42,8 +42,8 @@ class TestSwissLookup(RLEBAsyncTestCase):
     async def test_swiss_incomplete(self):
         mock_channel = mock.Mock(spec=discord.TextChannel)
 
-        with patch.object(rleb_stdout, "print_to_channel") as mocked_print_to_channel:
-            await rleb_swiss.handle_swiss_lookup(
+        with patch.object(stdout, "print_to_channel") as mocked_print_to_channel:
+            await swiss_lookup.handle_swiss_lookup(
                 "https://liquipedia.net/rocketleague/Rocket_League_Championship_Series/2021-22/Spring/North_America/1/Closed_Qualifier",
                 mock_channel,
             )
@@ -56,8 +56,8 @@ class TestSwissLookup(RLEBAsyncTestCase):
     async def test_swiss_parenthesis(self):
         mock_channel = mock.Mock(spec=discord.TextChannel)
 
-        with patch.object(rleb_stdout, "print_to_channel") as mocked_print_to_channel:
-            await rleb_swiss.handle_swiss_lookup(
+        with patch.object(stdout, "print_to_channel") as mocked_print_to_channel:
+            await swiss_lookup.handle_swiss_lookup(
                 "https://liquipedia.net/rocketleague/Rocket_League_Championship_Series/2021-22/Fall/Sub-Saharan_Africa/1",
                 mock_channel,
             )

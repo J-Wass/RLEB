@@ -26,16 +26,16 @@ class TestTeamLookup(RLEBAsyncTestCase):
         await super().asyncSetUp()
 
         # Import rleb_team_lookup after setUp is done so that rleb_settings loads with mocks/patches.
-        global rleb_stdout
-        global rleb_team_lookup
-        import rleb_stdout
-        from rleb_liqui import rleb_team_lookup
+        global stdout
+        global team_lookup
+        import stdout
+        from liqui import team_lookup
 
     async def test_team_lookup(self):
         mock_channel = mock.Mock(spec=discord.TextChannel)
 
-        with patch.object(rleb_stdout, "print_to_channel") as mocked_print_to_channel:
-            await rleb_team_lookup.handle_team_lookup(
+        with patch.object(stdout, "print_to_channel") as mocked_print_to_channel:
+            await team_lookup.handle_team_lookup(
                 "https://liquipedia.net/rocketleague/Rocket_League_Championship_Series/Season_X/Spring/North_America/The_Grid/Open_Qualifier",
                 mock_channel,
             )
@@ -48,7 +48,7 @@ class TestTeamLookup(RLEBAsyncTestCase):
     async def test_team_lookup_fails(self):
         mock_channel = mock.Mock(spec=discord.TextChannel)
 
-        await rleb_team_lookup.handle_team_lookup("bad url", mock_channel)
+        await team_lookup.handle_team_lookup("bad url", mock_channel)
         mock_channel.send.assert_awaited_once_with(
             "Couldn't load bad url!\nError: list index out of range"
         )
@@ -56,8 +56,8 @@ class TestTeamLookup(RLEBAsyncTestCase):
     async def test_team_lookup_with_parenthesis(self):
         mock_channel = mock.Mock(spec=discord.TextChannel)
 
-        with patch.object(rleb_stdout, "print_to_channel") as mocked_print_to_channel:
-            await rleb_team_lookup.handle_team_lookup(
+        with patch.object(stdout, "print_to_channel") as mocked_print_to_channel:
+            await team_lookup.handle_team_lookup(
                 "https://liquipedia.net/rocketleague/Rocket_League_Championship_Series/2021-22/Fall/Sub-Saharan_Africa/1",
                 mock_channel,
             )
@@ -70,8 +70,8 @@ class TestTeamLookup(RLEBAsyncTestCase):
     async def test_team_lookup_with_new_liqui_roster_table(self):
         mock_channel = mock.Mock(spec=discord.TextChannel)
 
-        with patch.object(rleb_stdout, "print_to_channel") as mocked_print_to_channel:
-            await rleb_team_lookup.handle_team_lookup(
+        with patch.object(stdout, "print_to_channel") as mocked_print_to_channel:
+            await team_lookup.handle_team_lookup(
                 "https://liquipedia.net/rocketleague/Rocket_League_Championship_Series/2021-22",
                 mock_channel,
             )

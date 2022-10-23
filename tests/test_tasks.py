@@ -20,10 +20,10 @@ class TestTasks(RLEBAsyncTestCase):
         await super().asyncSetUp()
 
         # import rleb_tasks after setUp is done so that rleb_settings loads with mocks/patches
-        global rleb_tasks
-        global rleb_settings
-        import rleb_tasks
-        import rleb_settings
+        global tasks
+        global global_settings
+        import tasks
+        import global_settings
 
         # Set up mock objects.
         self.mock_service = mock.Mock()
@@ -42,8 +42,8 @@ class TestTasks(RLEBAsyncTestCase):
 
         self.mock_credentials = mock.Mock()
 
-        rleb_settings.greetings = ["Incoming!"]
-        rleb_settings.user_names_to_ids = {
+        global_settings.greetings = ["Incoming!"]
+        global_settings.user_names_to_ids = {
             "voices#6380": 345639629459816458,
             "hawkkn#0408": 364941319296253954,
         }
@@ -59,14 +59,14 @@ class TestTasks(RLEBAsyncTestCase):
         ).start()
         self.addCleanup(credentials)
 
-        build = patch.object(rleb_tasks, "build", new=mock_build).start()
+        build = patch.object(tasks, "build", new=mock_build).start()
         self.addCleanup(build)
 
     async def test_tasks(self):
         mock_channel = mock.AsyncMock(spec=discord.TextChannel)
         mock_client = mock.Mock()
         user = "voices#6380"
-        await rleb_tasks.handle_task_lookup(mock_channel, mock_client, user)
+        await tasks.handle_task_lookup(mock_channel, mock_client, user)
 
         event1_discord_markup = "**cool event** (Tuesday 2021-06-01)\n✏️ Creator/Scheduler (Schedule UTC): **hawkkn#0408**\n🚔 Updaters/Monitors: **ds0308#9530**, **voices#6380**\n\n-----------------------------------------------------------\n\n"
         event2_discord_markup = "**Weekly Points Standings** (Monday 2021-05-03)\n📌 Sticky: **No sticky**\n✏️ Creator/Scheduler (Post 16:00 UTC): **voices#6380**\n🚔 Updaters/Monitors: **No one needed**, **No one needed**\n\n-----------------------------------------------------------\n\n"
@@ -78,7 +78,7 @@ class TestTasks(RLEBAsyncTestCase):
         mock_channel = mock.AsyncMock(spec=discord.TextChannel)
         mock_client = mock.Mock()
         user = "all"
-        await rleb_tasks.handle_task_lookup(mock_channel, mock_client, user)
+        await tasks.handle_task_lookup(mock_channel, mock_client, user)
 
         event1_discord_markup = "**cool event** (Tuesday 2021-06-01)\n✏️ Creator/Scheduler (Schedule UTC): **hawkkn#0408**\n🚔 Updaters/Monitors: **ds0308#9530**, **voices#6380**\n\n-----------------------------------------------------------\n\n"
         event2_discord_markup = "**Weekly Points Standings** (Monday 2021-05-03)\n📌 Sticky: **No sticky**\n✏️ Creator/Scheduler (Post 16:00 UTC): **voices#6380**\n🚔 Updaters/Monitors: **No one needed**, **No one needed**\n\n-----------------------------------------------------------\n\n"
@@ -121,9 +121,7 @@ class TestTasks(RLEBAsyncTestCase):
         mock_client = mock.Mock()
         mock_client.get_user = mock_get_user
 
-        await rleb_tasks.handle_task_lookup(
-            mock_channel, mock_client, "broadcast", None
-        )
+        await tasks.handle_task_lookup(mock_channel, mock_client, "broadcast", None)
 
         greeting = "Incoming!\n\n"
         event1_discord_markup = "**cool event** (Tuesday 2021-06-01)\n✏️ Creator/Scheduler (Schedule UTC): **hawkkn#0408**\n🚔 Updaters/Monitors: **ds0308#9530**, **voices#6380**\n\n-----------------------------------------------------------\n\n"
@@ -166,7 +164,7 @@ class TestTasks(RLEBAsyncTestCase):
         mock_client = mock.Mock()
         mock_client.get_user = mock_get_user
 
-        await rleb_tasks.handle_task_lookup(
+        await tasks.handle_task_lookup(
             mock_channel, mock_client, "send", extra="voices#6380"
         )
 

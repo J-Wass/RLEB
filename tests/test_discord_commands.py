@@ -3,7 +3,7 @@ import queue
 from threading import Thread, Timer
 import time
 import discord
-from rleb_data import Remindme
+from data_bridge import Remindme
 from tests.common.rleb_async_test_case import RLEBAsyncTestCase
 from unittest.mock import MagicMock, patch, call
 import unittest.mock as mock
@@ -41,13 +41,13 @@ class TestDiscordCommands(RLEBAsyncTestCase):
     async def asyncSetUp(self):
         await super().asyncSetUp()
 
-        # Import rleb_discord after setUp is done so that rleb_settings loads with mocks/patches.
-        global rleb_settings
-        global rleb_discord
-        import rleb_settings
-        import rleb_discord
+        # Import discord_bridge after setUp is done so that rleb_settings loads with mocks/patches.
+        global global_settings
+        global discord_bridge
+        import global_settings
+        import discord_bridge
 
-        self.discord_client = rleb_discord.RLEsportsBot([])
+        self.discord_client = discord_bridge.RLEsportsBot([])
         self.mock_channel = mock.MagicMock(discord.TextChannel)
         self.mock_channel.id = 1
 
@@ -58,21 +58,21 @@ class TestDiscordCommands(RLEBAsyncTestCase):
 
         self.discord_thread = Thread(
             target=self.discord_client.run,
-            args=(rleb_settings.TOKEN,),
+            args=(global_settings.TOKEN,),
             name="Discord Test Thread",
         )
         self.discord_thread.setDaemon(True)
 
         # Otherwise, we'd need to add !debug before each command.
-        rleb_settings.RUNNING_MODE = "production"
-        rleb_settings.verified_moderators = ["test_mod#1"]
+        global_settings.RUNNING_MODE = "production"
+        global_settings.verified_moderators = ["test_mod#1"]
 
         # Remove randomness.
-        rleb_settings.hooks = ["Hook"]
-        rleb_settings.success_emojis = ["!"]
+        global_settings.hooks = ["Hook"]
+        global_settings.success_emojis = ["!"]
 
-        rleb_settings.discord_async_interval_seconds = 1
-        rleb_settings.user_names_to_ids = {"test_mod#1": 567}
+        global_settings.discord_async_interval_seconds = 1
+        global_settings.user_names_to_ids = {"test_mod#1": 567}
 
     async def test_bracket(self):
         # Not staff.
@@ -96,7 +96,7 @@ class TestDiscordCommands(RLEBAsyncTestCase):
             "**Hook**: https://paste.ee/p/fake_url"
         )
 
-    @mock.patch("rleb_discord.handle_flair_census")
+    @mock.patch("discord_bridge.handle_flair_census")
     async def test_census(self, mock_rleb_census):
 
         # Users can't use census
@@ -107,14 +107,14 @@ class TestDiscordCommands(RLEBAsyncTestCase):
         # Mod can use census
         await self._send_message("!census 5 ,", from_staff_user=True)
         mock_rleb_census.assert_awaited_once_with(
-            rleb_settings.sub, 5, self.mock_channel, ","
+            global_settings.sub, 5, self.mock_channel, ","
         )
         mock_rleb_census.reset_mock()
 
         # Census works without optional divider
         await self._send_message("!census 10", from_staff_user=True)
         mock_rleb_census.assert_awaited_once_with(
-            rleb_settings.sub, 10, self.mock_channel, ","
+            global_settings.sub, 10, self.mock_channel, ","
         )
 
     async def test_triflairs(self):
@@ -125,7 +125,7 @@ class TestDiscordCommands(RLEBAsyncTestCase):
         )
 
     async def test_remindme(self):
-        rleb_settings.queues["alerts"] = queue.Queue()
+        global_settings.queues["alerts"] = queue.Queue()
 
         # Only used by mods.
         await self._send_message("!remindme", from_staff_user=False)
@@ -137,8 +137,8 @@ class TestDiscordCommands(RLEBAsyncTestCase):
         self.mock_channel.send.assert_awaited_with(
             "! reminder set.\nUse `!remindme list` to see all reminders."
         )
-        rleb_settings.remindme_timers[1].cancel()
-        del rleb_settings.remindme_timers[1]
+        global_settings.remindme_timers[1].cancel()
+        del global_settings.remindme_timers[1]
         self.mock_channel.reset_mock()
 
         # Create a timer with a floating value.
@@ -146,16 +146,16 @@ class TestDiscordCommands(RLEBAsyncTestCase):
         self.mock_channel.send.assert_awaited_with(
             "! reminder set.\nUse `!remindme list` to see all reminders."
         )
-        rleb_settings.remindme_timers[1].cancel()
-        del rleb_settings.remindme_timers[1]
+        global_settings.remindme_timers[1].cancel()
+        del global_settings.remindme_timers[1]
         self.mock_channel.reset_mock()
 
         # Delete a timer.
-        rleb_settings.schedule_remindme(
+        global_settings.schedule_remindme(
             Remindme(2, "test#mod", "msg", time.time() + 60, self.mock_channel.id)
         )
-        self.assertEqual(len(rleb_settings.remindme_timers), 1)
+        self.assertEqual(len(global_settings.remindme_timers), 1)
         await self._send_message("!remindme delete 2", from_staff_user=True)
-        self.assertEqual(len(rleb_settings.remindme_timers), 0)
+        self.assertEqual(len(global_settings.remindme_timers), 0)
         self.mock_channel.send.assert_awaited_with("Deleted reminder.")
         self.mock_channel.reset_mock()

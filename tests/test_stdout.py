@@ -34,21 +34,21 @@ class TestStandardOut(RLEBAsyncTestCase):
         # import rleb_stdout after setUp is done so that rleb_settings loads with mocks/patches
         global create_paste
         global print_to_channel
-        global rleb_stdout
-        global rleb_settings
-        import rleb_stdout
-        from rleb_stdout import create_paste, print_to_channel
-        import rleb_settings
+        global stdout
+        global global_settings
+        import stdout
+        from stdout import create_paste, print_to_channel
+        import global_settings
 
         # Remove the randomness lol
-        rleb_settings.hooks = ["test_hook"]
-        rleb_settings.enable_direct_channel_messages = False
+        global_settings.hooks = ["test_hook"]
+        global_settings.enable_direct_channel_messages = False
 
     async def test_create_paste(self):
         result = await create_paste("some words", title="really cool title")
 
         expected_arguments = {
-            "key": rleb_settings.PASTEEE_APP_KEY,
+            "key": global_settings.PASTEEE_APP_KEY,
             "sections": [
                 {
                     "name": "really cool title",
@@ -69,7 +69,7 @@ class TestStandardOut(RLEBAsyncTestCase):
     async def test_print_to_channel_calls_create_paste(self):
         mock_channel = mock.Mock(spec=discord.TextChannel)
 
-        with patch.object(rleb_stdout, "create_paste") as mocked_create_paste:
+        with patch.object(stdout, "create_paste") as mocked_create_paste:
             await print_to_channel(
                 mock_channel, "some cool content", title="the best title"
             )
@@ -98,10 +98,10 @@ class TestStandardOut(RLEBAsyncTestCase):
         )
 
     async def test_print_to_channel_with_direct_messaging(self):
-        rleb_settings.enable_direct_channel_messages = True
+        global_settings.enable_direct_channel_messages = True
         mock_channel = mock.Mock(spec=discord.TextChannel)
 
-        with patch.object(rleb_stdout, "create_paste") as mocked_create_paste:
+        with patch.object(stdout, "create_paste") as mocked_create_paste:
             await print_to_channel(
                 mock_channel, "some cool content", title="the best title"
             )

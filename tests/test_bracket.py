@@ -17,16 +17,16 @@ class TestBracketLookup(RLEBAsyncTestCase):
         await super().asyncSetUp()
 
         # Import rleb_bracket_lookup after setUp is done so that rleb_settings loads with mocks/patches.
-        global rleb_stdout
-        global rleb_bracket_lookup
-        import rleb_stdout
-        from rleb_liqui import rleb_bracket_lookup
+        global stdout
+        global bracket_lookup
+        import stdout
+        from liqui import bracket_lookup
 
     async def test_bracket(self):
         mock_channel = mock.Mock(spec=discord.TextChannel)
 
-        with patch.object(rleb_stdout, "print_to_channel") as mocked_print_to_channel:
-            await rleb_bracket_lookup.handle_bracket_lookup(
+        with patch.object(stdout, "print_to_channel") as mocked_print_to_channel:
+            await bracket_lookup.handle_bracket_lookup(
                 "https://liquipedia.net/rocketleague/Rocket_League_Championship_Series/2021-22/Winter",
                 mock_channel,
             )
@@ -42,8 +42,8 @@ class TestBracketLookup(RLEBAsyncTestCase):
     async def test_not_started_bracket(self):
         mock_channel = mock.Mock(spec=discord.TextChannel)
 
-        with patch.object(rleb_stdout, "print_to_channel") as mocked_print_to_channel:
-            await rleb_bracket_lookup.handle_bracket_lookup(
+        with patch.object(stdout, "print_to_channel") as mocked_print_to_channel:
+            await bracket_lookup.handle_bracket_lookup(
                 "https://liquipedia.net/rocketleague/RL_Oceania/ANZAC_Day_Invitational/2022",
                 mock_channel,
             )
