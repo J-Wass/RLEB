@@ -1,7 +1,6 @@
 from bs4 import BeautifulSoup
 import time
 import traceback
-import math
 import requests
 
 import global_settings

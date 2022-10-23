@@ -8,7 +8,7 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 
 import unittest
 import unittest.mock as mock
-from unittest.mock import patch, call
+from unittest.mock import patch
 
 from tests.common.rleb_async_test_case import RLEBAsyncTestCase
 

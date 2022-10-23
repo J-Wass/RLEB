@@ -1,8 +1,7 @@
 from collections import Counter
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 import traceback
 import json
-import random
 
 from google.oauth2 import service_account
 from googleapiclient.discovery import build

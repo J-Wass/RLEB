@@ -4,8 +4,7 @@ from data_bridge import Data
 import tasks
 
 import time
-from datetime import datetime, timedelta, timezone
-import traceback
+from datetime import datetime
 import math
 import pytz
 import random

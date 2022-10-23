@@ -1,6 +1,5 @@
 import discord
 import requests
-import base64
 from liqui.liqui_utils import string_to_base64, base64_to_string
 
 import global_settings

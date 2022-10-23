@@ -12,7 +12,6 @@ from tests.common.rleb_test_case import RLEBTestCase
 from threading import Thread
 from queue import Queue
 from datetime import datetime, timedelta
-import subprocess
 
 
 def instantly_crash():

@@ -1,9 +1,7 @@
 from typing import NamedTuple
-from xmlrpc.client import DateTime
 from bs4 import BeautifulSoup
-from datetime import date, datetime
+from datetime import datetime
 import traceback
-import re
 
 import global_settings
 import stdout
