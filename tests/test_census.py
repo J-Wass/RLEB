@@ -12,7 +12,7 @@ from tests.common.rleb_test_case import RLEBTestCase
 import discord
 import praw
 import asyncio
-from rleb_census import handle_flair_census
+from census import handle_flair_census
 
 
 class TestFlairCensus(RLEBTestCase):

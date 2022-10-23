@@ -1,20 +1,19 @@
-
 import asyncio
 from queue import Queue
 from threading import Thread
 from tornado.platform.asyncio import AnyThreadEventLoopPolicy
 
-import rleb_discord
-from rleb_reddit import (
+import discord_bridge
+from reddit_bridge import (
     read_new_submissions,
     monitor_subreddit,
     monitor_modmail,
     monitor_modlog,
 )
-import rleb_settings
-from rleb_settings import rleb_log_info
-from rleb_trello import read_new_trello_actions
-import rleb_health
+import global_settings
+from global_settings import rleb_log_info
+from trello_bridge import read_new_trello_actions
+import health_check
 
 
 def start():
@@ -37,13 +36,13 @@ def start():
     schedule_chat_queue = Queue()
 
     # Place all queues in rleb_settings. These queues are used to communicate throughout the bot.
-    rleb_settings.queues["submissions"] = submissions_queue
-    rleb_settings.queues["trello"] = trello_queue
-    rleb_settings.queues["modmail"] = modmail_queue
-    rleb_settings.queues["modlog"] = modlog_queue
-    rleb_settings.queues["alerts"] = alert_queue
-    rleb_settings.queues["direct_messages"] = direct_message_queue
-    rleb_settings.queues["schedule_chat"] = schedule_chat_queue
+    global_settings.queues["submissions"] = submissions_queue
+    global_settings.queues["trello"] = trello_queue
+    global_settings.queues["modmail"] = modmail_queue
+    global_settings.queues["modlog"] = modlog_queue
+    global_settings.queues["alerts"] = alert_queue
+    global_settings.queues["direct_messages"] = direct_message_queue
+    global_settings.queues["schedule_chat"] = schedule_chat_queue
 
     # Stores all threads used to run the bot.
     threads = []
@@ -54,7 +53,7 @@ def start():
     subreddit_thread = Thread(target=monitor_subreddit, name="Subreddit thread")
     subreddit_thread.setDaemon(True)
     health_thread = Thread(
-        target=rleb_health.health_check, args=(threads,), name="Health thread"
+        target=health_check.health_check, args=(threads,), name="Health thread"
     )
     health_thread.setDaemon(True)
     trello_thread = Thread(target=read_new_trello_actions, name="Trello thread")
@@ -64,7 +63,7 @@ def start():
     modlog_thread = Thread(target=monitor_modlog, name="ModLog thread")
     modlog_thread.setDaemon(True)
     task_alert_thread = Thread(
-        target=rleb_health.task_alert_check, name="Task alert thread"
+        target=health_check.task_alert_check, name="Task alert thread"
     )
     task_alert_thread.setDaemon(True)
     threads = [
@@ -79,12 +78,12 @@ def start():
 
     rleb_log_info(
         "Starting RLEB. Running under {0} in {1} mode.".format(
-            rleb_settings.RUNNING_ENVIRONMENT, rleb_settings.RUNNING_MODE
+            global_settings.RUNNING_ENVIRONMENT, global_settings.RUNNING_MODE
         )
     )
 
     # Start up first threads for streaming submissions and reading reddit PMs.
-    if rleb_settings.reddit_enabled:
+    if global_settings.reddit_enabled:
         rleb_log_info("Starting submissions thread.")
         submissions_thread.start()
 
@@ -97,23 +96,23 @@ def start():
         rleb_log_info("Starting subreddit thread.")
         subreddit_thread.start()
 
-    if rleb_settings.trello_enabled:
+    if global_settings.trello_enabled:
         rleb_log_info("Starting trello thread.")
         trello_thread.start()
 
-    if rleb_settings.health_enabled:
+    if global_settings.health_enabled:
         rleb_log_info("Starting health thread.")
         health_thread.start()
 
-    if rleb_settings.task_alerts_enabled:
+    if global_settings.task_alerts_enabled:
         rleb_log_info("Starting task alert thread.")
         task_alert_thread.start()
 
-    rleb_settings.refresh_remindmes()
+    global_settings.refresh_remindmes()
 
     # Start the discord thread, running on main thread.
     rleb_log_info("Starting discord thread.")
-    rleb_discord.start(threads)
+    discord_bridge.start(threads)
 
 
 # Here's where it all begins.

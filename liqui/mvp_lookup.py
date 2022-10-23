@@ -11,12 +11,12 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.errors import HttpError
 from bs4 import BeautifulSoup
 import discord
-from rleb_settings import rleb_log_error
+from global_settings import rleb_log_error
 
-import rleb_liqui
-from rleb_liqui import rleb_liqui_utils
-import rleb_settings
-import rleb_stdout
+import liqui
+from liqui import liqui_utils
+import global_settings
+import stdout
 
 # todo
 # make discord command
@@ -51,7 +51,7 @@ class MVPCandidates:
         self.candidates = candidates
 
     def __repr__(self):
-        return f'{self.title} -> {self.candidates}'
+        return f"{self.title} -> {self.candidates}"
 
 
 async def handle_mvp_form_creation(liquipedia_urls: list[str], channel) -> None:
@@ -62,7 +62,7 @@ async def handle_mvp_form_creation(liquipedia_urls: list[str], channel) -> None:
 
     markdown = await _get_mvp_markdown(candidate_groups, channel)
     if markdown:
-        await rleb_stdout.print_to_channel(
+        await stdout.print_to_channel(
             channel, markdown, title="RLCS 21-22 | Weekend MVP Poll"
         )
     else:
@@ -95,7 +95,7 @@ async def handle_mvp_results_lookup(form_url: str, channel) -> None:
             )
         region_markdowns.append(markdown)
     markdown = "\n".join(region_markdowns) + "\n" + footer
-    await rleb_stdout.print_to_channel(
+    await stdout.print_to_channel(
         channel, markdown, "RLCS | Week After MVP Poll | RESULTS"
     )
 
@@ -112,24 +112,30 @@ async def _get_mvp_candidates(
     return candidate_groups
 
 
-async def _get_eligible_candidates(liquipedia_url: str, channel, teams_allowed=4) -> list[str]:
+async def _get_eligible_candidates(
+    liquipedia_url: str, channel, teams_allowed=4
+) -> list[str]:
     try:
         await channel.send("Loading mvp candidates from Diesel...")
-        eligible_candidates = await rleb_liqui.diesel.get_mvp_candidates(liquipedia_url, teams_allowed=teams_allowed)
+        eligible_candidates = await liqui.diesel.get_mvp_candidates(
+            liquipedia_url, teams_allowed=teams_allowed
+        )
         return eligible_candidates.split("\n")
     except Exception as e:
         rleb_log_error(f"Failed to load mvp candidates from Diesel: {e}")
         await channel.send("Diesel failed :(")
 
     try:
-        await channel.send("Loading mvp candidates from Python (this may take a few minutes)...")
-        page = rleb_liqui_utils.get_page_html_from_url(liquipedia_url)
+        await channel.send(
+            "Loading mvp candidates from Python (this may take a few minutes)..."
+        )
+        page = liqui_utils.get_page_html_from_url(liquipedia_url)
     except Exception as e:
         await channel.send("Couldn't load {0}!\nError: {1}".format(liquipedia_url, e))
-        rleb_settings.rleb_log_info(
+        global_settings.rleb_log_info(
             "MVP: Couldn't load {0}!\nError: {1}".format(liquipedia_url, e)
         )
-        rleb_settings.rleb_log_error(traceback.format_exc())
+        global_settings.rleb_log_error(traceback.format_exc())
         return None
 
     html = BeautifulSoup(page, "html.parser")
@@ -165,7 +171,7 @@ async def _get_eligible_candidates(liquipedia_url: str, channel, teams_allowed=4
     # Get all players on top teams.
     eligible_candidates = []
     prizepool = html.select("table.prizepooltable:not(.collapsed)")
-    
+
     # Liqui can render the prizepool as a div or table lol.
     if not prizepool or len(prizepool) == 0:
         prizepool = html.select("div.general-collapsible.prizepooltable")
@@ -175,16 +181,19 @@ async def _get_eligible_candidates(liquipedia_url: str, channel, teams_allowed=4
 
     for i in range(min(teams_allowed, len(rows))):
         team_name = rows[i].text.strip()
-        if team_name == "TBD" or  team_name == "":
+        if team_name == "TBD" or team_name == "":
             continue
         eligible_candidates = eligible_candidates + mvp_candidates[team_name]
     return eligible_candidates
+
 
 async def _get_single_mvp_candidate_group(
     liquipedia_url: str, channel, teams_allowed: int = 4
 ) -> Optional[MVPCandidates]:
     """Gets an MVPCandidate group from the liquipedia_url."""
-    eligible_candidates = await _get_eligible_candidates(liquipedia_url, channel, teams_allowed)
+    eligible_candidates = await _get_eligible_candidates(
+        liquipedia_url, channel, teams_allowed
+    )
     title = " | ".join(liquipedia_url.split("/")[4:]).replace("_", " ")
     return MVPCandidates(title, eligible_candidates)
 
@@ -203,14 +212,16 @@ async def _create_mvp_form(
         "https://www.googleapis.com/auth/drive",
         "https://www.googleapis.com/auth/drive.metadata",
     ]
-    credential_info = json.loads(rleb_settings.GOOGLE_CREDENTIALS_JSON)
+    credential_info = json.loads(global_settings.GOOGLE_CREDENTIALS_JSON)
     credentials = service_account.Credentials.from_service_account_info(
         credential_info, scopes=SCOPES
     )
     try:
         form_data = _create_form(candidate_groups, credentials)
     except:
-        await channel.send(f"Couldn't build google form, are all the liquipedia pages formatted correctly?")
+        await channel.send(
+            f"Couldn't build google form, are all the liquipedia pages formatted correctly?"
+        )
         return None
     if form_data is None:
         return None
@@ -236,7 +247,7 @@ def _get_mvp_form_responses(form_link: str) -> Dict[str, List[Tuple[str, float]]
         "https://www.googleapis.com/auth/drive",
         "https://www.googleapis.com/auth/drive.metadata",
     ]
-    credential_info = json.loads(rleb_settings.GOOGLE_CREDENTIALS_JSON)
+    credential_info = json.loads(global_settings.GOOGLE_CREDENTIALS_JSON)
     credentials = service_account.Credentials.from_service_account_info(
         credential_info, scopes=SCOPES
     )
@@ -338,7 +349,7 @@ def _add_permissions_to_formid(form_id, google_credentials):
     service = build("drive", "v3", credentials=google_credentials)
 
     batch = service.new_batch_http_request()
-    for email in rleb_settings.moderator_emails:
+    for email in global_settings.moderator_emails:
         permission = {"type": "user", "role": "writer", "emailAddress": email}
         batch.add(
             service.permissions().create(

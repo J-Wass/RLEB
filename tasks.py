@@ -6,8 +6,8 @@ from googleapiclient.discovery import build
 import discord
 import traceback
 
-import rleb_settings
-import rleb_stdout
+import global_settings
+import stdout
 
 
 class Task:
@@ -67,28 +67,28 @@ async def send_tasks(
     """DMs a user (discord name) all of their tasks."""
     # Fetch the user id from mappings, and their tasks.
     user_tasks = await tasks_for_user(tasks, user)
-    user_mapping = rleb_settings.user_names_to_ids
+    user_mapping = global_settings.user_names_to_ids
     discord_user = (
         None if user not in user_mapping else client.get_user(user_mapping[user])
     )
     if not discord_user:
-        await rleb_stdout.print_to_channel(
+        await stdout.print_to_channel(
             channel,
             f"Couldn't dm {user}! Is their name spelled correctly in the sheet?",
         )
         return
 
-    message = f"{random.choice(rleb_settings.greetings)}\n\n"
+    message = f"{random.choice(global_settings.greetings)}\n\n"
     for t in user_tasks:
         message += t.pretty_print()
     # Discord messages must be less than 2000 to avoid rejection.
     if len(message) > 1990:
-        message = await rleb_stdout.create_paste(message, title=f"{u}'s tasks")
+        message = await stdout.create_paste(message, title=f"{u}'s tasks")
     try:
 
         await discord_user.send(message)
     except Exception as e:
-        await rleb_stdout.print_to_channel(
+        await stdout.print_to_channel(
             channel,
             f"**Couldn't dm {user}! Do they have DMs unblocked for the bot?**\n\n Underlying error: {e}",
         )
@@ -120,7 +120,7 @@ async def broadcast_tasks(
 def get_tasks() -> list[Task]:
     """Gets all tasks from the Spreadsheet tab named "Current Week"."""
     SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
-    credential_info = json.loads(rleb_settings.GOOGLE_CREDENTIALS_JSON)
+    credential_info = json.loads(global_settings.GOOGLE_CREDENTIALS_JSON)
     credentials = service_account.Credentials.from_service_account_info(
         credential_info, scopes=SCOPES
     )
@@ -131,8 +131,8 @@ def get_tasks() -> list[Task]:
     sheet_json = (
         sheet.values()
         .get(
-            spreadsheetId=rleb_settings.SHEETS_ID,
-            range=rleb_settings.weekly_schedule_sheets_range,
+            spreadsheetId=global_settings.SHEETS_ID,
+            range=global_settings.weekly_schedule_sheets_range,
         )
         .execute()
     )
@@ -217,9 +217,9 @@ async def handle_task_lookup(
             await channel.send(response)
 
     except Exception as e:
-        rleb_settings.rleb_log_info("Couldn't find tasks :(")
-        rleb_settings.rleb_log_info(e)
-        rleb_settings.rleb_log_error(traceback.format_exc())
+        global_settings.rleb_log_info("Couldn't find tasks :(")
+        global_settings.rleb_log_info(e)
+        global_settings.rleb_log_error(traceback.format_exc())
         await channel.send("Couldn't find tasks :(")
         await channel.send(e)
         await channel.send(traceback.format_exc())

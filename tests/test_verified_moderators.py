@@ -16,26 +16,26 @@ class TestVerifiedModerators(RLEBTestCase):
         super().setUp()
 
         # import rleb_settings after setUp is done so that rleb_settings loads with mocks/patches
-        global rleb_settings
-        import rleb_settings
+        global global_settings
+        import global_settings
 
     def test_verified_moderator(self):
-        rleb_settings.verified_moderators = ["janedoe#1023"]
+        global_settings.verified_moderators = ["janedoe#1023"]
 
         mock_author = Mock(spec=discord.Member)
         mock_author.name = "JaneDoe"
         mock_author.discriminator = "1023"
 
-        self.assertTrue(rleb_settings.is_discord_mod(mock_author))
+        self.assertTrue(global_settings.is_discord_mod(mock_author))
 
     def test_non_verified_moderator(self):
-        rleb_settings.verified_moderators = ["janedoe#1023"]
+        global_settings.verified_moderators = ["janedoe#1023"]
 
         mock_author = Mock(spec=discord.Member)
         mock_author.name = "JohnSmith"
         mock_author.discriminator = "2031"
 
-        self.assertFalse(rleb_settings.is_discord_mod(mock_author))
+        self.assertFalse(global_settings.is_discord_mod(mock_author))
 
 
 if __name__ == "__main__":

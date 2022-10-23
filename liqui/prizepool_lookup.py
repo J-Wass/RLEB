@@ -4,36 +4,39 @@ import traceback
 
 from bs4 import BeautifulSoup
 
-from rleb_liqui import rleb_liqui_utils
-from rleb_stdout import print_to_channel
-import rleb_settings
+from liqui import liqui_utils
+from stdout import print_to_channel
+import global_settings
 
 
 async def handle_prizepool_lookup(liquipedia_url: str, channel: str) -> str:
     """Gets prizepool markdown from a liquipedia tournament page."""
 
-    rleb_settings.rleb_log_info(
+    global_settings.rleb_log_info(
         "Prizepool: Creating prizepool lookup for {0}".format(liquipedia_url)
     )
 
-    
     page = None
     try:
-        page = rleb_liqui_utils.get_page_html_from_url(liquipedia_url)
+        page = liqui_utils.get_page_html_from_url(liquipedia_url)
     except Exception as e:
         await channel.send("Couldn't load {0}!\nError: {1}".format(liquipedia_url, e))
-        rleb_settings.rleb_log_info(
+        global_settings.rleb_log_info(
             "MVP: Couldn't load {0}!\nError: {1}".format(liquipedia_url, e)
         )
-        rleb_settings.rleb_log_error(traceback.format_exc())
+        global_settings.rleb_log_error(traceback.format_exc())
 
     html = BeautifulSoup(page, "html.parser")
 
     # Get all rows of prizepool table, ignore the first row which contains table headers.
-    try:    
-        team_rows = html.select("div.prizepooltable")[0].select(".csstable-widget-row:not(:first-child)")
+    try:
+        team_rows = html.select("div.prizepooltable")[0].select(
+            ".csstable-widget-row:not(:first-child)"
+        )
     except:
-        team_rows = html.select("table.prizepooltable")[0].select("tr:not(:first-child)")
+        team_rows = html.select("table.prizepooltable")[0].select(
+            "tr:not(:first-child)"
+        )
 
     markdown = "|**Place**|**Prize**|**Team**|**RLCS Points**|\n|:-|:-|:-|:-|"
 
@@ -46,7 +49,13 @@ async def handle_prizepool_lookup(liquipedia_url: str, channel: str) -> str:
     for i in range(min(9, len(team_rows))):
         team_data = team_rows[i].select(".csstable-widget-cell")
         # Partially down the prizepool, there's a row "expand" that just houses a toggle for the UI,
-        if team_data[0].get("class") == "prizepooltabletoggle" or "general-collapsible-expand-button" in team_data[0].get("class"):
+        if team_data[0].get(
+            "class"
+        ) == "prizepooltabletoggle" or "general-collapsible-expand-button" in team_data[
+            0
+        ].get(
+            "class"
+        ):
             continue
         team_name = None
         if len(team_data) == 4:

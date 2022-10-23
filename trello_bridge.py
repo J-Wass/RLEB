@@ -4,7 +4,7 @@ from datetime import datetime
 import requests
 import traceback
 
-import rleb_settings
+import global_settings
 
 
 # Create stream to add new posts to submissions queue
@@ -18,32 +18,32 @@ def read_new_trello_actions():
                 actions = get_trello_actions(last_check)
                 for action in actions:
                     human_readable_trello_action(action)
-                    rleb_settings.rleb_log_info(
+                    global_settings.rleb_log_info(
                         "TRELLO: Action - {0}".format(action["type"])
                     )
-                    rleb_settings.queues["trello"].put(action)
+                    global_settings.queues["trello"].put(action)
                 last_check = datetime.utcnow()
                 time.sleep(30)
             except Exception as e:
-                if rleb_settings.thread_crashes["thread"] > 5:
+                if global_settings.thread_crashes["thread"] > 5:
                     break
-                rleb_settings.rleb_log_error(
+                global_settings.rleb_log_error(
                     "REDDIT: Monitoring Trello failed - {0}".format(e)
                 )
-                rleb_settings.rleb_log_error(traceback.format_exc())
-                rleb_settings.thread_crashes["thread"] += 1
-                rleb_settings.last_datetime_crashed["thread"] = datetime.now()
-            time.sleep(rleb_settings.thread_restart_interval_seconds)
+                global_settings.rleb_log_error(traceback.format_exc())
+                global_settings.thread_crashes["thread"] += 1
+                global_settings.last_datetime_crashed["thread"] = datetime.now()
+            time.sleep(global_settings.thread_restart_interval_seconds)
 
 
 def get_trello_actions(date):
     """Pings the trello board for all actions since the requested date."""
     iso_date = date.replace(microsecond=0).isoformat()
     action_request = "https://api.trello.com/1/boards/{0}/actions/?since={1}Z&key={2}&token={3}".format(
-        rleb_settings.TRELLO_BOARD_ID,
+        global_settings.TRELLO_BOARD_ID,
         iso_date,
-        rleb_settings.TRELLO_AUTH_KEY,
-        rleb_settings.TRELLO_AUTH_TOKEN,
+        global_settings.TRELLO_AUTH_KEY,
+        global_settings.TRELLO_AUTH_TOKEN,
     )
     response = requests.request("GET", action_request)
     return json.loads(response.text)

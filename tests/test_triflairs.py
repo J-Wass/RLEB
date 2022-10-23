@@ -25,17 +25,17 @@ class TestDualFlairs(RLEBTestCase):
 
         # import rleb_dualflairs after setUp is done so that rleb_settings loads with mocks/patches
         global handle_flair_request
-        global rleb_settings
+        global global_settings
         global rleb_reddit
-        from rleb_triflairs import handle_flair_request
-        from rleb_reddit import monitor_modmail
-        import rleb_settings
+        from triflairs import handle_flair_request
+        from reddit_bridge import monitor_modmail
+        import global_settings
 
         # Dualflairs spams the console so much.
-        rleb_settings.logging_enabled = False
+        global_settings.logging_enabled = False
 
     def tearDown(self):
-        rleb_settings.logging_enabled = True
+        global_settings.logging_enabled = True
         super().tearDown()
 
     def test_handle_two_flairs(self):

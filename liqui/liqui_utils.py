@@ -33,9 +33,11 @@ def _get_page_id_from_url(liquipedia_url: str) -> str:
     # Just pull out the only key, which is the pageid.
     return random.choice(list(pages.keys()))
 
+
 def _get_content_api_url_from_liqui_url(liquipedia_url: str) -> str:
     pageid = _get_page_id_from_url(liquipedia_url)
     return f"https://liquipedia.net/rocketleague/api.php?action=parse&format=json&pageid={pageid}"
+
 
 def get_page_html_from_url(liquipedia_url: str) -> str:
     """Accepts a liquipedia_url and returns the html for that page."""
@@ -54,8 +56,10 @@ def get_page_html_from_url(liquipedia_url: str) -> str:
 
     return content
 
+
 def string_to_base64(in_string: str) -> str:
-    return base64.b64encode(in_string.encode('utf-8')).decode('utf-8')
+    return base64.b64encode(in_string.encode("utf-8")).decode("utf-8")
+
 
 def base64_to_string(in_string: str) -> str:
-    return base64.b64decode(in_string).decode('utf-8').strip()
+    return base64.b64decode(in_string).decode("utf-8").strip()

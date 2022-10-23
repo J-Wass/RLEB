@@ -5,9 +5,9 @@ from datetime import date, datetime
 import traceback
 import re
 
-import rleb_settings
-import rleb_stdout
-from rleb_liqui import rleb_liqui_utils
+import global_settings
+import stdout
+from liqui import liqui_utils
 
 import discord
 
@@ -46,18 +46,20 @@ async def handle_bracket_lookup(url: str, channel: discord.channel.TextChannel) 
         channel (discord.channel.TextChannel): Channel the lookup is being used in.
         url (str): Liquipedia URL string to look for elimination brackets.
     """
-    rleb_settings.rleb_log_info("DISCORD: Creating bracket lookup for {0}".format(url))
+    global_settings.rleb_log_info(
+        "DISCORD: Creating bracket lookup for {0}".format(url)
+    )
 
     try:
         content = None
         try:
-            content = rleb_liqui_utils.get_page_html_from_url(url)
+            content = liqui_utils.get_page_html_from_url(url)
         except Exception as e:
             await channel.send("Couldn't load {0} !\nError: {1}".format(url, e))
-            rleb_settings.rleb_log_info(
+            global_settings.rleb_log_info(
                 "BRACKET: Couldn't load {0}!\nError: {1}".format(url, e)
             )
-            rleb_settings.rleb_log_error(traceback.format_exc())
+            global_settings.rleb_log_error(traceback.format_exc())
             return
 
         html = BeautifulSoup(content, "html.parser")
@@ -167,14 +169,14 @@ async def handle_bracket_lookup(url: str, channel: discord.channel.TextChannel) 
 
             final_markdown += f"\n{match_row}"
 
-        await rleb_stdout.print_to_channel(
+        await stdout.print_to_channel(
             channel, final_markdown, title="Elimination Bracket", force_pastebin=True
         )
     except Exception as e:
         await channel.send("Couldn't find brackets in {0}. Error: {1}.".format(url, e))
-        rleb_settings.rleb_log_info(
+        global_settings.rleb_log_info(
             "BRACKET: Couldn't find brackets in {0}.\nError: {1}\nTraceback: {2}".format(
                 url, e, traceback.format_exc()
             )
         )
-        rleb_settings.rleb_log_error(traceback.format_exc())
+        global_settings.rleb_log_error(traceback.format_exc())

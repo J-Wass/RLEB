@@ -12,8 +12,8 @@ from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
-import rleb_settings
-import rleb_stdout
+import global_settings
+import stdout
 
 SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
 
@@ -98,9 +98,9 @@ def process_calendar_events(calendar_event):
     )
 
     calendar_event.day_number = calendar_event.et_datetime.day
-    calendar_event.day_name = rleb_settings.DAYS[calendar_event.et_datetime.weekday()]
+    calendar_event.day_name = global_settings.DAYS[calendar_event.et_datetime.weekday()]
     calendar_event.month_number = calendar_event.et_datetime.month
-    calendar_event.month_name = rleb_settings.MONTHS[
+    calendar_event.month_name = global_settings.MONTHS[
         calendar_event.et_datetime.month - 1
     ]
 
@@ -194,7 +194,7 @@ async def handle_calendar_lookup(channel, formatter="reddit", days_in_advance=7)
     """Retrieves calendar events, formats them, and then sends them to the discord channel with the supplied formatter."""
 
     try:
-        credential_info = json.loads(rleb_settings.GOOGLE_CREDENTIALS_JSON)
+        credential_info = json.loads(global_settings.GOOGLE_CREDENTIALS_JSON)
         credentials = service_account.Credentials.from_service_account_info(
             credential_info, scopes=SCOPES
         )
@@ -205,7 +205,7 @@ async def handle_calendar_lookup(channel, formatter="reddit", days_in_advance=7)
         upcoming_events = (
             service.events()
             .list(
-                calendarId=rleb_settings.GOOGLE_CALENDAR_ID,
+                calendarId=global_settings.GOOGLE_CALENDAR_ID,
                 timeMin=datetime.datetime.now().astimezone().isoformat(),
                 timeMax=later.astimezone().isoformat(),
                 orderBy="updated",
@@ -240,13 +240,13 @@ async def handle_calendar_lookup(channel, formatter="reddit", days_in_advance=7)
 
         formatted_text = formatted_calendar_events(calendar_events, formatter)
 
-        await rleb_stdout.print_to_channel(
+        await stdout.print_to_channel(
             channel,
             formatted_text,
             title="{0} calendar for next {1} days".format(formatter, days_in_advance),
         )
     except Exception as e:
-        rleb_settings.rleb_log_error(traceback.format_exc())
+        global_settings.rleb_log_error(traceback.format_exc())
         await channel.send("Couldn't build event post :(")
         await channel.send(e)
         await channel.send(traceback.format_exc())

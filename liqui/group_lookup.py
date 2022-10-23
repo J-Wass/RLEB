@@ -4,9 +4,9 @@ import traceback
 import math
 import requests
 
-import rleb_settings
-import rleb_stdout
-from rleb_liqui import rleb_liqui_utils
+import global_settings
+import stdout
+from liqui import liqui_utils
 
 
 async def handle_group_lookup(url, channel):
@@ -18,18 +18,18 @@ async def handle_group_lookup(url, channel):
     """
 
     start = time.time()
-    rleb_settings.rleb_log_info("DISCORD: Creating group lookup for {0}".format(url))
+    global_settings.rleb_log_info("DISCORD: Creating group lookup for {0}".format(url))
 
     try:
         page = None
         try:
-            page = rleb_liqui_utils.get_page_html_from_url(url)
+            page = liqui_utils.get_page_html_from_url(url)
         except Exception as e:
             await channel.send("Couldn't load {0}!\nError: {1}".format(url, e))
-            rleb_settings.rleb_log_info(
+            global_settings.rleb_log_info(
                 "TEAMS: Couldn't load {0}!\nError: {1}".format(url, e)
             )
-            rleb_settings.rleb_log_error(traceback.format_exc())
+            global_settings.rleb_log_error(traceback.format_exc())
             return
 
         html = BeautifulSoup(page, "html.parser")
@@ -98,14 +98,14 @@ async def handle_group_lookup(url, channel):
 
             finalMarkdown += groupMarkdown + "\n\n&#x200B;\n\n"
 
-        await rleb_stdout.print_to_channel(channel, finalMarkdown, title="Groups")
+        await stdout.print_to_channel(channel, finalMarkdown, title="Groups")
 
     except Exception as e:
         await channel.send("Couldn't find groups in {0}.".format(url))
-        rleb_settings.rleb_log_info(
+        global_settings.rleb_log_info(
             "LOOKUP: Couldn't find groups in {0}. Error: {1}".format(url, e)
         )
-        rleb_settings.rleb_log_error(traceback.format_exc())
+        global_settings.rleb_log_error(traceback.format_exc())
 
     finally:
         return int(time.time() - start)

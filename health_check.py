@@ -1,7 +1,7 @@
-import rleb_settings
-from rleb_settings import rleb_log_info, rleb_log_error
-from rleb_data import Data
-import rleb_tasks
+import global_settings
+from global_settings import rleb_log_info, rleb_log_error
+from data_bridge import Data
+import tasks
 
 import time
 from datetime import datetime, timedelta, timezone
@@ -38,7 +38,7 @@ def get_scheduled_posts(
 ) -> list[Event]:
     """ "Returns a list of scheduled posts from the sub.."""
     scheduled_posts = []
-    for log in rleb_settings.sub.mod.log(action="create_scheduled_post", limit=20):
+    for log in global_settings.sub.mod.log(action="create_scheduled_post", limit=20):
         if already_warned_scheduled_posts and log.id in already_warned_scheduled_posts:
             continue
 
@@ -62,7 +62,7 @@ def get_scheduled_posts(
         except Exception as e:
             # only send warnings of the caller provided a list to be filled out (already_warned_scheduled_posts)
             if already_warned_scheduled_posts:
-                rleb_settings.queues["schedule_chat"].put(
+                global_settings.queues["schedule_chat"].put(
                     f"**{log.details}** {log.description} wasn't scheduled in UTC! (internal error = {e})"
                 )
                 already_warned_scheduled_posts.append(log.id)
@@ -74,7 +74,7 @@ def get_scheduled_posts(
 
 def get_weekly_tasks() -> list[Event]:
     weekly_tasks = []
-    tasks = rleb_tasks.get_tasks()
+    tasks = tasks.get_tasks()
     for t in tasks:
         try:
             time_string = t.event_schedule_time.replace("Schedule ", "")
@@ -147,9 +147,9 @@ def task_alert_check():
             else:
                 scheduled_post = post_at_same_time[0]
                 if scheduled_post.id not in already_confirmed_scheduled_posts:
-                    message = random.choice(rleb_settings.success_emojis)
+                    message = random.choice(global_settings.success_emojis)
                     message += f" Task is scheduled: **{task.event_name}** by {task.event_creator}.\nhttps://new.reddit.com/r/RocketLeagueEsports/about/scheduledposts"
-                    rleb_settings.queues["schedule_chat"].put(message)
+                    global_settings.queues["schedule_chat"].put(message)
                     already_confirmed_scheduled_posts.append(scheduled_post.id)
                     Data.singleton().write_already_warned_confirmed_post(
                         scheduled_post.id, datetime.now().timestamp()
@@ -171,11 +171,11 @@ def task_alert_check():
             if (seconds_remaining < 60 * 60 * 8) and (seconds_remaining > -60 * 60 * 2):
                 message = f"WARNING: {unscheduled_task.event_name} was not scheduled correctly!\n\n"
                 message += f"Task is due in {math.floor(seconds_remaining / 3600)} hour(s) and {round((seconds_remaining / 60) % 60, 0)} minute(s).\n\nScheduled posts: https://new.reddit.com/r/RocketLeagueEsports/about/scheduledposts"
-                rleb_settings.queues["schedule_chat"].put(message)
+                global_settings.queues["schedule_chat"].put(message)
                 message += (
                     f"\nAccording to the weekly sheet, **you** are the thread creator."
                 )
-                rleb_settings.queues["direct_messages"].put(
+                global_settings.queues["direct_messages"].put(
                     (unscheduled_task.event_creator, message)
                 )
                 already_warned_late_posts.append(
@@ -186,7 +186,7 @@ def task_alert_check():
                 )
 
         # Break before waiting for the interval.
-        if not rleb_settings.task_alert_check_enabled:
+        if not global_settings.task_alert_check_enabled:
             break
         time.sleep(60 * 10)  # 60 seconds, 10 minutes
 
@@ -194,57 +194,57 @@ def task_alert_check():
 # Monitors health of other threads.
 def health_check(threads):
     """Every minute, check if all threads are still running and restart if needed."""
-    time.sleep(rleb_settings.health_check_startup_latency)
+    time.sleep(global_settings.health_check_startup_latency)
 
     while True:
         # Monitor Threads
         for t in threads:
-            if not rleb_settings.thread_health_check_enabled:
+            if not global_settings.thread_health_check_enabled:
                 break
             if not t.is_alive():
                 rleb_log_error(
                     "HEALTH: Thread has died: {0} ({1} crashes)".format(
-                        t.name, rleb_settings.thread_crashes["thread"]
+                        t.name, global_settings.thread_crashes["thread"]
                     )
                 )
-                rleb_settings.queues["alerts"].put(
+                global_settings.queues["alerts"].put(
                     (
                         "Thread has died: {0} ({1} crashes)".format(
-                            t.name, rleb_settings.thread_crashes["thread"]
+                            t.name, global_settings.thread_crashes["thread"]
                         ),
-                        rleb_settings.BOT_COMMANDS_CHANNEL_ID,
+                        global_settings.BOT_COMMANDS_CHANNEL_ID,
                     )
                 )
                 threads.remove(t)
 
         # Monitor Asyncio Threads
         dead_asyncio_threads = []
-        for asyncio_thread, update_time in rleb_settings.asyncio_threads.items():
-            if not rleb_settings.asyncio_health_check_enabled:
+        for asyncio_thread, update_time in global_settings.asyncio_threads.items():
+            if not global_settings.asyncio_health_check_enabled:
                 break
 
             # Can't check if an asyncio thread is alive, check heartbeat instead.
             if (datetime.now() - update_time).total_seconds() > 300:
                 rleb_log_error(
                     "HEALTH: {0} asyncio thread has stopped responding! ({1} crashes)".format(
-                        asyncio_thread, rleb_settings.thread_crashes["asyncio"]
+                        asyncio_thread, global_settings.thread_crashes["asyncio"]
                     )
                 )
-                rleb_settings.queues["alerts"].put(
+                global_settings.queues["alerts"].put(
                     (
                         "{0} asyncio thread has stopped responding! ({1} crashes)".format(
-                            asyncio_thread, rleb_settings.thread_crashes["asyncio"]
+                            asyncio_thread, global_settings.thread_crashes["asyncio"]
                         ),
-                        rleb_settings.BOT_COMMANDS_CHANNEL_ID,
+                        global_settings.BOT_COMMANDS_CHANNEL_ID,
                     )
                 )
                 dead_asyncio_threads.append(asyncio_thread)
 
         # Don't warn about this asyncio thread again.
         for dead_asyncio_thread in dead_asyncio_threads:
-            del rleb_settings.asyncio_threads[dead_asyncio_thread]
+            del global_settings.asyncio_threads[dead_asyncio_thread]
 
         # Break before waiting for the interval.
-        if not rleb_settings.health_enabled:
+        if not global_settings.health_enabled:
             break
         time.sleep(30)

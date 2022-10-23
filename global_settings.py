@@ -10,7 +10,7 @@ import os
 from sys import platform
 import discord
 
-from rleb_data import Data, Remindme
+from data_bridge import Data, Remindme
 
 # This is bad code, don't tell anyone I wrote this.
 try:

@@ -20,18 +20,18 @@ class TestPrizepoolLookup(RLEBAsyncTestCase):
         await super().asyncSetUp()
 
         # Import rleb_swiss after setUp is done so that rleb_settings loads with mocks/patches.
-        global rleb_stdout
-        global rleb_prizepool_lookup
-        import rleb_stdout
-        from rleb_liqui import rleb_prizepool_lookup
+        global stdout
+        global prizepool_lookup
+        import stdout
+        from liqui import prizepool_lookup
 
     async def test_prizepool_complete(self):
         mock_channel = mock.Mock(spec=discord.TextChannel)
 
         with patch.object(
-            rleb_prizepool_lookup, "print_to_channel"
+            prizepool_lookup, "print_to_channel"
         ) as mocked_print_to_channel:
-            await rleb_prizepool_lookup.handle_prizepool_lookup(
+            await prizepool_lookup.handle_prizepool_lookup(
                 "https://liquipedia.net/rocketleague/Rocket_League_Championship_Series/2021-22/Spring/North_America/1",
                 mock_channel,
             )

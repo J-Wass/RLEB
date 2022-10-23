@@ -26,16 +26,16 @@ class TestGroupLookup(RLEBAsyncTestCase):
         await super().asyncSetUp()
 
         # Import rleb_group_lookup after setUp is done so that rleb_settings loads with mocks/patches.
-        global rleb_stdout
-        global rleb_group_lookup
-        import rleb_stdout
-        from rleb_liqui import rleb_group_lookup
+        global stdout
+        global group_lookup
+        import stdout
+        from liqui import group_lookup
 
     async def test_group_lookup(self):
         mock_channel = mock.Mock(spec=discord.TextChannel)
 
-        with patch.object(rleb_stdout, "print_to_channel") as mocked_print_to_channel:
-            await rleb_group_lookup.handle_group_lookup(
+        with patch.object(stdout, "print_to_channel") as mocked_print_to_channel:
+            await group_lookup.handle_group_lookup(
                 "https://liquipedia.net/rocketleague/Rocket_League_Championship_Series/Season_X/Spring/Oceania",
                 mock_channel,
             )
@@ -56,7 +56,7 @@ class TestGroupLookup(RLEBAsyncTestCase):
         self.addCleanup(mock_request)
 
         mock_channel = mock.Mock(spec=discord.TextChannel)
-        await rleb_group_lookup.handle_group_lookup("bad url", mock_channel)
+        await group_lookup.handle_group_lookup("bad url", mock_channel)
 
         self.assertEquals(
             mock_channel.send.mock_calls,

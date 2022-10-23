@@ -5,7 +5,7 @@ import json
 
 import discord
 
-import rleb_settings
+import global_settings
 
 
 async def create_paste(content, title=None):
@@ -17,7 +17,7 @@ async def create_paste(content, title=None):
     try:
         request = "https://api.paste.ee/v1/pastes"
         arguments = {
-            "key": rleb_settings.PASTEEE_APP_KEY,
+            "key": global_settings.PASTEEE_APP_KEY,
             "sections": [
                 {
                     "name": ("Untitled" if title is None else title),
@@ -35,8 +35,8 @@ async def create_paste(content, title=None):
     except:
         request = "https://pastebin.com/api/api_post.php"
         arguments = {
-            "api_dev_key": rleb_settings.PASTEBIN_API_KEY,
-            "api_user_key": rleb_settings.PASTEBIN_API_USER_KEY,
+            "api_dev_key": global_settings.PASTEBIN_API_KEY,
+            "api_user_key": global_settings.PASTEBIN_API_USER_KEY,
             "api_paste_code": content,
             "api_paste_expire_date": "1W",
             "api_option": "paste",
@@ -66,7 +66,7 @@ async def print_to_channel(
     """
     if (
         len(content) < 250
-        and rleb_settings.enable_direct_channel_messages
+        and global_settings.enable_direct_channel_messages
         and not force_pastebin
     ):
         message = await channel.send(content, embed=None)
@@ -75,15 +75,15 @@ async def print_to_channel(
 
     try:
         response = await create_paste(content, title=title)
-        hook = random.choice(rleb_settings.hooks)
+        hook = random.choice(global_settings.hooks)
         message = await channel.send("**{0}**: {1}".format(hook, response))
         await message.edit(suppress=True)  # remove those annoying embeds
     except Exception as e:
 
         # If something goes wrong with paste.ee or pastebin, print text directly to discord.
 
-        rleb_settings.rleb_log_error(traceback.format_exc())
-        rleb_settings.rleb_log_error(e)
+        global_settings.rleb_log_error(traceback.format_exc())
+        global_settings.rleb_log_error(e)
 
         # Discord will bold text if it uses *'s. Escape the stars so they can make it all the way to reddit.
         content = content.replace("*", "\*")

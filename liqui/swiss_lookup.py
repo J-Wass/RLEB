@@ -5,9 +5,9 @@ import discord
 import requests
 import base64
 
-import rleb_settings
-import rleb_stdout
-from rleb_liqui import rleb_liqui_utils
+import global_settings
+import stdout
+from liqui import liqui_utils
 
 
 async def handle_swiss_lookup(url, channel: discord.channel.TextChannel):
@@ -17,14 +17,16 @@ async def handle_swiss_lookup(url, channel: discord.channel.TextChannel):
         channel (discord.channel.TextChannel): Channel the lookup is being used in.
         url (str): Liquipedia URL string to look for swiss tables.
     """
-    rleb_settings.rleb_log_info("DISCORD: Creating lookup for {0}".format(url))
+    global_settings.rleb_log_info("DISCORD: Creating lookup for {0}".format(url))
 
     # Attempt to load markdown from Diesel.
     try:
         await channel.send("Building swiss table from Diesel...")
-        response = requests.get(f"http://127.0.0.1:8080/swiss/{base64.b64encode(url.encode('utf-8')).decode('utf-8')}")
-        markdown = base64.b64decode(response.content).decode('utf-8').strip()
-        await rleb_stdout.print_to_channel(channel, markdown , title="Swiss Bracket")
+        response = requests.get(
+            f"http://127.0.0.1:8080/swiss/{base64.b64encode(url.encode('utf-8')).decode('utf-8')}"
+        )
+        markdown = base64.b64decode(response.content).decode("utf-8").strip()
+        await stdout.print_to_channel(channel, markdown, title="Swiss Bracket")
         return
     except Exception as e:
         await channel.send("Diesel failed :(")
@@ -35,16 +37,16 @@ async def handle_swiss_lookup(url, channel: discord.channel.TextChannel):
         await channel.send("Building swiss table from Python...")
         content = None
         try:
-            content = rleb_liqui_utils.get_page_html_from_url(url)
+            content = liqui_utils.get_page_html_from_url(url)
         except Exception as e:
             await channel.send("Couldn't load {0} !\nError: {1}".format(url, e))
-            rleb_settings.rleb_log_info(
+            global_settings.rleb_log_info(
                 "SWISS: Couldn't load {0}!\nError: {1}".format(url, e)
             )
-            rleb_settings.rleb_log_error(traceback.format_exc())
+            global_settings.rleb_log_error(traceback.format_exc())
             return
 
-        html = BeautifulSoup(content, 'lxml')
+        html = BeautifulSoup(content, "lxml")
 
         # The indicator that each cell in the swiss table starts with.
         indicator = {
@@ -69,7 +71,6 @@ async def handle_swiss_lookup(url, channel: discord.channel.TextChannel):
 
             # Add to mapping.
             acronym_map[team_name] = team_acronym
-
 
         def name_to_acronym(full_team_name):
             """Takes a team name and returns it's acroynm. If the acronym isn't found, returns the full name."""
@@ -110,16 +111,14 @@ async def handle_swiss_lookup(url, channel: discord.channel.TextChannel):
             rows.insert(int(len(rows) / 2) + 1, "|\-|\- - - - -|\- - -||||||")
             table = "\n".join(rows)
             tables.append(table)
-        await rleb_stdout.print_to_channel(
-            channel, "\n".join(tables), title="Swiss Bracket"
-        )
+        await stdout.print_to_channel(channel, "\n".join(tables), title="Swiss Bracket")
     except Exception as e:
         await channel.send(
             "Couldn't find swiss group in {0}. Error: {1}.".format(url, e)
         )
-        rleb_settings.rleb_log_info(
+        global_settings.rleb_log_info(
             "SWISS: Couldn't find swiss group in {0}.\nError: {1}\nTraceback: {2}".format(
                 url, e, traceback.format_exc()
             )
         )
-        rleb_settings.rleb_log_error(traceback.format_exc())
+        global_settings.rleb_log_error(traceback.format_exc())

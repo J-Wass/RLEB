@@ -11,24 +11,24 @@ from threading import Lock, Thread
 import traceback
 import math
 
-import rleb_health
-import rleb_settings
-import rleb_stdout
-from rleb_data import Data, Remindme
-from rleb_settings import sub, user_names_to_ids
-from rleb_liqui.rleb_team_lookup import handle_team_lookup
-from rleb_liqui.rleb_group_lookup import handle_group_lookup
-from rleb_census import handle_flair_census
-from rleb_calendar import handle_calendar_lookup
-from rleb_tasks import handle_task_lookup
-from rleb_liqui.rleb_swiss import handle_swiss_lookup
-from rleb_liqui.rleb_bracket_lookup import handle_bracket_lookup
-from rleb_liqui.rleb_mvp_lookup import (
+import health_check
+import global_settings
+import stdout
+from data_bridge import Data, Remindme
+from global_settings import sub, user_names_to_ids
+from liqui.team_lookup import handle_team_lookup
+from liqui.group_lookup import handle_group_lookup
+from census import handle_flair_census
+from calendar_event import handle_calendar_lookup
+from tasks import handle_task_lookup
+from liqui.swiss_lookup import handle_swiss_lookup
+from liqui.bracket_lookup import handle_bracket_lookup
+from liqui.mvp_lookup import (
     handle_mvp_form_creation,
     handle_mvp_results_lookup,
 )
-from rleb_liqui.diesel import handle_stream_lookup, healthcheck
-from rleb_liqui.rleb_prizepool_lookup import handle_prizepool_lookup
+from liqui.diesel import handle_stream_lookup, healthcheck
+from liqui.prizepool_lookup import handle_prizepool_lookup
 
 responses_lock = Lock()
 
@@ -61,39 +61,39 @@ class RLEsportsBot(discord.Client):
 
     async def on_ready(self):
         """Indicate bot has joined the discord."""
-        rleb_settings.rleb_log_info("DISCORD: Logged on as {0}".format(self.user))
-        self.new_post_channel = self.get_channel(rleb_settings.NEW_POSTS_CHANNEL_ID)
-        self.trello_channel = self.get_channel(rleb_settings.TRELLO_CHANNEL_ID)
-        self.modmail_channel = self.get_channel(rleb_settings.MODMAIL_CHANNEL_ID)
+        global_settings.rleb_log_info("DISCORD: Logged on as {0}".format(self.user))
+        self.new_post_channel = self.get_channel(global_settings.NEW_POSTS_CHANNEL_ID)
+        self.trello_channel = self.get_channel(global_settings.TRELLO_CHANNEL_ID)
+        self.modmail_channel = self.get_channel(global_settings.MODMAIL_CHANNEL_ID)
         self.bot_command_channel = self.get_channel(
-            rleb_settings.BOT_COMMANDS_CHANNEL_ID
+            global_settings.BOT_COMMANDS_CHANNEL_ID
         )
         self.schedule_chat_channel = self.get_channel(
-            rleb_settings.SCHEDULE_CHAT_CHANNEL_ID
+            global_settings.SCHEDULE_CHAT_CHANNEL_ID
         )
         self.roster_news_channel = self.get_channel(
-            rleb_settings.ROSTER_NEWS_CHANNEL_ID
+            global_settings.ROSTER_NEWS_CHANNEL_ID
         )
-        self.modlog_channel = self.get_channel(rleb_settings.MODLOG_CHANNEL_ID)
+        self.modlog_channel = self.get_channel(global_settings.MODLOG_CHANNEL_ID)
 
         # Create a mapping of discord usernames to discord ids for future use.
         for m in self.new_post_channel.members:
-            rleb_settings.user_names_to_ids[
+            global_settings.user_names_to_ids[
                 m.name.lower() + "#" + m.discriminator
             ] = m.id
 
         # If testing, ping the discord channel.
-        if rleb_settings.RUNNING_MODE != "production":
+        if global_settings.RUNNING_MODE != "production":
             await self.bot_command_channel.send(
                 "Bot is online, running in {0} under {1} mode.".format(
-                    rleb_settings.RUNNING_ENVIRONMENT, rleb_settings.RUNNING_MODE
+                    global_settings.RUNNING_ENVIRONMENT, global_settings.RUNNING_MODE
                 )
             )
         else:
             await self.send_meme(self.bot_command_channel)
 
     async def send_meme(self, channel):
-        meme_sub = rleb_settings.r.subreddit(self.meme_subreddit)
+        meme_sub = global_settings.r.subreddit(self.meme_subreddit)
         if meme_sub.over18:
             return
         randomizer = random.randint(1, 20)
@@ -112,9 +112,9 @@ class RLEsportsBot(discord.Client):
         """Check submissions queue to post in 'new posts' discord channel."""
         while True:
             try:
-                while not rleb_settings.queues["submissions"].empty():
-                    submission = rleb_settings.queues["submissions"].get()
-                    rleb_settings.rleb_log_info(
+                while not global_settings.queues["submissions"].empty():
+                    submission = global_settings.queues["submissions"].get()
+                    global_settings.rleb_log_info(
                         "DISCORD: Received submission id {0}: {1}".format(
                             submission, submission.title
                         )
@@ -122,7 +122,7 @@ class RLEsportsBot(discord.Client):
                     embed = discord.Embed(
                         title=submission.title,
                         url="https://www.reddit.com{0}".format(submission.permalink),
-                        color=random.choice(rleb_settings.colors),
+                        color=random.choice(global_settings.colors),
                     )
                     embed.set_author(name=submission.author.name)
 
@@ -130,38 +130,38 @@ class RLEsportsBot(discord.Client):
                         await self.roster_news_channel.send(embed=embed)
 
                     await self.new_post_channel.send(embed=embed)
-                rleb_settings.asyncio_threads["submissions"] = datetime.now()
-                if not rleb_settings.discord_check_new_submission_enabled:
+                global_settings.asyncio_threads["submissions"] = datetime.now()
+                if not global_settings.discord_check_new_submission_enabled:
                     break
             except Exception as e:
-                if rleb_settings.thread_crashes["asyncio"] > 5:
+                if global_settings.thread_crashes["asyncio"] > 5:
                     await self.bot_command_channel.send(
                         "ALERT: Asyncio thread has crashed more than 5 times."
                     )
                     developer = discord.utils.get(
                         self.get_all_members(),
-                        name=rleb_settings.developer_name,
-                        discriminator=rleb_settings.developer_discriminator,
+                        name=global_settings.developer_name,
+                        discriminator=global_settings.developer_discriminator,
                     )
                     await self.bot_command_channel.send(
                         "^ " + developer.mention + " fyi"
                     )
                     break
-                rleb_settings.rleb_log_error(
+                global_settings.rleb_log_error(
                     "Discord: Submissions asyncio thread failed - {0}".format(e)
                 )
-                rleb_settings.rleb_log_error(traceback.format_exc())
-                rleb_settings.thread_crashes["asyncio"] += 1
-                rleb_settings.last_datetime_crashed["asyncio"] = datetime.now()
-            await asyncio.sleep(rleb_settings.discord_async_interval_seconds)
+                global_settings.rleb_log_error(traceback.format_exc())
+                global_settings.thread_crashes["asyncio"] += 1
+                global_settings.last_datetime_crashed["asyncio"] = datetime.now()
+            await asyncio.sleep(global_settings.discord_async_interval_seconds)
 
     async def check_new_schedule_chat(self):
         """Checks schedule_chat queue to send warnings into #schedule_chat."""
         while True:
             try:
-                while not rleb_settings.queues["schedule_chat"].empty():
-                    message = rleb_settings.queues["schedule_chat"].get()
-                    rleb_settings.rleb_log_info(
+                while not global_settings.queues["schedule_chat"].empty():
+                    message = global_settings.queues["schedule_chat"].get()
+                    global_settings.rleb_log_info(
                         "DISCORD: Received schedule chat '{0}'".format(message)
                     )
                     schedule_chat_message = await self.schedule_chat_channel.send(
@@ -169,43 +169,45 @@ class RLEsportsBot(discord.Client):
                     )
                     await schedule_chat_message.edit(suppress=True)
 
-                rleb_settings.asyncio_threads["schedule_chat"] = datetime.now()
-                if not rleb_settings.discord_check_new_schedule_chat_enabled:
+                global_settings.asyncio_threads["schedule_chat"] = datetime.now()
+                if not global_settings.discord_check_new_schedule_chat_enabled:
                     break
             except Exception as e:
-                if rleb_settings.thread_crashes["asyncio"] > 5:
+                if global_settings.thread_crashes["asyncio"] > 5:
                     await self.bot_command_channel.send(
                         "ALERT: Asyncio thread has crashed more than 5 times."
                     )
                     developer = discord.utils.get(
                         self.get_all_members(),
-                        name=rleb_settings.developer_name,
-                        discriminator=rleb_settings.developer_discriminator,
+                        name=global_settings.developer_name,
+                        discriminator=global_settings.developer_discriminator,
                     )
                     await self.bot_command_channel.send(
                         "^ " + developer.mention + " fyi"
                     )
                     break
-                rleb_settings.rleb_log_error(
+                global_settings.rleb_log_error(
                     "DISCORD: Alert asyncio thread failed - {0}".format(e)
                 )
-                rleb_settings.rleb_log_error(traceback.format_exc())
-                rleb_settings.thread_crashes["asyncio"] += 1
-                rleb_settings.last_datetime_crashed["asyncio"] = datetime.now()
-            await asyncio.sleep(rleb_settings.discord_async_interval_seconds)
+                global_settings.rleb_log_error(traceback.format_exc())
+                global_settings.thread_crashes["asyncio"] += 1
+                global_settings.last_datetime_crashed["asyncio"] = datetime.now()
+            await asyncio.sleep(global_settings.discord_async_interval_seconds)
 
     async def check_new_direct_messages(self):
         """Checks direct_messages queue to send DMs to discord users."""
         while True:
             try:
-                while not rleb_settings.queues["direct_messages"].empty():
-                    author_message_tuple = rleb_settings.queues["direct_messages"].get()
-                    rleb_settings.rleb_log_info(
+                while not global_settings.queues["direct_messages"].empty():
+                    author_message_tuple = global_settings.queues[
+                        "direct_messages"
+                    ].get()
+                    global_settings.rleb_log_info(
                         "DISCORD: Received DM '{0}'".format(author_message_tuple)
                     )
                     author = author_message_tuple[0]
                     message = author_message_tuple[1]
-                    user_mapping = rleb_settings.user_names_to_ids
+                    user_mapping = global_settings.user_names_to_ids
                     if user_mapping == None or len(user_mapping) == 0:
                         continue
                     discord_user = self.get_user(user_mapping[author])
@@ -213,7 +215,7 @@ class RLEsportsBot(discord.Client):
                         continue
                     message = "\n".join(
                         [
-                            random.choice(rleb_settings.greetings),
+                            random.choice(global_settings.greetings),
                             "\n----------\n",
                             message,
                             "\n----------\n",
@@ -222,41 +224,41 @@ class RLEsportsBot(discord.Client):
                     DM = await discord_user.send(message)
                     await DM.edit(suppress=True)
 
-                rleb_settings.asyncio_threads["direct_messages"] = datetime.now()
-                if not rleb_settings.discord_check_direct_messages_enabled:
+                global_settings.asyncio_threads["direct_messages"] = datetime.now()
+                if not global_settings.discord_check_direct_messages_enabled:
                     break
             except Exception as e:
-                if rleb_settings.thread_crashes["asyncio"] > 5:
+                if global_settings.thread_crashes["asyncio"] > 5:
                     await self.bot_command_channel.send(
                         "ALERT: Asyncio thread has crashed more than 5 times."
                     )
                     developer = discord.utils.get(
                         self.get_all_members(),
-                        name=rleb_settings.developer_name,
-                        discriminator=rleb_settings.developer_discriminator,
+                        name=global_settings.developer_name,
+                        discriminator=global_settings.developer_discriminator,
                     )
                     await self.bot_command_channel.send(
                         "^ " + developer.mention + " fyi"
                     )
                     break
-                rleb_settings.rleb_log_error(
+                global_settings.rleb_log_error(
                     "DISCORD: Alert asyncio thread failed - {0}".format(e)
                 )
-                rleb_settings.rleb_log_error(traceback.format_exc())
-                rleb_settings.thread_crashes["asyncio"] += 1
-                rleb_settings.last_datetime_crashed["asyncio"] = datetime.now()
-            await asyncio.sleep(rleb_settings.discord_async_interval_seconds)
+                global_settings.rleb_log_error(traceback.format_exc())
+                global_settings.thread_crashes["asyncio"] += 1
+                global_settings.last_datetime_crashed["asyncio"] = datetime.now()
+            await asyncio.sleep(global_settings.discord_async_interval_seconds)
 
     async def check_new_alerts(self):
         """Check alerts queue to post in 'bot commands' discord channel."""
         while True:
             try:
-                while not rleb_settings.queues["alerts"].empty():
-                    alert = rleb_settings.queues["alerts"].get()
+                while not global_settings.queues["alerts"].empty():
+                    alert = global_settings.queues["alerts"].get()
                     message = alert[0]
                     channel_id = alert[1]
 
-                    rleb_settings.rleb_log_info(
+                    global_settings.rleb_log_info(
                         "DISCORD: Received alert '{0}'".format(alert)
                     )
 
@@ -267,45 +269,45 @@ class RLEsportsBot(discord.Client):
                     except:
                         channel = self.bot_command_channel
                         await channel.send(message)
-                rleb_settings.asyncio_threads["alerts"] = datetime.now()
-                if not rleb_settings.discord_check_new_alerts_enabled:
+                global_settings.asyncio_threads["alerts"] = datetime.now()
+                if not global_settings.discord_check_new_alerts_enabled:
                     break
             except Exception as e:
-                if rleb_settings.thread_crashes["asyncio"] > 5:
+                if global_settings.thread_crashes["asyncio"] > 5:
                     await self.bot_command_channel.send(
                         "ALERT: Asyncio thread has crashed more than 5 times."
                     )
                     developer = discord.utils.get(
                         self.get_all_members(),
-                        name=rleb_settings.developer_name,
-                        discriminator=rleb_settings.developer_discriminator,
+                        name=global_settings.developer_name,
+                        discriminator=global_settings.developer_discriminator,
                     )
                     await self.bot_command_channel.send(
                         "^ " + developer.mention + " fyi"
                     )
                     break
-                rleb_settings.rleb_log_error(
+                global_settings.rleb_log_error(
                     "DISCORD: Alert asyncio thread failed - {0}".format(e)
                 )
-                rleb_settings.rleb_log_error(traceback.format_exc())
-                rleb_settings.thread_crashes["asyncio"] += 1
-                rleb_settings.last_datetime_crashed["asyncio"] = datetime.now()
-            await asyncio.sleep(rleb_settings.discord_async_interval_seconds)
+                global_settings.rleb_log_error(traceback.format_exc())
+                global_settings.thread_crashes["asyncio"] += 1
+                global_settings.last_datetime_crashed["asyncio"] = datetime.now()
+            await asyncio.sleep(global_settings.discord_async_interval_seconds)
 
     async def check_new_modfeed(self):
         """Check modmail/modlog queue to post in discord."""
         while True:
             try:
                 # Mod Log
-                while not rleb_settings.queues["modlog"].empty():
+                while not global_settings.queues["modlog"].empty():
                     await asyncio.sleep(1)
-                    item = rleb_settings.queues["modlog"].get()
+                    item = global_settings.queues["modlog"].get()
 
                     # Create an embed to post for each mod log.
                     embed = discord.Embed(
                         title=item.action.replace("_", " ").title(),
                         url="https://www.reddit.com/r/RocketLeagueEsports/about/log/",
-                        color=random.choice(rleb_settings.colors),
+                        color=random.choice(global_settings.colors),
                     )
                     embed.set_author(name=item.mod)
 
@@ -333,9 +335,9 @@ class RLEsportsBot(discord.Client):
                     await self.modlog_channel.send(embed=embed)
 
                 # Mod Mail
-                while not rleb_settings.queues["modmail"].empty():
-                    item = rleb_settings.queues["modmail"].get()
-                    rleb_settings.rleb_log_info(
+                while not global_settings.queues["modmail"].empty():
+                    item = global_settings.queues["modmail"].get()
+                    global_settings.rleb_log_info(
                         "DISCORD: Received modmail id {0}: {1}".format(
                             item.id, item.body
                         )
@@ -347,7 +349,7 @@ class RLEsportsBot(discord.Client):
                         embed = discord.Embed(
                             title="Commented on '{0}'".format(item.subject),
                             url="https://mod.reddit.com/mail/all",
-                            color=random.choice(rleb_settings.colors),
+                            color=random.choice(global_settings.colors),
                         )
                         embed.set_author(name=item.author.name)
                     # New modmail
@@ -355,7 +357,7 @@ class RLEsportsBot(discord.Client):
                         embed = discord.Embed(
                             title="Created: '{0}'".format(item.subject),
                             url="https://mod.reddit.com/mail/all",
-                            color=random.choice(rleb_settings.colors),
+                            color=random.choice(global_settings.colors),
                         )
                         embed.set_author(name=item.author.name)
 
@@ -364,69 +366,69 @@ class RLEsportsBot(discord.Client):
                     # Send everything.
                     await self.modmail_channel.send(embed=embed)
 
-                rleb_settings.asyncio_threads["modmail"] = datetime.now()
-                if not rleb_settings.discord_check_new_modmail_enabled:
+                global_settings.asyncio_threads["modmail"] = datetime.now()
+                if not global_settings.discord_check_new_modmail_enabled:
                     break
             except Exception as e:
-                if rleb_settings.thread_crashes["asyncio"] > 5:
+                if global_settings.thread_crashes["asyncio"] > 5:
                     await self.bot_command_channel.send(
                         "ALERT: Asyncio thread has crashed more than 5 times."
                     )
                     developer = discord.utils.get(
                         self.get_all_members(),
-                        name=rleb_settings.developer_name,
-                        discriminator=rleb_settings.developer_discriminator,
+                        name=global_settings.developer_name,
+                        discriminator=global_settings.developer_discriminator,
                     )
                     await self.bot_command_channel.send(
                         "^ " + developer.mention + " fyi"
                     )
                     break
-                rleb_settings.rleb_log_error(
+                global_settings.rleb_log_error(
                     "DISCORD: Modfeed asyncio thread failed - {0}".format(e)
                 )
-                rleb_settings.rleb_log_error(traceback.format_exc())
-                rleb_settings.thread_crashes["asyncio"] += 1
-                rleb_settings.last_datetime_crashed["asyncio"] = datetime.now()
-            await asyncio.sleep(rleb_settings.discord_async_interval_seconds)
+                global_settings.rleb_log_error(traceback.format_exc())
+                global_settings.thread_crashes["asyncio"] += 1
+                global_settings.last_datetime_crashed["asyncio"] = datetime.now()
+            await asyncio.sleep(global_settings.discord_async_interval_seconds)
 
     async def check_new_trello_actions(self):
         """Check trello queue to post in discord."""
         while True:
             try:
-                while not rleb_settings.queues["trello"].empty():
-                    action = rleb_settings.queues["trello"].get()
-                    rleb_settings.rleb_log_info(
+                while not global_settings.queues["trello"].empty():
+                    action = global_settings.queues["trello"].get()
+                    global_settings.rleb_log_info(
                         "DISCORD: Received trello action {0}".format(action["type"])
                     )
                     embed = discord.Embed(
                         title=action["message"],
                         url="https://trello.com/b/u16InUez/rl-esports-sub",
-                        color=random.choice(rleb_settings.colors),
+                        color=random.choice(global_settings.colors),
                     )
                     embed.set_author(name=action["memberCreator"]["username"])
                     await self.trello_channel.send(embed=embed)
-                rleb_settings.asyncio_threads["trello"] = datetime.now()
+                global_settings.asyncio_threads["trello"] = datetime.now()
             except Exception as e:
-                if rleb_settings.thread_crashes["asyncio"] > 5:
+                if global_settings.thread_crashes["asyncio"] > 5:
                     await self.bot_command_channel.send(
                         "ALERT: Asyncio thread has crashed more than 5 times."
                     )
                     developer = discord.utils.get(
                         self.get_all_members(),
-                        name=rleb_settings.developer_name,
-                        discriminator=rleb_settings.developer_discriminator,
+                        name=global_settings.developer_name,
+                        discriminator=global_settings.developer_discriminator,
                     )
                     await self.bot_command_channel.send(
                         "^ " + developer.mention + " fyi"
                     )
                     break
-                rleb_settings.rleb_log_error(
+                global_settings.rleb_log_error(
                     "DISCORD: Trello asyncio thread failed - {0}".format(e)
                 )
-                rleb_settings.rleb_log_error(traceback.format_exc())
-                rleb_settings.thread_crashes["asyncio"] += 1
-                rleb_settings.last_datetime_crashed["asyncio"] = datetime.now()
-            await asyncio.sleep(rleb_settings.discord_async_interval_seconds)
+                global_settings.rleb_log_error(traceback.format_exc())
+                global_settings.thread_crashes["asyncio"] += 1
+                global_settings.last_datetime_crashed["asyncio"] = datetime.now()
+            await asyncio.sleep(global_settings.discord_async_interval_seconds)
 
     # Record that a user was responded to. Useful for responding "thanks".
     async def add_response(self, message):
@@ -456,13 +458,13 @@ class RLEsportsBot(discord.Client):
 
         # force local builds to use !debug command before any commands
         discord_message = message.content
-        if rleb_settings.RUNNING_MODE == "local":
+        if global_settings.RUNNING_MODE == "local":
             if "!debug" not in discord_message:
                 return
             discord_message = discord_message.replace("!debug ", "")
 
         if str(message.channel) == "voting":
-            rleb_settings.rleb_log_info(
+            global_settings.rleb_log_info(
                 "DISCORD: New voting message: {0}".format(discord_message)
             )
             await message.add_reaction("👍")
@@ -471,7 +473,7 @@ class RLEsportsBot(discord.Client):
             return
 
         if str(message.channel) == "ban-review":
-            rleb_settings.rleb_log_info(
+            global_settings.rleb_log_info(
                 "DISCORD: New ban-review message: {0}".format(discord_message)
             )
             await message.add_reaction("⚠️")
@@ -496,10 +498,10 @@ class RLEsportsBot(discord.Client):
 
         elif discord_message.startswith("!census") and is_staff(message.author):
 
-            if not rleb_settings.is_discord_mod(message.author):
+            if not global_settings.is_discord_mod(message.author):
                 return
 
-            rleb_settings.rleb_log_info("DISCORD: Starting flair census.")
+            global_settings.rleb_log_info("DISCORD: Starting flair census.")
             await message.channel.send(
                 "Starting flair census, this may take a minute..."
             )
@@ -524,10 +526,10 @@ class RLEsportsBot(discord.Client):
 
         elif discord_message.startswith("!migrate") and is_staff(message.author):
 
-            if not rleb_settings.is_discord_mod(message.author):
+            if not global_settings.is_discord_mod(message.author):
                 return
 
-            rleb_settings.rleb_log_info("DISCORD: Starting migration")
+            global_settings.rleb_log_info("DISCORD: Starting migration")
             tokens = discord_message.split()
             from_flair = None
             to_flair = None
@@ -556,7 +558,7 @@ class RLEsportsBot(discord.Client):
 
         elif discord_message == "!confirm migrate" and is_staff(message.author):
 
-            if not rleb_settings.is_discord_mod(message.author):
+            if not global_settings.is_discord_mod(message.author):
                 return
 
             if (datetime.now() - self.migrate_request_time).total_seconds() > 120:
@@ -576,7 +578,7 @@ class RLEsportsBot(discord.Client):
                     new_flair = flair["flair_text"].replace(
                         self.from_flair, self.to_flair
                     )
-                    rleb_settings.rleb_log_info(
+                    global_settings.rleb_log_info(
                         "DISCORD: Setting {0} to {1} (was {2})".format(
                             user.name, new_flair, flair["flair_text"]
                         )
@@ -586,12 +588,12 @@ class RLEsportsBot(discord.Client):
             await self.add_response(message)
 
         elif discord_message.startswith("!dualflairs") and is_staff(message.author):
-            if not rleb_settings.is_discord_mod(message.author):
+            if not global_settings.is_discord_mod(message.author):
                 return
 
         elif discord_message == "!triflairs list" and is_staff(message.author):
 
-            if not rleb_settings.is_discord_mod(message.author):
+            if not global_settings.is_discord_mod(message.author):
                 return
 
             all_flairs = ""
@@ -608,7 +610,7 @@ class RLEsportsBot(discord.Client):
             message.author
         ):
 
-            if not rleb_settings.is_discord_mod(message.author):
+            if not global_settings.is_discord_mod(message.author):
                 return
 
             tokens = discord_message.split()
@@ -629,7 +631,7 @@ class RLEsportsBot(discord.Client):
 
         elif discord_message == "!confirm remove" and is_staff(message.author):
 
-            if not rleb_settings.is_discord_mod(message.author):
+            if not global_settings.is_discord_mod(message.author):
                 return
 
             if (datetime.now() - self.remove_flair_time).total_seconds() > 120:
@@ -653,7 +655,7 @@ class RLEsportsBot(discord.Client):
 
         elif discord_message.startswith("!triflairs add") and is_staff(message.author):
 
-            if not rleb_settings.is_discord_mod(message.author):
+            if not global_settings.is_discord_mod(message.author):
                 return
 
             tokens = discord_message.split()
@@ -680,7 +682,7 @@ class RLEsportsBot(discord.Client):
 
         elif discord_message == "!confirm add" and is_staff(message.author):
 
-            if not rleb_settings.is_discord_mod(message.author):
+            if not global_settings.is_discord_mod(message.author):
                 return
 
             if (datetime.now() - self.add_flair_time).total_seconds() > 120:
@@ -704,27 +706,27 @@ class RLEsportsBot(discord.Client):
 
         elif discord_message.startswith("!flush") and is_staff(message.author):
 
-            if not rleb_settings.is_discord_mod(message.author):
+            if not global_settings.is_discord_mod(message.author):
                 return
 
-            rleb_settings._flush_memory_log()
+            global_settings._flush_memory_log()
             await message.channel.send(":toilet:")
 
         elif discord_message.startswith("!schedule") and is_staff(message.author):
-            if not rleb_settings.is_discord_mod(message.author):
+            if not global_settings.is_discord_mod(message.author):
                 return
 
             await message.channel.send(
                 "**Found the following scheduled posts on reddit:**"
             )
-            scheduled_posts = rleb_health.get_scheduled_posts()
+            scheduled_posts = health_check.get_scheduled_posts()
             for s in scheduled_posts:
                 await message.channel.send(s)
 
             await message.channel.send(
                 "**Found the following tasks on the weekly sheet:**"
             )
-            weekly_tasks = rleb_health.get_weekly_tasks()
+            weekly_tasks = health_check.get_weekly_tasks()
             for t in weekly_tasks:
                 await message.channel.send(t)
 
@@ -732,7 +734,7 @@ class RLEsportsBot(discord.Client):
 
         elif discord_message.startswith("!logs") and is_staff(message.author):
 
-            if not rleb_settings.is_discord_mod(message.author):
+            if not global_settings.is_discord_mod(message.author):
                 return
 
             tokens = discord_message.split()
@@ -749,7 +751,7 @@ class RLEsportsBot(discord.Client):
 
             logs = None
             if datasource == "memory":
-                logs = rleb_settings.memory_log[(-1 * count) :]
+                logs = global_settings.memory_log[(-1 * count) :]
             elif datasource == "db":
                 db_logs = Data.singleton().read_logs()
                 db_logs_as_list = list(map(lambda x: x[0], db_logs))
@@ -763,52 +765,52 @@ class RLEsportsBot(discord.Client):
                 if logs == None or len(logs) == 0:
                     await message.channel.send("No logs to show.")
                     return
-                await rleb_stdout.print_to_channel(
+                await stdout.print_to_channel(
                     message.channel, "\n".join(logs), title="logs"
                 )
             except discord.errors.HTTPException:
-                rleb_settings.rleb_log_error(traceback.format_exc())
+                global_settings.rleb_log_error(traceback.format_exc())
                 await message.channel.send(
                     "Couldn't send logs over! (tip: there's a limit to the number of characters that can be sent. Make sure you aren't requesting too many logs. Use '!logs [db/memory] [n]', where n is a small number to avoid the character limit.)"
                 )
             await self.add_response(message)
         elif discord_message.startswith("!shutdown") and is_staff(message.author):
-            if not rleb_settings.is_discord_mod(message.author):
+            if not global_settings.is_discord_mod(message.author):
                 return
 
             # Absolutely shrek the running process.
             await message.channel.send("Later nerds.")
 
-            if rleb_settings.RUNNING_ENVIRONMENT == "windows":
+            if global_settings.RUNNING_ENVIRONMENT == "windows":
                 os.kill(os.getpid(), signal.SIGTERM)
             else:
                 os.popen("pkill -9 -f rleb_core.py")
 
         elif discord_message.startswith("!deploy") and is_staff(message.author):
-            if not rleb_settings.is_discord_mod(message.author):
+            if not global_settings.is_discord_mod(message.author):
                 return
 
             await message.channel.send("brb")
 
-            if rleb_settings.RUNNING_ENVIRONMENT == "windows":
+            if global_settings.RUNNING_ENVIRONMENT == "windows":
                 os.kill(os.getpid(), signal.SIGTERM)  # just shutdown
             else:
                 current_path = str(pathlib.Path(__file__).parent.resolve())
                 os.popen(f"{current_path}/deploy.sh")
 
         elif discord_message.startswith("!restart") and is_staff(message.author):
-            if not rleb_settings.is_discord_mod(message.author):
+            if not global_settings.is_discord_mod(message.author):
                 return
 
             await message.channel.send("See ya in a few minutes <3")
-            if rleb_settings.RUNNING_ENVIRONMENT == "windows":
+            if global_settings.RUNNING_ENVIRONMENT == "windows":
                 os.kill(os.getpid(), signal.SIGTERM)  # just shutdown
             else:
                 os.popen("sudo reboot now")
 
         elif discord_message == "!status" and is_staff(message.author):
 
-            if not rleb_settings.is_discord_mod(message.author):
+            if not global_settings.is_discord_mod(message.author):
                 return
 
             # Runtime
@@ -822,11 +824,13 @@ class RLEsportsBot(discord.Client):
             )
 
             # Diesel.
-            before = time.time()*1000
+            before = time.time() * 1000
             health = await healthcheck()
-            after = time.time()*1000
-            elapsed_time = round(after-before)
-            await message.channel.send(f"**Diesel Status:** {health} ({elapsed_time}ms response time)")
+            after = time.time() * 1000
+            elapsed_time = round(after - before)
+            await message.channel.send(
+                f"**Diesel Status:** {health} ({elapsed_time}ms response time)"
+            )
 
             # Hardware specs.
             try:
@@ -863,12 +867,15 @@ class RLEsportsBot(discord.Client):
             except:
                 pass
 
-            for thread_type, crash_count in rleb_settings.thread_crashes.items():
+            for thread_type, crash_count in global_settings.thread_crashes.items():
                 await message.channel.send(
                     "**{0} crashes detected:** {1}".format(thread_type, crash_count)
                 )
 
-            for thread_type, last_crash in rleb_settings.last_datetime_crashed.items():
+            for (
+                thread_type,
+                last_crash,
+            ) in global_settings.last_datetime_crashed.items():
                 last_crash_string = "N/A"
                 if last_crash:
                     delta = datetime.now() - last_crash
@@ -890,13 +897,13 @@ class RLEsportsBot(discord.Client):
 
         elif discord_message == "!reset crashes" and is_staff(message.author):
 
-            if not rleb_settings.is_discord_mod(message.author):
+            if not global_settings.is_discord_mod(message.author):
                 return
 
-            rleb_settings.thread_crashes["thread"] = 0
-            rleb_settings.thread_crashes["asyncio"] = 0
+            global_settings.thread_crashes["thread"] = 0
+            global_settings.thread_crashes["asyncio"] = 0
             await message.channel.send("Thread crash count was reset")
-            rleb_settings.rleb_log_info("DISCORD: Thread count was reset.")
+            global_settings.rleb_log_info("DISCORD: Thread count was reset.")
             await self.add_response(message)
 
         elif discord_message.startswith("!search"):
@@ -913,16 +920,16 @@ class RLEsportsBot(discord.Client):
                 target
             )
             embed = discord.Embed(
-                title=target, url=url, color=random.choice(rleb_settings.colors)
+                title=target, url=url, color=random.choice(global_settings.colors)
             )
             await message.channel.send(embed=embed)
             await self.add_response(message)
 
         elif discord_message.startswith("!teams") and is_staff(message.author):
-            if not rleb_settings.is_discord_mod(message.author):
+            if not global_settings.is_discord_mod(message.author):
                 return
 
-            rleb_settings.rleb_log_info("DISCORD: Starting team generation.")
+            global_settings.rleb_log_info("DISCORD: Starting team generation.")
             await message.channel.send("Starting team lookup...")
             tokens = discord_message.split()
             url = ""
@@ -937,10 +944,10 @@ class RLEsportsBot(discord.Client):
             await self.add_response(message)
 
         elif discord_message.startswith("!swiss") and is_staff(message.author):
-            if not rleb_settings.is_discord_mod(message.author):
+            if not global_settings.is_discord_mod(message.author):
                 return
 
-            rleb_settings.rleb_log_info("DISCORD: Starting swiss bracket generation.")
+            global_settings.rleb_log_info("DISCORD: Starting swiss bracket generation.")
             await message.channel.send("Starting swiss bracket lookup...")
             tokens = discord_message.split()
             url = ""
@@ -954,11 +961,14 @@ class RLEsportsBot(discord.Client):
             seconds = await handle_swiss_lookup(url, message.channel)
             await self.add_response(message)
 
-        elif (discord_message.startswith("!streams") or discord_message.startswith("!stream")) and is_staff(message.author):
-            if not rleb_settings.is_discord_mod(message.author):
+        elif (
+            discord_message.startswith("!streams")
+            or discord_message.startswith("!stream")
+        ) and is_staff(message.author):
+            if not global_settings.is_discord_mod(message.author):
                 return
 
-            rleb_settings.rleb_log_info("DISCORD: Starting stream generation.")
+            global_settings.rleb_log_info("DISCORD: Starting stream generation.")
             await message.channel.send("Starting stream lookup...")
             tokens = discord_message.split()
             url = ""
@@ -973,10 +983,10 @@ class RLEsportsBot(discord.Client):
             await self.add_response(message)
 
         elif discord_message.startswith("!bracket") and is_staff(message.author):
-            if not rleb_settings.is_discord_mod(message.author):
+            if not global_settings.is_discord_mod(message.author):
                 return
 
-            rleb_settings.rleb_log_info("DISCORD: Starting elim bracket generation.")
+            global_settings.rleb_log_info("DISCORD: Starting elim bracket generation.")
             await message.channel.send("Starting elimination bracket lookup...")
             tokens = discord_message.split()
             url = ""
@@ -991,10 +1001,10 @@ class RLEsportsBot(discord.Client):
             await self.add_response(message)
 
         elif discord_message.startswith("!groups") and is_staff(message.author):
-            if not rleb_settings.is_discord_mod(message.author):
+            if not global_settings.is_discord_mod(message.author):
                 return
 
-            rleb_settings.rleb_log_info("DISCORD: Starting group generation.")
+            global_settings.rleb_log_info("DISCORD: Starting group generation.")
             await message.channel.send("Starting group lookup...")
             tokens = discord_message.split()
             url = ""
@@ -1009,10 +1019,10 @@ class RLEsportsBot(discord.Client):
             await self.add_response(message)
 
         elif discord_message.startswith("!prizepool") and is_staff(message.author):
-            if not rleb_settings.is_discord_mod(message.author):
+            if not global_settings.is_discord_mod(message.author):
                 return
 
-            rleb_settings.rleb_log_info("DISCORD: Starting prizepool generation.")
+            global_settings.rleb_log_info("DISCORD: Starting prizepool generation.")
             await message.channel.send("Starting prizepool lookup...")
             tokens = discord_message.split()
             url = ""
@@ -1027,10 +1037,10 @@ class RLEsportsBot(discord.Client):
             await self.add_response(message)
 
         elif discord_message.startswith("!mvp") and is_staff(message.author):
-            if not rleb_settings.is_discord_mod(message.author):
+            if not global_settings.is_discord_mod(message.author):
                 return
 
-            rleb_settings.rleb_log_info(
+            global_settings.rleb_log_info(
                 f"DISCORD: Starting mvp generation: {discord_message}"
             )
 
@@ -1063,10 +1073,10 @@ class RLEsportsBot(discord.Client):
             await self.add_response(message)
 
         elif discord_message.startswith("!events") and is_staff(message.author):
-            if not rleb_settings.is_discord_mod(message.author):
+            if not global_settings.is_discord_mod(message.author):
                 return
 
-            rleb_settings.rleb_log_info("DISCORD: Starting event lookup.")
+            global_settings.rleb_log_info("DISCORD: Starting event lookup.")
             tokens = discord_message.split()
             formatter = "reddit"
             days = 7
@@ -1082,7 +1092,7 @@ class RLEsportsBot(discord.Client):
             await self.add_response(message)
 
         elif discord_message.startswith("!remindme") and is_staff(message.author):
-            rleb_settings.rleb_log_info("DISCORD: Handling remindme.")
+            global_settings.rleb_log_info("DISCORD: Handling remindme.")
             tokens = discord_message.split()
 
             if len(tokens) < 1:
@@ -1100,14 +1110,14 @@ class RLEsportsBot(discord.Client):
                     )
                     return
 
-                if remindme_id not in rleb_settings.remindme_timers:
+                if remindme_id not in global_settings.remindme_timers:
                     await message.channel.send(
                         f"Couldn't find reminder with id `{remindme_id}`. Use `!remindme list` to view all reminder ids."
                     )
                     return
 
-                rleb_settings.remindme_timers[remindme_id].cancel()
-                del rleb_settings.remindme_timers[remindme_id]
+                global_settings.remindme_timers[remindme_id].cancel()
+                del global_settings.remindme_timers[remindme_id]
                 Data.singleton().delete_remindme(remindme_id)
 
                 await message.channel.send("Deleted reminder.")
@@ -1171,18 +1181,18 @@ class RLEsportsBot(discord.Client):
             remindme: Remindme = Data.singleton().write_remindme(
                 user, reminder_message, total_time, message.channel.id
             )
-            rleb_settings.schedule_remindme(remindme)
+            global_settings.schedule_remindme(remindme)
             await message.channel.send(
-                random.choice(rleb_settings.success_emojis)
+                random.choice(global_settings.success_emojis)
                 + " reminder set.\nUse `!remindme list` to see all reminders."
             )
             await self.add_response(message)
 
         elif discord_message.startswith("!tasks") and is_staff(message.author):
-            if not rleb_settings.is_discord_mod(message.author):
+            if not global_settings.is_discord_mod(message.author):
                 return
 
-            rleb_settings.rleb_log_info("DISCORD: Starting task lookup.")
+            global_settings.rleb_log_info("DISCORD: Starting task lookup.")
             tokens = discord_message.split()
 
             # User = the person requesting the command, unless explicitly stated.
@@ -1196,7 +1206,7 @@ class RLEsportsBot(discord.Client):
             await handle_task_lookup(message.channel, self, user, extra)
             if user == "broadcast" or user == "send":
                 await message.channel.send(
-                    random.choice(rleb_settings.success_emojis) + " tasks are sent."
+                    random.choice(global_settings.success_emojis) + " tasks are sent."
                 )
             await self.add_response(message)
 
@@ -1205,7 +1215,7 @@ class RLEsportsBot(discord.Client):
             await self.add_response(message)
 
         elif discord_message.startswith("!setmeme") and is_staff(message.author):
-            if not rleb_settings.is_discord_mod(message.author):
+            if not global_settings.is_discord_mod(message.author):
                 return
 
             tokens = discord_message.split()
@@ -1217,7 +1227,7 @@ class RLEsportsBot(discord.Client):
 
             original_meme_subreddit = self.meme_subreddit
             try:
-                rleb_settings.r.subreddit(self.meme_subreddit)
+                global_settings.r.subreddit(self.meme_subreddit)
                 self.meme_subreddit = subreddit
                 await self.send_meme(message.channel)
             except:
@@ -1251,4 +1261,4 @@ def start(threads: list[Thread]) -> None:
     client.loop.create_task(client.check_new_schedule_chat())
 
     # Start listening to discord commands.
-    client.run(rleb_settings.TOKEN)
+    client.run(global_settings.TOKEN)

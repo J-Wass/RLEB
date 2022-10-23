@@ -4,9 +4,9 @@ import praw
 import traceback
 from datetime import datetime
 
-from rleb_triflairs import handle_flair_request
-import rleb_settings
-from rleb_settings import sub, r, rleb_log_info
+from triflairs import handle_flair_request
+import global_settings
+from global_settings import sub, r, rleb_log_info
 
 # keys that trigger multiflair request, from modmail or u/RLMatchThreads's inbox. The keys should be lowercase and stripped of whitespace.
 multiflair_request_keys = [
@@ -36,24 +36,24 @@ def read_new_submissions():
                 if abs((datetime.now() - submission_datetime).total_seconds()) > 60 * 2:
                     continue
 
-                rleb_settings.rleb_log_info(
+                global_settings.rleb_log_info(
                     "REDDIT: Submission - {0}".format(submission)
                 )
-                rleb_settings.queues["submissions"].put(submission)
+                global_settings.queues["submissions"].put(submission)
         except prawcore.exceptions.ServerError as e:
             pass  # Reddit server borked, wait an interval and try again
         except Exception as e:
-            if rleb_settings.thread_crashes["thread"] > 5:
+            if global_settings.thread_crashes["thread"] > 5:
                 break
-            rleb_settings.rleb_log_error(
+            global_settings.rleb_log_error(
                 "REDDIT: Monitoring new submissions failed - {0}".format(e)
             )
-            rleb_settings.rleb_log_error(traceback.format_exc())
-            rleb_settings.thread_crashes["thread"] += 1
-            rleb_settings.last_datetime_crashed["thread"] = datetime.now()
-        if not rleb_settings.read_new_submissions_enabled:
+            global_settings.rleb_log_error(traceback.format_exc())
+            global_settings.thread_crashes["thread"] += 1
+            global_settings.last_datetime_crashed["thread"] = datetime.now()
+        if not global_settings.read_new_submissions_enabled:
             break
-        time.sleep(rleb_settings.thread_restart_interval_seconds)
+        time.sleep(global_settings.thread_restart_interval_seconds)
 
 
 # Monitor inbox for PMs
@@ -76,17 +76,17 @@ def monitor_subreddit():
         except prawcore.exceptions.ServerError as e:
             pass  # Reddit server borked, wait an interval and try again
         except Exception as e:
-            if rleb_settings.thread_crashes["thread"] > 5:
+            if global_settings.thread_crashes["thread"] > 5:
                 break
-            rleb_settings.rleb_log_error(
+            global_settings.rleb_log_error(
                 "REDDIT: Monitoring RLMatchThreads inbox failed - {0}".format(e)
             )
-            rleb_settings.rleb_log_error(traceback.format_exc())
-            rleb_settings.thread_crashes["thread"] += 1
-            rleb_settings.last_datetime_crashed["thread"] = datetime.now()
-        if not rleb_settings.monitor_subreddit_enabled:
+            global_settings.rleb_log_error(traceback.format_exc())
+            global_settings.thread_crashes["thread"] += 1
+            global_settings.last_datetime_crashed["thread"] = datetime.now()
+        if not global_settings.monitor_subreddit_enabled:
             break
-        time.sleep(rleb_settings.thread_restart_interval_seconds)
+        time.sleep(global_settings.thread_restart_interval_seconds)
 
 
 # Monitor moderator feeds.
@@ -95,7 +95,7 @@ def monitor_modlog():
     while True:
         try:
             logs = praw.models.util.stream_generator(
-                rleb_settings.sub.mod.log,
+                global_settings.sub.mod.log,
                 pause_after=0,
                 skip_existing=True,
                 attribute_name="id",
@@ -105,28 +105,28 @@ def monitor_modlog():
                     continue
 
                 # only accept logs that have an appropriate mod & action
-                if log.mod != None and (log.mod in rleb_settings.filtered_mod_log):
+                if log.mod != None and (log.mod in global_settings.filtered_mod_log):
                     continue
                 if log.action != None and (
-                    log.action.lower() not in rleb_settings.allowed_mod_actions
+                    log.action.lower() not in global_settings.allowed_mod_actions
                 ):
                     continue
-                rleb_settings.queues["modlog"].put(log)
-                time.sleep(rleb_settings.modmail_polling_interval_seconds)
+                global_settings.queues["modlog"].put(log)
+                time.sleep(global_settings.modmail_polling_interval_seconds)
         except prawcore.exceptions.ServerError as e:
             pass  # Reddit server borked, wait an interval and try again
         except Exception as e:
-            if rleb_settings.thread_crashes["thread"] > 5:
+            if global_settings.thread_crashes["thread"] > 5:
                 break
-            rleb_settings.rleb_log_error(
+            global_settings.rleb_log_error(
                 "REDDIT: Monitoring subreddit modlogs failed - {0}".format(e)
             )
-            rleb_settings.rleb_log_error(traceback.format_exc())
-            rleb_settings.thread_crashes["thread"] += 1
-            rleb_settings.last_datetime_crashed["thread"] = datetime.now()
-        if not rleb_settings.monitor_modlog_enabled:
+            global_settings.rleb_log_error(traceback.format_exc())
+            global_settings.thread_crashes["thread"] += 1
+            global_settings.last_datetime_crashed["thread"] = datetime.now()
+        if not global_settings.monitor_modlog_enabled:
             break
-        time.sleep(rleb_settings.thread_restart_interval_seconds)
+        time.sleep(global_settings.thread_restart_interval_seconds)
 
 
 # Monitor moderator feeds.
@@ -136,7 +136,7 @@ def monitor_modmail():
         try:
             for item in sub.mod.unread():
                 item.mark_read()
-                rleb_settings.rleb_log_info("REDDIT: Modmail - {0}".format(item.id))
+                global_settings.rleb_log_info("REDDIT: Modmail - {0}".format(item.id))
 
                 # Handle multiflairs from subreddit.
                 subject = item.subject.lower().replace(" ", "")
@@ -145,19 +145,19 @@ def monitor_modmail():
                     continue
 
                 # Send modmail to discord.
-                rleb_settings.queues["modmail"].put(item)
-            time.sleep(rleb_settings.modmail_polling_interval_seconds)
+                global_settings.queues["modmail"].put(item)
+            time.sleep(global_settings.modmail_polling_interval_seconds)
         except prawcore.exceptions.ServerError as e:
             pass  # Reddit server borked, wait an interval and try again
         except Exception as e:
-            if rleb_settings.thread_crashes["thread"] > 5:
+            if global_settings.thread_crashes["thread"] > 5:
                 break
-            rleb_settings.rleb_log_error(
+            global_settings.rleb_log_error(
                 "REDDIT: Monitoring subreddit modmail failed - {0}".format(e)
             )
-            rleb_settings.rleb_log_error(traceback.format_exc())
-            rleb_settings.thread_crashes["thread"] += 1
-            rleb_settings.last_datetime_crashed["thread"] = datetime.now()
-        if not rleb_settings.monitor_modmail_enabled:
+            global_settings.rleb_log_error(traceback.format_exc())
+            global_settings.thread_crashes["thread"] += 1
+            global_settings.last_datetime_crashed["thread"] = datetime.now()
+        if not global_settings.monitor_modmail_enabled:
             break
-        time.sleep(rleb_settings.thread_restart_interval_seconds)
+        time.sleep(global_settings.thread_restart_interval_seconds)
