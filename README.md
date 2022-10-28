@@ -23,12 +23,16 @@ RLEB has many features including
 - Reddit <---> Discord bridges
 - And many other small tools that mods use to improve their job
 
-RLEB can be run easily:
+# Running RLEB:
 
 1. `pip install -r requirements.txt`
 2. `python rleb_core.py`
 
-Note that you will need to create an `rleb_secrets.py` file if running RLEB locally. This file contains info about API keys, usernames, etc. Check out the https://github.com/J-Wass/RLEB/blob/main/rleb_sample_secrets.py to see what a sample secrets file would look like.
+Note that you will need to create an `rleb_secrets.py` file if running RLEB locally. This file contains info about API keys, usernames, etc. Check out the [sample secrets](https://github.com/J-Wass/RLEB/blob/main/rleb_sample_secrets.py) to learn more. You can also deploy with these secrets key-value pairs as OS ENV variables.
+
+If using liqui tools, you should also run [Diesel](https://github.com/J-Wass/Diesel) @ 127.0.0.1:8080. Diesel is a fast media wiki parser that turns media wiki pages into reddit markdown. It's written and Go and is impemented as an http server that RLEB can talk to. RLEB can also parse media wiki, but it is over 10x slower than Diesel.
+
+# Apple lol
 
 Mac users (especially on M1 chipset) may need to set certain flags to be able to install everything from requirements.txt.
 
