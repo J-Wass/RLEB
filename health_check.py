@@ -1,5 +1,5 @@
 import global_settings
-from global_settings import rleb_log_info, rleb_log_error
+from global_settings import rleb_log_error
 from data_bridge import Data
 import tasks
 
@@ -73,8 +73,8 @@ def get_scheduled_posts(
 
 def get_weekly_tasks() -> list[Event]:
     weekly_tasks = []
-    tasks = tasks.get_tasks()
-    for t in tasks:
+    new_tasks = tasks.get_tasks()
+    for t in new_tasks:
         try:
             time_string = t.event_schedule_time.replace("Schedule ", "")
             date_string = t.event_date

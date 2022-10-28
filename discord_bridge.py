@@ -62,7 +62,6 @@ class RLEsportsBot(discord.Client):
         """Indicate bot has joined the discord."""
         global_settings.rleb_log_info("DISCORD: Logged on as {0}".format(self.user))
         self.new_post_channel = self.get_channel(global_settings.NEW_POSTS_CHANNEL_ID)
-        self.trello_channel = self.get_channel(global_settings.TRELLO_CHANNEL_ID)
         self.modmail_channel = self.get_channel(global_settings.MODMAIL_CHANNEL_ID)
         self.bot_command_channel = self.get_channel(
             global_settings.BOT_COMMANDS_CHANNEL_ID
@@ -384,45 +383,6 @@ class RLEsportsBot(discord.Client):
                     break
                 global_settings.rleb_log_error(
                     "DISCORD: Modfeed asyncio thread failed - {0}".format(e)
-                )
-                global_settings.rleb_log_error(traceback.format_exc())
-                global_settings.thread_crashes["asyncio"] += 1
-                global_settings.last_datetime_crashed["asyncio"] = datetime.now()
-            await asyncio.sleep(global_settings.discord_async_interval_seconds)
-
-    async def check_new_trello_actions(self):
-        """Check trello queue to post in discord."""
-        while True:
-            try:
-                while not global_settings.queues["trello"].empty():
-                    action = global_settings.queues["trello"].get()
-                    global_settings.rleb_log_info(
-                        "DISCORD: Received trello action {0}".format(action["type"])
-                    )
-                    embed = discord.Embed(
-                        title=action["message"],
-                        url="https://trello.com/b/u16InUez/rl-esports-sub",
-                        color=random.choice(global_settings.colors),
-                    )
-                    embed.set_author(name=action["memberCreator"]["username"])
-                    await self.trello_channel.send(embed=embed)
-                global_settings.asyncio_threads["trello"] = datetime.now()
-            except Exception as e:
-                if global_settings.thread_crashes["asyncio"] > 5:
-                    await self.bot_command_channel.send(
-                        "ALERT: Asyncio thread has crashed more than 5 times."
-                    )
-                    developer = discord.utils.get(
-                        self.get_all_members(),
-                        name=global_settings.developer_name,
-                        discriminator=global_settings.developer_discriminator,
-                    )
-                    await self.bot_command_channel.send(
-                        "^ " + developer.mention + " fyi"
-                    )
-                    break
-                global_settings.rleb_log_error(
-                    "DISCORD: Trello asyncio thread failed - {0}".format(e)
                 )
                 global_settings.rleb_log_error(traceback.format_exc())
                 global_settings.thread_crashes["asyncio"] += 1
@@ -887,7 +847,7 @@ class RLEsportsBot(discord.Client):
                 )
 
             await message.channel.send(
-                "**Found {0} out of 7 threads running:** {1}".format(
+                "**Found {0} out of 6 threads running:** {1}".format(
                     len(self.threads), list(map(lambda x: x.name, self.threads))
                 )
             )
@@ -1253,7 +1213,6 @@ def start(threads: list[Thread]) -> None:
 
     # Create asyncronoush discord tasks.
     client.loop.create_task(client.check_new_submissions())
-    client.loop.create_task(client.check_new_trello_actions())
     client.loop.create_task(client.check_new_modfeed())
     client.loop.create_task(client.check_new_alerts())
     client.loop.create_task(client.check_new_direct_messages())

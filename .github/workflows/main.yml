@@ -24,7 +24,6 @@ jobs:
       # Discord
       DISCORD_TOKEN : "fake_token"
       NEW_POSTS_CHANNEL_ID : 1
-      TRELLO_CHANNEL_ID : 2
       MODMAIL_CHANNEL_ID : 3
       BOT_COMMANDS_CHANNEL_ID : 4
       ROSTER_NEWS_CHANNEL_ID : 5
@@ -41,11 +40,6 @@ jobs:
       DB_USER : 'fake_db_user'
       DB_PORT : '1'
       DB_PASSWORD : 'fake_db_password'
-
-      # Trello
-      TRELLO_AUTH_KEY : "fake_trello_auth"
-      TRELLO_AUTH_TOKEN : "fake_trello_auth_token"
-      TRELLO_BOARD_ID : "fake_trello_board_id"
 
       # Pastebin
       PASTEBIN_API_KEY : "fake_pastebin_api_key"

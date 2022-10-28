@@ -12,7 +12,6 @@ from reddit_bridge import (
 )
 import global_settings
 from global_settings import rleb_log_info
-from trello_bridge import read_new_trello_actions
 import health_check
 
 
@@ -22,8 +21,6 @@ def start():
 
     # Used for passing reddit submissions from reddit to discord.
     submissions_queue = Queue()
-    # Used for passing trello actions from reddit to discord.
-    trello_queue = Queue()
     # Used for passing modmail from reddit to discord.
     modmail_queue = Queue()
     # Used for passing modlogs from reddit to discord.
@@ -37,7 +34,6 @@ def start():
 
     # Place all queues in rleb_settings. These queues are used to communicate throughout the bot.
     global_settings.queues["submissions"] = submissions_queue
-    global_settings.queues["trello"] = trello_queue
     global_settings.queues["modmail"] = modmail_queue
     global_settings.queues["modlog"] = modlog_queue
     global_settings.queues["alerts"] = alert_queue
@@ -56,8 +52,6 @@ def start():
         target=health_check.health_check, args=(threads,), name="Health thread"
     )
     health_thread.setDaemon(True)
-    trello_thread = Thread(target=read_new_trello_actions, name="Trello thread")
-    trello_thread.setDaemon(True)
     modmail_thread = Thread(target=monitor_modmail, name="ModMail thread")
     modmail_thread.setDaemon(True)
     modlog_thread = Thread(target=monitor_modlog, name="ModLog thread")
@@ -68,7 +62,6 @@ def start():
     task_alert_thread.setDaemon(True)
     threads = [
         modmail_thread,
-        trello_thread,
         subreddit_thread,
         submissions_thread,
         health_thread,
@@ -95,10 +88,6 @@ def start():
 
         rleb_log_info("Starting subreddit thread.")
         subreddit_thread.start()
-
-    if global_settings.trello_enabled:
-        rleb_log_info("Starting trello thread.")
-        trello_thread.start()
 
     if global_settings.health_enabled:
         rleb_log_info("Starting health thread.")

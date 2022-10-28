@@ -45,15 +45,12 @@ class TestDiscord(RLEBAsyncTestCase):
 
         # Used for passing reddit submissions from reddit to discord.
         submissions_queue = Queue()
-        # Used for passing trello actions from reddit to discord.
-        trello_queue = Queue()
         # Used for passing modmail from reddit to discord.
         modmail_queue = Queue()
         # Used for passing alerts from reddit to discord.
         alert_queue = Queue()
 
         global_settings.queues["submissions"] = submissions_queue
-        global_settings.queues["trello"] = trello_queue
         global_settings.queues["modmail"] = modmail_queue
         global_settings.queues["alerts"] = alert_queue
         global_settings.queues["modlog"] = Queue()

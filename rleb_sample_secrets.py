@@ -1,6 +1,6 @@
 # Fill in your credentials below, and then rename this file to "rleb_secrets.py"
-# If you don't need all integrations (trello, calendar, etc) most things can be turned off in rleb_settings.py.
-#   ex) rleb_settings.trello_enabled = False, or rleb_settings.task_alert_check_enabled=False, etc.
+# If you don't need all integrations (reddit, calendar, etc) most things can be turned off in rleb_settings.py.
+#   ex) global_settings.reddit_enabled = False, or global_settings.task_alert_check_enabled=False, etc.
 
 # Reddit
 REDDIT_CLIENT_ID = "asdDwdasdA"
@@ -12,7 +12,6 @@ REDDIT_PASSWORD = "RedditBotPassword"
 # Discord
 DISCORD_TOKEN = "asdawdwAWD.AWDAw.ASD._AWDWAd"
 NEW_POSTS_CHANNEL_ID = 1234567898765431
-TRELLO_CHANNEL_ID = 1234567898765432
 MODMAIL_CHANNEL_ID = 1234567898765433
 BOT_COMMANDS_CHANNEL_ID = 1234567898765434
 SCHEDULE_CHAT_CHANNEL_ID = 1234567898765435
@@ -28,11 +27,6 @@ DB_HOST = "database.base.com"
 DB_USER = "database_user"
 DB_PORT = "database_port"
 DB_PASSWORD = "database_password"
-
-# Trello
-TRELLO_AUTH_KEY = "adaw6daw765d"
-TRELLO_AUTH_TOKEN = "awdwa9d86098609a6w0d6a0d"
-TRELLO_BOARD_ID = "adwad986906adad6a08d6a7d6ad"
 
 # Pastebin/Paste.ee
 PASTEBIN_API_KEY = "87a6wd8ad0ad0ad"
