@@ -47,7 +47,6 @@ asyncio_threads = {
     "submissions": datetime.now(),
     "alerts": datetime.now(),
     "modmail": datetime.now(),
-    "trello": datetime.now(),
     "direct_messages": datetime.now(),
     "schedule_chat": datetime.now(),
 }
@@ -161,9 +160,6 @@ TOKEN = os.environ.get("DISCORD_TOKEN") or rleb_secrets.DISCORD_TOKEN
 NEW_POSTS_CHANNEL_ID = int(
     os.environ.get("NEW_POSTS_CHANNEL_ID") or rleb_secrets.NEW_POSTS_CHANNEL_ID
 )
-TRELLO_CHANNEL_ID = int(
-    os.environ.get("TRELLO_CHANNEL_ID") or rleb_secrets.TRELLO_CHANNEL_ID
-)
 MODMAIL_CHANNEL_ID = int(
     os.environ.get("MODMAIL_CHANNEL_ID") or rleb_secrets.MODMAIL_CHANNEL_ID
 )
@@ -238,26 +234,6 @@ def is_discord_mod(user: discord.Member):
 
 
 discord_async_interval_seconds = 20
-
-
-# TRELLO
-trello_enabled = True
-TRELLO_AUTH_KEY = os.environ.get("TRELLO_AUTH_KEY") or rleb_secrets.TRELLO_AUTH_KEY
-TRELLO_AUTH_TOKEN = (
-    os.environ.get("TRELLO_AUTH_TOKEN") or rleb_secrets.TRELLO_AUTH_TOKEN
-)
-TRELLO_BOARD_ID = os.environ.get("TRELLO_BOARD_ID") or rleb_secrets.TRELLO_BOARD_ID
-
-
-def get_trello_actions(date):
-    """Pings the trello board for all actions since the requested date."""
-    iso_date = date.replace(microsecond=0).isoformat()
-    action_request = "https://api.trello.com/1/boards/{0}/actions/?since={1}Z&key={2}&token={3}".format(
-        TRELLO_BOARD_ID, iso_date, TRELLO_AUTH_KEY, TRELLO_AUTH_TOKEN
-    )
-    response = requests.request("GET", action_request)
-    return json.loads(response.text)
-
 
 # MONITORING
 

@@ -70,7 +70,6 @@ class TestHealth(RLEBTestCase):
             "submissions": datetime.now() - timedelta(seconds=350),
             "alerts": datetime.now(),
             "modmail": datetime.now() - timedelta(seconds=250),
-            "trello": datetime.now(),
         }
         global_settings.thread_crashes["asyncio"] = 2
 
