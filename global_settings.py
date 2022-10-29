@@ -48,7 +48,7 @@ asyncio_threads = {
     "alerts": datetime.now(),
     "modmail": datetime.now(),
     "direct_messages": datetime.now(),
-    "schedule_chat": datetime.now(),
+    "thread_creation": datetime.now(),
 }
 
 # Mapping of reminder_ids to Timers
@@ -154,7 +154,7 @@ discord_check_new_submission_enabled = True
 discord_check_new_modmail_enabled = True
 discord_check_new_alerts_enabled = True
 discord_check_direct_messages_enabled = True
-discord_check_new_schedule_chat_enabled = True
+discord_check_new_thread_creation_enabled = True
 
 TOKEN = os.environ.get("DISCORD_TOKEN") or rleb_secrets.DISCORD_TOKEN
 NEW_POSTS_CHANNEL_ID = int(
@@ -174,6 +174,9 @@ ROSTER_NEWS_CHANNEL_ID = int(
 )
 MODLOG_CHANNEL_ID = int(
     os.environ.get("MODLOG_CHANNEL_ID") or rleb_secrets.MODLOG_CHANNEL_ID
+)
+THREAD_CREATION_CHANNEL_ID = int(
+    os.environ.get("THREAD_CREATION_CHANNEL_ID") or rleb_secrets.THREAD_CREATION_CHANNEL_ID
 )
 
 # reroute testing pings to bot_commands

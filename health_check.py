@@ -61,7 +61,7 @@ def get_scheduled_posts(
         except Exception as e:
             # only send warnings of the caller provided a list to be filled out (already_warned_scheduled_posts)
             if already_warned_scheduled_posts:
-                global_settings.queues["schedule_chat"].put(
+                global_settings.queues["thread_creation"].put(
                     f"**{log.details}** {log.description} wasn't scheduled in UTC! (internal error = {e})"
                 )
                 already_warned_scheduled_posts.append(log.id)
@@ -148,7 +148,7 @@ def task_alert_check():
                 if scheduled_post.id not in already_confirmed_scheduled_posts:
                     message = random.choice(global_settings.success_emojis)
                     message += f" Task is scheduled: **{task.event_name}** by {task.event_creator}.\nhttps://new.reddit.com/r/RocketLeagueEsports/about/scheduledposts"
-                    global_settings.queues["schedule_chat"].put(message)
+                    global_settings.queues["thread_creation"].put(message)
                     already_confirmed_scheduled_posts.append(scheduled_post.id)
                     Data.singleton().write_already_warned_confirmed_post(
                         scheduled_post.id, datetime.now().timestamp()
@@ -170,7 +170,12 @@ def task_alert_check():
             if (seconds_remaining < 60 * 60 * 8) and (seconds_remaining > -60 * 60 * 2):
                 message = f"WARNING: {unscheduled_task.event_name} was not scheduled correctly!\n\n"
                 message += f"Task is due in {math.floor(seconds_remaining / 3600)} hour(s) and {round((seconds_remaining / 60) % 60, 0)} minute(s).\n\nScheduled posts: https://new.reddit.com/r/RocketLeagueEsports/about/scheduledposts"
-                global_settings.queues["schedule_chat"].put(message)
+                
+                # Warn on the #thread-creation channel if the thread is due in less than 4 hours.
+                if seconds_remaining < 60 * 60 * 4:
+                    global_settings.queues["thread_creation"].put(message)
+
+                # Warn in DMs everytime.
                 message += (
                     f"\nAccording to the weekly sheet, **you** are the thread creator."
                 )
