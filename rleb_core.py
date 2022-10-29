@@ -29,8 +29,8 @@ def start():
     alert_queue = Queue()
     # Used for discord DMs from reddit to discord.
     direct_message_queue = Queue()
-    # Used to send messages to #schedule_chat on discord.
-    schedule_chat_queue = Queue()
+     # Used to send messages to #thread_creation on discord.
+    thread_creation_queue = Queue()
 
     # Place all queues in rleb_settings. These queues are used to communicate throughout the bot.
     global_settings.queues["submissions"] = submissions_queue
@@ -38,7 +38,7 @@ def start():
     global_settings.queues["modlog"] = modlog_queue
     global_settings.queues["alerts"] = alert_queue
     global_settings.queues["direct_messages"] = direct_message_queue
-    global_settings.queues["schedule_chat"] = schedule_chat_queue
+    global_settings.queues["thread_creation"] = thread_creation_queue
 
     # Stores all threads used to run the bot.
     threads = []

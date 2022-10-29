@@ -29,6 +29,7 @@ jobs:
       ROSTER_NEWS_CHANNEL_ID : 5
       SCHEDULE_CHAT_CHANNEL_ID : 6
       MODLOG_CHANNEL_ID : 7
+      THREAD_CREATION_CHANNEL_ID : 8
       developer_name : 'fake_name'
       developer_discriminator : 'fake_discriminator'
       VERIFIED_MODERATORS : "[]"

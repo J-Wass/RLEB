@@ -73,6 +73,7 @@ class RLEsportsBot(discord.Client):
             global_settings.ROSTER_NEWS_CHANNEL_ID
         )
         self.modlog_channel = self.get_channel(global_settings.MODLOG_CHANNEL_ID)
+        self.thread_creation_channel = self.get_channel(global_settings.THREAD_CREATION_CHANNEL_ID)
 
         # Create a mapping of discord usernames to discord ids for future use.
         for m in self.new_post_channel.members:
@@ -153,22 +154,22 @@ class RLEsportsBot(discord.Client):
                 global_settings.last_datetime_crashed["asyncio"] = datetime.now()
             await asyncio.sleep(global_settings.discord_async_interval_seconds)
 
-    async def check_new_schedule_chat(self):
-        """Checks schedule_chat queue to send warnings into #schedule_chat."""
+    async def check_new_thread_creation(self):
+        """Checks thread_creation queue to send warnings into #thread-creation."""
         while True:
             try:
-                while not global_settings.queues["schedule_chat"].empty():
-                    message = global_settings.queues["schedule_chat"].get()
+                while not global_settings.queues["thread_creation"].empty():
+                    message = global_settings.queues["thread_creation"].get()
                     global_settings.rleb_log_info(
-                        "DISCORD: Received schedule chat '{0}'".format(message)
+                        "DISCORD: Received thread creation alert '{0}'".format(message)
                     )
-                    schedule_chat_message = await self.schedule_chat_channel.send(
+                    thread_creation_message = await self.thread_creation_channel.send(
                         message
                     )
-                    await schedule_chat_message.edit(suppress=True)
+                    await thread_creation_message.edit(suppress=True)
 
-                global_settings.asyncio_threads["schedule_chat"] = datetime.now()
-                if not global_settings.discord_check_new_schedule_chat_enabled:
+                global_settings.asyncio_threads["thread_creation"] = datetime.now()
+                if not global_settings.discord_check_new_thread_creation_enabled:
                     break
             except Exception as e:
                 if global_settings.thread_crashes["asyncio"] > 5:
@@ -1216,7 +1217,7 @@ def start(threads: list[Thread]) -> None:
     client.loop.create_task(client.check_new_modfeed())
     client.loop.create_task(client.check_new_alerts())
     client.loop.create_task(client.check_new_direct_messages())
-    client.loop.create_task(client.check_new_schedule_chat())
+    client.loop.create_task(client.check_new_thread_creation())
 
     # Start listening to discord commands.
     client.run(global_settings.TOKEN)
