@@ -26,7 +26,7 @@ from liqui.mvp_lookup import (
     handle_mvp_form_creation,
     handle_mvp_results_lookup,
 )
-from liqui.diesel import handle_stream_lookup, healthcheck
+from liqui.diesel import handle_stream_lookup, healthcheck, handle_coverage_lookup
 from liqui.prizepool_lookup import handle_prizepool_lookup
 
 responses_lock = Lock()
@@ -941,6 +941,25 @@ class RLEsportsBot(discord.Client):
                 return
             seconds = await handle_stream_lookup(url, message.channel)
             await self.add_response(message)
+
+        elif discord_message.startswith("!coverage") and is_staff(message.author):
+            if not global_settings.is_discord_mod(message.author):
+                return
+
+            global_settings.rleb_log_info("DISCORD: Starting coverage generation.")
+            await message.channel.send("Starting coverage lookup...")
+            tokens = discord_message.split()
+            url = ""
+            try:
+                url = tokens[1]
+            except Exception:
+                await message.channel.send(
+                    "Couldn't understand that. Expected '!coverage liquipedia-url'."
+                )
+                return
+            await handle_coverage_lookup(url, message.channel)
+            await self.add_response(message)
+
 
         elif discord_message.startswith("!bracket") and is_staff(message.author):
             if not global_settings.is_discord_mod(message.author):

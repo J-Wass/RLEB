@@ -26,6 +26,26 @@ async def handle_stream_lookup(url: str, channel: discord.channel.TextChannel) -
         await channel.send("Failed to build streams table :(")
         await channel.send(e)
 
+async def handle_coverage_lookup(url: str, channel: discord.channel.TextChannel) -> None:
+    """Handle coverage table lookup message.
+
+    Args:
+        channel (discord.channel.TextChannel): Channel the lookup is being used in.
+        url (str): Liquipedia URL string to look for coverage tables.
+    """
+    global_settings.rleb_log_info("DIESEL: Creating coverage lookup for {0}".format(url))
+
+    try:
+        response = requests.get(
+            f"http://127.0.0.1:8080/coverage/{string_to_base64(url)}"
+        )
+        markdown = base64_to_string(response.content)
+        await stdout.print_to_channel(channel, markdown, title="Coverage")
+        return
+    except Exception as e:
+        await channel.send("Failed to build coverage table :(")
+        await channel.send(e)
+
 
 async def healthcheck() -> str:
     try:
