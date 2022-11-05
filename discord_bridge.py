@@ -125,6 +125,9 @@ class RLEsportsBot(discord.Client):
                     )
                     embed.set_author(name=submission.author.name)
 
+                    if not submission.link_flair_text:
+                        continue
+
                     if "roster news" in submission.link_flair_text.strip().lower():
                         await self.roster_news_channel.send(embed=embed)
 
@@ -331,7 +334,12 @@ class RLEsportsBot(discord.Client):
                     embed.description = contents
 
                     # Send everything.
-                    await self.modlog_channel.send(embed=embed)
+                    breakpoint()
+                    try:
+                        await self.modmail_channel.send(embed=embed)
+                    except discord.errors.HTTPException as e:
+                        # Message has invalid formatting. Just send basic msg.
+                        await self.modmail_channel.send(item.description)
 
                 # Mod Mail
                 while not global_settings.queues["modmail"].empty():
@@ -363,7 +371,11 @@ class RLEsportsBot(discord.Client):
                     embed.description = f"{item.body}\n--------------------------------------------------------"
 
                     # Send everything.
-                    await self.modmail_channel.send(embed=embed)
+                    try:
+                        await self.modmail_channel.send(embed=embed)
+                    except discord.errors.HTTPException as e:
+                        # Message has invalid formatting. Just send basic msg.
+                        await self.modmail_channel.send(f"**{item.subject}** by {item.author.name}")
 
                 global_settings.asyncio_threads["modmail"] = datetime.now()
                 if not global_settings.discord_check_new_modmail_enabled:

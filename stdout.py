@@ -54,6 +54,7 @@ async def print_to_channel(
     content: str,
     title: str = None,
     force_pastebin: bool = False,
+    use_hook: bool = True
 ) -> None:
     """Prints |content| in the discord |channel|. If |content| is long, it will write to pastebin or paste.ee.
     In dire cases, |content| will be marshalled out, line by line to discord to avoid the char limit.
@@ -63,6 +64,7 @@ async def print_to_channel(
         content (str): The content of the message to be sent.
         title (str): Optional, the title to make the pastebin.
         force_pastebin (bool): Forces the stdout to occur on pastebin, instead of directly in discord.
+        use_hook (bool): Whether the `content` should be printed with a catchphrase hook in the beginning.
     """
     if (
         len(content) < 250
@@ -76,7 +78,10 @@ async def print_to_channel(
     try:
         response = await create_paste(content, title=title)
         hook = random.choice(global_settings.hooks)
-        message = await channel.send("**{0}**: {1}".format(hook, response))
+        if use_hook:
+            message = await channel.send("**{0}**: {1}".format(hook, response))
+        else:
+            message = await channel.send(response)
         await message.edit(suppress=True)  # remove those annoying embeds
     except Exception as e:
 

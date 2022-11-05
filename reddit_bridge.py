@@ -41,7 +41,9 @@ def read_new_submissions():
                 )
                 global_settings.queues["submissions"].put(submission)
         except prawcore.exceptions.ServerError as e:
-            pass  # Reddit server borked, wait an interval and try again
+            pass  # Reddit server borked, try again
+        except prawcore.exceptions.RequestException as e:
+            time.sleep(60)  # timeout error, just wait awhile and try again
         except Exception as e:
             if global_settings.thread_crashes["thread"] > 5:
                 break
@@ -75,6 +77,8 @@ def monitor_subreddit():
                     handle_flair_request(sub, user, body)
         except prawcore.exceptions.ServerError as e:
             pass  # Reddit server borked, wait an interval and try again
+        except prawcore.exceptions.RequestException as e:
+            time.sleep(60)  # timeout error, just wait awhile and try again
         except Exception as e:
             if global_settings.thread_crashes["thread"] > 5:
                 break
@@ -115,6 +119,8 @@ def monitor_modlog():
                 time.sleep(global_settings.modmail_polling_interval_seconds)
         except prawcore.exceptions.ServerError as e:
             pass  # Reddit server borked, wait an interval and try again
+        except prawcore.exceptions.RequestException as e:
+            time.sleep(60)  # timeout error, just wait awhile and try again
         except Exception as e:
             if global_settings.thread_crashes["thread"] > 5:
                 break
@@ -149,6 +155,8 @@ def monitor_modmail():
             time.sleep(global_settings.modmail_polling_interval_seconds)
         except prawcore.exceptions.ServerError as e:
             pass  # Reddit server borked, wait an interval and try again
+        except prawcore.exceptions.RequestException as e:
+            time.sleep(60)  # timeout error, just wait awhile and try again
         except Exception as e:
             if global_settings.thread_crashes["thread"] > 5:
                 break
