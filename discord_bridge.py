@@ -335,10 +335,10 @@ class RLEsportsBot(discord.Client):
 
                     # Send everything.
                     try:
-                        await self.modmail_channel.send(embed=embed)
+                        await self.modlog_channel.send(embed=embed)
                     except discord.errors.HTTPException as e:
                         # Message has invalid formatting. Just send basic msg.
-                        await self.modmail_channel.send(item.description)
+                        await self.modlog_channel.send(item.description)
 
                 # Mod Mail
                 while not global_settings.queues["modmail"].empty():

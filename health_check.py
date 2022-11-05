@@ -205,7 +205,7 @@ def health_check(threads):
         for t in threads:
             if not global_settings.thread_health_check_enabled:
                 break
-            if global_settings.thread_crashes["threads"] >= 5:
+            if global_settings.thread_crashes["thread"] >= 5:
                 global_settings.thread_health_check_enabled = False
                 global_settings.health_enabled = False
                 rleb_log_error("HEALTH: More than 5 thread crashes.")
