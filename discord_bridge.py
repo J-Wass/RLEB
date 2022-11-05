@@ -1075,7 +1075,7 @@ class RLEsportsBot(discord.Client):
                 days = int(tokens[2])
             except Exception:
                 await message.channel.send(
-                    "Couldn't understand that. Expected '!events [formatter] [# days]'. Example is '!events reddit 7' to get the next 7 days of events. Valid formatters are reddit and sheets."
+                    "Couldn't understand that. Expected '!events [formatter] [# days]'. Example is '!events reddit 7' to get the next 7 days of events. Valid formatters are `reddit` and `sheets`."
                 )
                 return
             await handle_calendar_lookup(message.channel, formatter, days)
