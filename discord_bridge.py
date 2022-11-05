@@ -334,7 +334,6 @@ class RLEsportsBot(discord.Client):
                     embed.description = contents
 
                     # Send everything.
-                    breakpoint()
                     try:
                         await self.modmail_channel.send(embed=embed)
                     except discord.errors.HTTPException as e:
