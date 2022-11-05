@@ -74,7 +74,7 @@ class TestDiscordCommands(RLEBAsyncTestCase):
         global_settings.discord_async_interval_seconds = 1
         global_settings.user_names_to_ids = {"test_mod#1": 567}
 
-    async def test_bracket(self):
+    async def test_bracket_e2e(self):
         # Not staff.
         await self._send_message("!bracket", from_staff_user=False)
         self.mock_channel.send.assert_not_awaited()
@@ -159,3 +159,183 @@ class TestDiscordCommands(RLEBAsyncTestCase):
         self.assertEqual(len(global_settings.remindme_timers), 0)
         self.mock_channel.send.assert_awaited_with("Deleted reminder.")
         self.mock_channel.reset_mock()
+
+    @mock.patch("discord_bridge.handle_team_lookup")
+    async def test_teams(self, mock_handle_team_lookup):
+        # Happy path.
+        await self._send_message("!teams url", from_staff_user=True)
+        mock_handle_team_lookup.assert_awaited_with("url", self.mock_channel)
+        mock_handle_team_lookup.reset_mock()
+
+        # No url.
+        await self._send_message("!teams", from_staff_user=True)
+        self.mock_channel.send.assert_awaited_with("Couldn't understand that. Expected '!teams liquipedia-url'.")
+        self.mock_channel.send.reset_mock()
+        mock_handle_team_lookup.assert_not_awaited()
+
+        # Not a mod.
+        await self._send_message("!teams url", from_staff_user=False)
+        self.mock_channel.send.assert_not_awaited()
+        mock_handle_team_lookup.assert_not_awaited()
+
+    @mock.patch("discord_bridge.handle_swiss_lookup")
+    async def test_swiss(self, mock_handle_swiss_lookup):
+        # Happy path.
+        await self._send_message("!swiss url", from_staff_user=True)
+        mock_handle_swiss_lookup.assert_awaited_with("url", self.mock_channel)
+        mock_handle_swiss_lookup.reset_mock()
+
+        # No url.
+        await self._send_message("!swiss", from_staff_user=True)
+        self.mock_channel.send.assert_awaited_with("Couldn't understand that. Expected '!swiss liquipedia-url'.")
+        self.mock_channel.send.reset_mock()
+        mock_handle_swiss_lookup.assert_not_awaited()
+
+        # Not a mod.
+        await self._send_message("!swiss url", from_staff_user=False)
+        self.mock_channel.send.assert_not_awaited()
+        mock_handle_swiss_lookup.assert_not_awaited()
+
+    @mock.patch("discord_bridge.handle_coverage_lookup")
+    async def test_coverage(self, mock_handle_coverage_lookup):
+        # Happy path.
+        await self._send_message("!coverage url", from_staff_user=True)
+        mock_handle_coverage_lookup.assert_awaited_with("url", self.mock_channel)
+        mock_handle_coverage_lookup.reset_mock()
+
+        # No url.
+        await self._send_message("!coverage", from_staff_user=True)
+        self.mock_channel.send.assert_awaited_with("Couldn't understand that. Expected '!coverage liquipedia-url'.")
+        self.mock_channel.send.reset_mock()
+        mock_handle_coverage_lookup.assert_not_awaited()
+
+        # Not a mod.
+        await self._send_message("!coverage url", from_staff_user=False)
+        self.mock_channel.send.assert_not_awaited()
+        mock_handle_coverage_lookup.assert_not_awaited()
+
+    @mock.patch("discord_bridge.handle_bracket_lookup")
+    async def test_bracket(self, mock_handle_bracket_lookup):
+        # Happy path.
+        await self._send_message("!bracket url", from_staff_user=True)
+        mock_handle_bracket_lookup.assert_awaited_with("url", self.mock_channel)
+        mock_handle_bracket_lookup.reset_mock()
+
+        # No url.
+        await self._send_message("!bracket", from_staff_user=True)
+        self.mock_channel.send.assert_awaited_with("Couldn't understand that. Expected '!bracket liquipedia-url'.")
+        self.mock_channel.send.reset_mock()
+        mock_handle_bracket_lookup.assert_not_awaited()
+
+        # Not a mod.
+        await self._send_message("!bracket url", from_staff_user=False)
+        self.mock_channel.send.assert_not_awaited()
+        mock_handle_bracket_lookup.assert_not_awaited()
+
+    @mock.patch("discord_bridge.handle_group_lookup")
+    async def test_groups(self, mock_handle_group_lookup):
+        # Happy path.
+        await self._send_message("!groups url", from_staff_user=True)
+        mock_handle_group_lookup.assert_awaited_with("url", self.mock_channel)
+        mock_handle_group_lookup.reset_mock()
+
+        # No url.
+        await self._send_message("!groups", from_staff_user=True)
+        self.mock_channel.send.assert_awaited_with("Couldn't understand that. Expected '!groups liquipedia-url'.")
+        self.mock_channel.send.reset_mock()
+        mock_handle_group_lookup.assert_not_awaited()
+
+        # Not a mod.
+        await self._send_message("!groups url", from_staff_user=False)
+        self.mock_channel.send.assert_not_awaited()
+        mock_handle_group_lookup.assert_not_awaited()
+
+    @mock.patch("discord_bridge.handle_prizepool_lookup")
+    async def test_prizepool(self, mock_handle_prizepool_lookup):
+        # Happy path.
+        await self._send_message("!prizepool url", from_staff_user=True)
+        mock_handle_prizepool_lookup.assert_awaited_with("url", self.mock_channel)
+        mock_handle_prizepool_lookup.reset_mock()
+
+        # No url.
+        await self._send_message("!prizepool", from_staff_user=True)
+        self.mock_channel.send.assert_awaited_with("Couldn't understand that. Expected '!prizepool liquipedia-url'.")
+        self.mock_channel.send.reset_mock()
+        mock_handle_prizepool_lookup.assert_not_awaited()
+
+        # Not a mod.
+        await self._send_message("!prizepool url", from_staff_user=False)
+        self.mock_channel.send.assert_not_awaited()
+        mock_handle_prizepool_lookup.assert_not_awaited()
+
+    @mock.patch("discord_bridge.handle_mvp_form_creation")
+    async def test_mvp_creation(self, mock_handle_mvp_form_creation):
+        # Happy path, multiple urls.
+        await self._send_message("!mvp create url1 url2", from_staff_user=True)
+        mock_handle_mvp_form_creation.assert_awaited_with(["url1", "url2"], self.mock_channel)
+        mock_handle_mvp_form_creation.reset_mock()
+
+        # Happy path, one url.
+        await self._send_message("!mvp create url", from_staff_user=True)
+        mock_handle_mvp_form_creation.assert_awaited_with(["url"], self.mock_channel)
+        mock_handle_mvp_form_creation.reset_mock()
+
+        # No urls.
+        await self._send_message("!mvp create", from_staff_user=True)
+        self.mock_channel.send.assert_awaited_with("Couldn't understand that. Expected '!mvp [create OR results] [list of liqui urls OR form url]'.")
+        self.mock_channel.send.reset_mock()
+        mock_handle_mvp_form_creation.assert_not_awaited()
+
+        # Not a mod.
+        await self._send_message("!mvp create url", from_staff_user=False)
+        self.mock_channel.send.assert_not_awaited()
+        mock_handle_mvp_form_creation.assert_not_awaited()
+
+    @mock.patch("discord_bridge.handle_mvp_results_lookup")
+    async def test_mvp_results(self, mock_handle_mvp_results_lookup):
+        # Happy path.
+        await self._send_message("!mvp results url", from_staff_user=True)
+        mock_handle_mvp_results_lookup.assert_awaited_with("url", self.mock_channel)
+        mock_handle_mvp_results_lookup.reset_mock()
+
+        # No url.
+        await self._send_message("!mvp results", from_staff_user=True)
+        self.mock_channel.send.assert_awaited_with("Couldn't understand that. Expected '!mvp [create OR results] [list of liqui urls OR form url]'.")
+        self.mock_channel.send.reset_mock()
+        mock_handle_mvp_results_lookup.assert_not_awaited()
+
+        # Not a mod.
+        await self._send_message("!mvp results url", from_staff_user=False)
+        self.mock_channel.send.assert_not_awaited()
+        self.mock_channel.reset_mock()
+        mock_handle_mvp_results_lookup.assert_not_awaited()
+        mock_handle_mvp_results_lookup.reset_mock()
+
+        # Not create or results.
+        await self._send_message("!mvp bad_option url", from_staff_user=True)
+        self.mock_channel.send.assert_awaited_with("Couldn't understand that. Expected either 'create' or 'results' in the second parameter. Ex) '!mvp create liqui_url_1 liqui_url_2'.")
+        mock_handle_mvp_results_lookup.assert_not_awaited()
+
+    @mock.patch("discord_bridge.handle_calendar_lookup")
+    async def test_events(self, mock_handle_calendar_lookup):
+        # Happy path: reddit
+        await self._send_message("!events reddit 4", from_staff_user=True)
+        mock_handle_calendar_lookup.assert_awaited_with(self.mock_channel, "reddit", 4)
+        mock_handle_calendar_lookup.reset_mock()
+
+        # Happy path: sheets
+        await self._send_message("!events sheets 4", from_staff_user=True)
+        mock_handle_calendar_lookup.assert_awaited_with(self.mock_channel, "sheets", 4)
+        mock_handle_calendar_lookup.reset_mock()
+
+        # Missing number of days
+        await self._send_message("!events sheets", from_staff_user=True)
+        self.mock_channel.send.assert_awaited_with("Couldn't understand that. Expected '!events [formatter] [# days]'. Example is '!events reddit 7' to get the next 7 days of events. Valid formatters are `reddit` and `sheets`.")
+        self.mock_channel.send.reset_mock()
+        mock_handle_calendar_lookup.assert_not_awaited()
+        mock_handle_calendar_lookup.reset_mock()
+
+        # Not a mod.
+        await self._send_message("!events sheets 4", from_staff_user=False)
+        self.mock_channel.send.assert_not_awaited()
+        mock_handle_calendar_lookup.assert_not_awaited()
