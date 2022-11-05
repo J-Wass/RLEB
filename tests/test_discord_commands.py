@@ -74,7 +74,7 @@ class TestDiscordCommands(RLEBAsyncTestCase):
         global_settings.discord_async_interval_seconds = 1
         global_settings.user_names_to_ids = {"test_mod#1": 567}
 
-    async def test_bracket(self):
+    async def test_bracket_e2e(self):
         # Not staff.
         await self._send_message("!bracket", from_staff_user=False)
         self.mock_channel.send.assert_not_awaited()
@@ -215,7 +215,7 @@ class TestDiscordCommands(RLEBAsyncTestCase):
         mock_handle_coverage_lookup.assert_not_awaited()
 
     @mock.patch("discord_bridge.handle_bracket_lookup")
-    async def test_coverage(self, mock_handle_bracket_lookup):
+    async def test_bracket(self, mock_handle_bracket_lookup):
         # Happy path.
         await self._send_message("!bracket url", from_staff_user=True)
         mock_handle_bracket_lookup.assert_awaited_with("url", self.mock_channel)
