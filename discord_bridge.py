@@ -1193,6 +1193,7 @@ class RLEsportsBot(discord.Client):
                 extra = tokens[2]
             except Exception:
                 pass
+            await message.channel.send("Checking tasks...")
             await handle_task_lookup(message.channel, self, user, extra)
             if user == "broadcast" or user == "send":
                 await message.channel.send(
