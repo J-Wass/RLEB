@@ -34,15 +34,16 @@ class Event:
 
 def get_scheduled_posts(
     already_warned_scheduled_posts: list[int] = None,
+    days_ago: int = 5
 ) -> list[Event]:
-    """ "Returns a list of scheduled posts from the sub.."""
+    """ "Returns a list of scheduled posts from the sub starting `days_ago`."""
     scheduled_posts = []
     for log in global_settings.sub.mod.log(action="create_scheduled_post", limit=20):
         if already_warned_scheduled_posts and log.id in already_warned_scheduled_posts:
             continue
 
-        # if post was scheduled >5 days ago, ignore
-        if (datetime.now().timestamp() - log.created_utc) > 60 * 60 * 24 * 5:
+        # only take posts that have been made x days ago
+        if (datetime.now().timestamp() - log.created_utc) > 60 * 60 * 24 * days_ago:
             continue
 
         try:
@@ -168,11 +169,13 @@ def task_alert_check():
 
             # Only warn about events that are 2 hours late or are due in 8 hours
             if (seconds_remaining < 60 * 60 * 8) and (seconds_remaining > -60 * 60 * 2):
+                global_settings.rleb_log_info(f"THREAD CHECK: Thread is due in {seconds_remaining}s: {message}")
                 message = f"WARNING: {unscheduled_task.event_name} was not scheduled correctly!\n\n"
                 message += f"Task is due in {math.floor(seconds_remaining / 3600)} hour(s) and {round((seconds_remaining / 60) % 60, 0)} minute(s).\n\nScheduled posts: https://new.reddit.com/r/RocketLeagueEsports/about/scheduledposts"
                 
                 # Warn on the #thread-creation channel if the thread is due in less than 4 hours.
                 if seconds_remaining < 60 * 60 * 4:
+                    global_settings.rleb_log_info(f"THREAD CHECK: Creating #thread-creation late thread warning: {message}")
                     global_settings.queues["thread_creation"].put(message)
 
                 # Warn in DMs everytime.
