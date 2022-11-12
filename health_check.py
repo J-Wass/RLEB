@@ -118,6 +118,7 @@ def task_alert_check():
     while True:
         # Every 3 hours, empty the already warned posts list and rewarn the world.
         if (datetime.now().timestamp() - last_emptied_already_late_posts) > 60 * 60 * 3:
+            global_settings.rleb_log_info(f"Emptying already_late_posts of size {len(already_warned_late_posts)}")
             last_emptied_already_late_posts = datetime.now().timestamp()
             already_warned_late_posts = []
 
@@ -169,9 +170,10 @@ def task_alert_check():
 
             # Only warn about events that are 2 hours late or are due in 8 hours
             if (seconds_remaining < 60 * 60 * 8) and (seconds_remaining > -60 * 60 * 2):
-                global_settings.rleb_log_info(f"THREAD CHECK: Thread is due in {seconds_remaining}s: {message}")
                 message = f"WARNING: {unscheduled_task.event_name} was not scheduled correctly!\n\n"
                 message += f"Task is due in {math.floor(seconds_remaining / 3600)} hour(s) and {round((seconds_remaining / 60) % 60, 0)} minute(s).\n\nScheduled posts: https://new.reddit.com/r/RocketLeagueEsports/about/scheduledposts"
+                global_settings.rleb_log_info(f"THREAD CHECK: Thread is due in {seconds_remaining}s: {message}")
+
                 
                 # Warn on the #thread-creation channel if the thread is due in less than 4 hours.
                 if seconds_remaining < 60 * 60 * 4:
