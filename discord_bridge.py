@@ -223,8 +223,13 @@ class RLEsportsBot(discord.Client):
                             "\n----------\n",
                         ]
                     )
-                    DM = await discord_user.send(message)
-                    await DM.edit(suppress=True)
+                    if global_settings.RUNNING_MODE == "local":
+                        await self.bot_command_channel.send(f"**DM For {author}**")
+                        testing_msg = await self.bot_command_channel.send(message)
+                        await testing_msg.edit(suppress=True)
+                    else:
+                        DM = await discord_user.send(message)
+                        await DM.edit(suppress=True)
 
                 global_settings.asyncio_threads["direct_messages"] = datetime.now()
                 if not global_settings.discord_check_direct_messages_enabled:
