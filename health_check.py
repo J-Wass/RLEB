@@ -117,6 +117,7 @@ def task_alert_check():
     already_warned_late_posts = []
     last_emptied_already_late_posts = datetime.now().timestamp()
 
+    # Every 10 cycles of loop, use the counter to enable enhanced logging.
     counter = 0
 
     while True:

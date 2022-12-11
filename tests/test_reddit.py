@@ -130,7 +130,7 @@ class TestReddit(RLEBTestCase):
         ).start()
         self.addCleanup(modmail_stream)
 
-        # Assert that the new modmail is in the modmail queue after the method.
+        # Assert that the new modmail isn't in the queue since it is filtered.
         self.assertEqual(global_settings.queues["modmail"].qsize(), 0)
 
         reddit_bridge.monitor_modmail()
@@ -139,6 +139,37 @@ class TestReddit(RLEBTestCase):
         mock_sub_flair.set.assert_called_once_with(
             mock_user, text=":NRG: :G2:", css_class=""
         )
+
+    def test_monitor_modmail_for_removal_reason(self):
+        global_settings.monitor_modmail_enabled = False
+        global_settings.modmail_polling_interval_seconds = 0
+
+        mock_user = mock.Mock()
+        mock_modmail_item = mock.Mock()
+        mock_modmail_item.id = "123"
+        mock_modmail_item.subject = "Your comment was removed from /r/RocketLeagueEsports"
+        mock_modmail_item.body = "blah blah foobar"
+        mock_modmail_item.author = mock_user
+        mock_modmail_item.parent_id = None
+
+        mock_sub_flair = mock.MagicMock()
+        global_settings.sub.flair = mock_sub_flair
+
+        def mock_modmail_stream(args=[]):
+            """Mock method for sub.stream.submissions()."""
+            return [mock_modmail_item]
+
+        # Mock the modmail stream to be an array of 1.
+        modmail_stream = patch.object(
+            reddit_bridge.sub.mod, "unread", new=mock_modmail_stream
+        ).start()
+        self.addCleanup(modmail_stream)
+
+        # Assert that the new modmail isn't in the queue since it is filtered.
+        self.assertEqual(global_settings.queues["modmail"].qsize(), 0)
+
+        reddit_bridge.monitor_modmail()
+        self.assertEqual(global_settings.queues["modmail"].qsize(), 0)
 
     def test_monitor_modlog(self):
         global_settings.monitor_modlog_enabled = False

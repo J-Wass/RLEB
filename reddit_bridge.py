@@ -145,9 +145,13 @@ def monitor_modmail():
                 global_settings.rleb_log_info("REDDIT: Modmail - {0}".format(item.id))
 
                 # Handle multiflairs from subreddit.
-                subject = item.subject.lower().replace(" ", "")
-                if subject in multiflair_request_keys:
+                subject = item.subject
+                if subject.lower().replace(" ", "") in multiflair_request_keys:
                     handle_flair_request(sub, item.author, item.body)
+                    continue
+
+                # Filter modmail from removed comment reason.
+                if subject == "Your comment was removed from /r/RocketLeagueEsports" and not item.parent_id:
                     continue
 
                 # Send modmail to discord.
