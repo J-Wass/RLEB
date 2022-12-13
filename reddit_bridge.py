@@ -151,7 +151,11 @@ def monitor_modmail():
                     continue
 
                 # Filter modmail from removed comment reason.
-                if subject == "Your comment was removed from /r/RocketLeagueEsports" and not item.parent_id:
+                if (
+                    subject == "Your comment was removed from /r/RocketLeagueEsports"
+                    or subject == "Your comment from RocketLeagueEsports was removed"
+                    and not item.parent_id
+                ):
                     continue
 
                 # Send modmail to discord.
