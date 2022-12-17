@@ -27,32 +27,6 @@ def health_check():
                 "More than 5 asyncio crashes detected. Consider using `!restart`."
             )
 
-        # Monitor Threads
-        dead_threads = []
-        for thread, update_time in global_settings.threads_heartbeats.items():
-
-            if (
-                datetime.now() - update_time
-            ).total_seconds() > global_settings.thread_timeout:
-                rleb_log_error(
-                    "HEALTH: {0} thread has stopped responding! ({1} crashes)".format(
-                        thread, global_settings.thread_crashes["thread"]
-                    )
-                )
-                global_settings.queues["alerts"].put(
-                    (
-                        "{0} thread has stopped responding! ({1} crashes)".format(
-                            thread, global_settings.thread_crashes["thread"]
-                        ),
-                        global_settings.BOT_COMMANDS_CHANNEL_ID,
-                    )
-                )
-                dead_threads.append(thread)
-
-        # Don't warn about this thread again.
-        for dead_thread in dead_threads:
-            del global_settings.threads_heartbeats[dead_thread]
-
         # Monitor Asyncio Threads
         dead_asyncio_threads = []
         for (
