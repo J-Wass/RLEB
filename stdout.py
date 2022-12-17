@@ -54,7 +54,7 @@ async def print_to_channel(
     content: str,
     title: str = None,
     force_pastebin: bool = False,
-    use_hook: bool = True
+    use_hook: bool = True,
 ) -> None:
     """Prints |content| in the discord |channel|. If |content| is long, it will write to pastebin or paste.ee.
     In dire cases, |content| will be marshalled out, line by line to discord to avoid the char limit.

@@ -147,7 +147,9 @@ class TestReddit(RLEBTestCase):
         mock_user = mock.Mock()
         mock_modmail_item = mock.Mock()
         mock_modmail_item.id = "123"
-        mock_modmail_item.subject = "Your comment was removed from /r/RocketLeagueEsports"
+        mock_modmail_item.subject = (
+            "Your comment was removed from /r/RocketLeagueEsports"
+        )
         mock_modmail_item.body = "blah blah foobar"
         mock_modmail_item.author = mock_user
         mock_modmail_item.parent_id = None

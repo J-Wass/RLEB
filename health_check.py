@@ -5,7 +5,6 @@ import time
 from datetime import datetime
 
 
-
 # Monitors health of other threads.
 def health_check():
     """Every minute, check if all threads are still running and restart if needed."""
@@ -17,18 +16,24 @@ def health_check():
             global_settings.thread_health_check_enabled = False
             global_settings.health_enabled = False
             rleb_log_error("HEALTH: More than 5 thread crashes.")
-            global_settings.queues["alerts"].put("More than 5 thread crashes detected. Consider using `!restart`.")
+            global_settings.queues["alerts"].put(
+                "More than 5 thread crashes detected. Consider using `!restart`."
+            )
         if global_settings.thread_crashes["asyncio"] >= 5:
             global_settings.thread_health_check_enabled = False
             global_settings.health_enabled = False
             rleb_log_error("HEALTH: More than 5 asyncio crashes.")
-            global_settings.queues["alerts"].put("More than 5 asyncio crashes detected. Consider using `!restart`.")
+            global_settings.queues["alerts"].put(
+                "More than 5 asyncio crashes detected. Consider using `!restart`."
+            )
 
         # Monitor Threads
         dead_threads = []
         for thread, update_time in global_settings.threads_heartbeats.items():
 
-            if (datetime.now() - update_time).total_seconds() > global_settings.thread_timeout:
+            if (
+                datetime.now() - update_time
+            ).total_seconds() > global_settings.thread_timeout:
                 rleb_log_error(
                     "HEALTH: {0} thread has stopped responding! ({1} crashes)".format(
                         thread, global_settings.thread_crashes["thread"]
@@ -50,12 +55,17 @@ def health_check():
 
         # Monitor Asyncio Threads
         dead_asyncio_threads = []
-        for asyncio_thread, update_time in global_settings.asyncio_threads_heartbeats.items():
+        for (
+            asyncio_thread,
+            update_time,
+        ) in global_settings.asyncio_threads_heartbeats.items():
             if not global_settings.asyncio_health_check_enabled:
                 break
 
             # Can't check if an asyncio thread is alive, check heartbeat instead.
-            if (datetime.now() - update_time).total_seconds() > global_settings.asyncio_timeout:
+            if (
+                datetime.now() - update_time
+            ).total_seconds() > global_settings.asyncio_timeout:
                 rleb_log_error(
                     "HEALTH: {0} asyncio thread has stopped responding! ({1} crashes)".format(
                         asyncio_thread, global_settings.thread_crashes["asyncio"]
@@ -78,4 +88,7 @@ def health_check():
         # Break before waiting for the interval.
         if not global_settings.health_enabled:
             break
+
+        global_settings.threads_heartbeats["Health thread"] = datetime.now()
+
         time.sleep(30)

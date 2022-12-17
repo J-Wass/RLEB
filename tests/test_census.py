@@ -32,7 +32,9 @@ class TestFlairCensus(RLEBAsyncTestCase):
 
         await handle_flair_census(mock_sub, 3, mock_channel)
 
-        mock_channel.send.assert_awaited_once_with("Verified, 3\nG2, 3\nNRG, 2\n", embed=None)
+        mock_channel.send.assert_awaited_once_with(
+            "Verified, 3\nG2, 3\nNRG, 2\n", embed=None
+        )
 
 
 if __name__ == "__main__":

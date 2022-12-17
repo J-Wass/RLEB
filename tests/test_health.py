@@ -43,7 +43,7 @@ class TestHealth(RLEBTestCase):
 
     def test_alerts_on_dead_thread(self):
         global_settings.threads_heartbeats = {
-            "submissions": datetime.now() - timedelta(seconds=60*50),
+            "submissions": datetime.now() - timedelta(seconds=60 * 50),
             "alerts": datetime.now(),
             "modmail": datetime.now() - timedelta(seconds=250),
         }

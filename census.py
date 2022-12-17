@@ -3,7 +3,13 @@ import praw
 import discord
 import stdout
 
-async def handle_flair_census(sub: praw.reddit.models.Subreddit, amount: int, channel: discord.TextChannel, divider=",") -> None:
+
+async def handle_flair_census(
+    sub: praw.reddit.models.Subreddit,
+    amount: int,
+    channel: discord.TextChannel,
+    divider=",",
+) -> None:
     """Takes a census of all user flairs and prints to channel.
 
     Parameters:

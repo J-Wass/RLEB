@@ -52,9 +52,7 @@ asyncio_threads_heartbeats = {
 }
 
 # Mapping of each thread to the last time it sent a heartbeat out. Used to determine if a thread has crashed.
-threads_heartbeats = {
-
-}
+threads_heartbeats = {}
 
 # seconds until an asyncio_thread is considered timed-out.
 asyncio_timeout = 60 * 5
@@ -185,7 +183,8 @@ MODLOG_CHANNEL_ID = int(
     os.environ.get("MODLOG_CHANNEL_ID") or rleb_secrets.MODLOG_CHANNEL_ID
 )
 THREAD_CREATION_CHANNEL_ID = int(
-    os.environ.get("THREAD_CREATION_CHANNEL_ID") or rleb_secrets.THREAD_CREATION_CHANNEL_ID
+    os.environ.get("THREAD_CREATION_CHANNEL_ID")
+    or rleb_secrets.THREAD_CREATION_CHANNEL_ID
 )
 
 # reroute testing pings to bot_commands

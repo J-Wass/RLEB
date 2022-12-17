@@ -31,7 +31,7 @@ def start():
     alert_queue = Queue()
     # Used for discord DMs from reddit to discord.
     direct_message_queue = Queue()
-     # Used to send messages to #thread_creation on discord.
+    # Used to send messages to #thread_creation on discord.
     thread_creation_queue = Queue()
 
     # Place all queues in rleb_settings. These queues are used to communicate throughout the bot.
@@ -47,17 +47,13 @@ def start():
     submissions_thread.setDaemon(True)
     subreddit_thread = Thread(target=monitor_subreddit, name="Subreddit thread")
     subreddit_thread.setDaemon(True)
-    health_thread = Thread(
-        target=health_check.health_check, name="Health thread"
-    )
+    health_thread = Thread(target=health_check.health_check, name="Health thread")
     health_thread.setDaemon(True)
     modmail_thread = Thread(target=monitor_modmail, name="ModMail thread")
     modmail_thread.setDaemon(True)
     modlog_thread = Thread(target=monitor_modlog, name="ModLog thread")
     modlog_thread.setDaemon(True)
-    task_alert_thread = Thread(
-        target=tasks.task_alert_check, name="Task alert thread"
-    )
+    task_alert_thread = Thread(target=tasks.task_alert_check, name="Task alert thread")
     task_alert_thread.setDaemon(True)
 
     # Stores all threads used to run the bot.

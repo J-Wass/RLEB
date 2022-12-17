@@ -14,7 +14,6 @@ import stdout
 from data_bridge import Data
 
 
-
 class Task:
     """Encapsulation of a task from the google sheet."""
 
@@ -229,6 +228,7 @@ async def handle_task_lookup(
         await channel.send(e)
         await channel.send(traceback.format_exc())
 
+
 class Event:
     """Encapsulation of an event in time."""
 
@@ -252,8 +252,7 @@ class Event:
 
 
 def get_scheduled_posts(
-    already_warned_scheduled_posts: list[int] = None,
-    days_ago: int = 5
+    already_warned_scheduled_posts: list[int] = None, days_ago: int = 5
 ) -> list[Event]:
     """ "Returns a list of scheduled posts from the sub starting `days_ago`, ignoring posts already in already_warned_scheduled_posts."""
     scheduled_posts = []
@@ -345,11 +344,15 @@ def task_alert_check():
     while True:
         use_enhanced_logging = counter % 10 == 0
         if use_enhanced_logging:
-            global_settings.rleb_log_info(f"TASK CHECK: At {counter} cycles: enabled enhanced logging.")
+            global_settings.rleb_log_info(
+                f"TASK CHECK: At {counter} cycles: enabled enhanced logging."
+            )
 
         # Every 3 hours, empty the already warned posts list and rewarn the world.
         if (datetime.now().timestamp() - last_emptied_already_late_posts) > 60 * 60 * 3:
-            global_settings.rleb_log_info(f"TASK CHECK: Emptying already_late_posts of size {len(already_warned_late_posts)}")
+            global_settings.rleb_log_info(
+                f"TASK CHECK: Emptying already_late_posts of size {len(already_warned_late_posts)}"
+            )
             last_emptied_already_late_posts = datetime.now().timestamp()
             already_warned_late_posts = []
 
@@ -360,7 +363,9 @@ def task_alert_check():
         new_scheduled_posts = get_scheduled_posts(already_warned_scheduled_posts)
 
         if use_enhanced_logging:
-            global_settings.rleb_log_info(f"TASK CHECK: Found {len(tasks)} weekly tasks & {(len(new_scheduled_posts))} posts already scheduled.")
+            global_settings.rleb_log_info(
+                f"TASK CHECK: Found {len(tasks)} weekly tasks & {(len(new_scheduled_posts))} posts already scheduled."
+            )
 
         # Gather tasks which don't have a scheduled post.
         unscheduled_tasks: list[Event] = []
@@ -375,7 +380,9 @@ def task_alert_check():
                 )
             )
             if use_enhanced_logging:
-                global_settings.rleb_log_info(f"TASK CHECK: Found {len(post_at_same_time)} tasks at the same time as {task.event_name}.")
+                global_settings.rleb_log_info(
+                    f"TASK CHECK: Found {len(post_at_same_time)} tasks at the same time as {task.event_name}."
+                )
 
             if len(post_at_same_time) == 0:
                 # todo, also try to compare task.event_name and posts that share a similar name
@@ -385,7 +392,9 @@ def task_alert_check():
             else:
                 scheduled_post = post_at_same_time[0]
                 if scheduled_post.id not in already_confirmed_scheduled_posts:
-                    global_settings.rleb_log_info(f"TASK CHECK: Found new scheduled post: {task.event_name}.")
+                    global_settings.rleb_log_info(
+                        f"TASK CHECK: Found new scheduled post: {task.event_name}."
+                    )
 
                     message = random.choice(global_settings.success_emojis)
                     message += f" Task is scheduled: **{task.event_name}** by {task.event_creator}.\nhttps://new.reddit.com/r/RocketLeagueEsports/about/scheduledposts"
@@ -397,7 +406,9 @@ def task_alert_check():
 
         # Warn for each unscheduled task.
         if use_enhanced_logging:
-                global_settings.rleb_log_info(f"TASK CHECK: Found {len(unscheduled_tasks)} unscheduled posts.")
+            global_settings.rleb_log_info(
+                f"TASK CHECK: Found {len(unscheduled_tasks)} unscheduled posts."
+            )
 
         for unscheduled_task in unscheduled_tasks:
             now = datetime.now().timestamp()
@@ -411,18 +422,23 @@ def task_alert_check():
                 continue
 
             if use_enhanced_logging:
-                global_settings.rleb_log_info(f"TASK CHECK: Check if needs warning for unscheduled post: {unscheduled_task.event_name}.")
+                global_settings.rleb_log_info(
+                    f"TASK CHECK: Check if needs warning for unscheduled post: {unscheduled_task.event_name}."
+                )
 
             # Only warn about events that are 2 hours late or are due in 8 hours
             if (seconds_remaining < 60 * 60 * 8) and (seconds_remaining > -60 * 60 * 2):
                 message = f"WARNING: {unscheduled_task.event_name} was not scheduled correctly!\n\n"
                 message += f"Task is due in {math.floor(seconds_remaining / 3600)} hour(s) and {round((seconds_remaining / 60) % 60, 0)} minute(s).\n\nScheduled posts: https://new.reddit.com/r/RocketLeagueEsports/about/scheduledposts"
-                global_settings.rleb_log_info(f"TASK CHECK: Thread is due in {seconds_remaining}s: {message}")
+                global_settings.rleb_log_info(
+                    f"TASK CHECK: Thread is due in {seconds_remaining}s: {message}"
+                )
 
-                
                 # Warn on the #thread-creation channel if the thread is due in less than 4 hours.
                 if seconds_remaining < 60 * 60 * 4:
-                    global_settings.rleb_log_info(f"TASK CHECK: Creating #thread-creation late thread warning: {message}")
+                    global_settings.rleb_log_info(
+                        f"TASK CHECK: Creating #thread-creation late thread warning: {message}"
+                    )
                     global_settings.queues["thread_creation"].put(message)
 
                 # Warn in DMs everytime.
@@ -442,6 +458,7 @@ def task_alert_check():
         # Break before waiting for the interval.
         if not global_settings.task_alert_check_enabled:
             break
+        global_settings.threads_heartbeats["Task alert thread"] = datetime.now()
         counter += 1
         time.sleep(60 * 10)  # 60 seconds, 10 minutes
     global_settings.rleb_log_info(f"TASK CHECK: Existing task_check loop.")

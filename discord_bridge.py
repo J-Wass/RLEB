@@ -66,7 +66,9 @@ class RLEsportsBot(discord.Client):
             global_settings.ROSTER_NEWS_CHANNEL_ID
         )
         self.modlog_channel = self.get_channel(global_settings.MODLOG_CHANNEL_ID)
-        self.thread_creation_channel = self.get_channel(global_settings.THREAD_CREATION_CHANNEL_ID)
+        self.thread_creation_channel = self.get_channel(
+            global_settings.THREAD_CREATION_CHANNEL_ID
+        )
 
         # Create a mapping of discord usernames to discord ids for future use.
         for m in self.new_post_channel.members:
@@ -96,8 +98,13 @@ class RLEsportsBot(discord.Client):
         for meme in meme_sub.top("day"):
             if tries > 3:
                 await channel.send("Couldn't find a suitable meme :(")
-                break 
-            if meme.over_18 or meme.is_video or "gallery" in meme.url or "v.reddit" in meme.url:
+                break
+            if (
+                meme.over_18
+                or meme.is_video
+                or "gallery" in meme.url
+                or "v.reddit" in meme.url
+            ):
                 tries += 1
                 continue
 
@@ -136,7 +143,9 @@ class RLEsportsBot(discord.Client):
                         await self.roster_news_channel.send(embed=embed)
 
                     await self.new_post_channel.send(embed=embed)
-                global_settings.asyncio_threads_heartbeats["submissions"] = datetime.now()
+                global_settings.asyncio_threads_heartbeats[
+                    "submissions"
+                ] = datetime.now()
                 if not global_settings.discord_check_new_submission_enabled:
                     break
             except Exception as e:
@@ -175,7 +184,9 @@ class RLEsportsBot(discord.Client):
                     )
                     await thread_creation_message.edit(suppress=True)
 
-                global_settings.asyncio_threads_heartbeats["thread_creation"] = datetime.now()
+                global_settings.asyncio_threads_heartbeats[
+                    "thread_creation"
+                ] = datetime.now()
                 if not global_settings.discord_check_new_thread_creation_enabled:
                     break
             except Exception as e:
@@ -235,7 +246,9 @@ class RLEsportsBot(discord.Client):
                         DM = await discord_user.send(message)
                         await DM.edit(suppress=True)
 
-                global_settings.asyncio_threads_heartbeats["direct_messages"] = datetime.now()
+                global_settings.asyncio_threads_heartbeats[
+                    "direct_messages"
+                ] = datetime.now()
                 if not global_settings.discord_check_direct_messages_enabled:
                     break
             except Exception as e:
@@ -383,7 +396,9 @@ class RLEsportsBot(discord.Client):
                         await self.modmail_channel.send(embed=embed)
                     except discord.errors.HTTPException as e:
                         # Message has invalid formatting. Just send basic msg.
-                        await self.modmail_channel.send(f"**{item.subject}** by {item.author.name}")
+                        await self.modmail_channel.send(
+                            f"**{item.subject}** by {item.author.name}"
+                        )
 
                 global_settings.asyncio_threads_heartbeats["modmail"] = datetime.now()
                 if not global_settings.discord_check_new_modmail_enabled:
@@ -882,10 +897,16 @@ class RLEsportsBot(discord.Client):
                     )
                 )
 
-            thread_heartbeat = [f"{k}: {round((datetime.now()-v).total_seconds(),1)}s ago" for k,v in global_settings.threads_heartbeats.items()]
+            thread_heartbeat = [
+                f"{k}: {round((datetime.now()-v).total_seconds(),1)}s ago"
+                for k, v in global_settings.threads_heartbeats.items()
+            ]
             await message.channel.send(f"**Thread heartbeats:** {thread_heartbeat}")
 
-            thread_heartbeat = [f"{k}: {round((datetime.now()-v).total_seconds(),1)}s ago" for k,v in global_settings.asyncio_threads_heartbeats.items()]
+            thread_heartbeat = [
+                f"{k}: {round((datetime.now()-v).total_seconds(),1)}s ago"
+                for k, v in global_settings.asyncio_threads_heartbeats.items()
+            ]
             await message.channel.send(f"**Asyncio heartbeats:** {thread_heartbeat}")
 
             await self.add_response(message)
@@ -994,7 +1015,6 @@ class RLEsportsBot(discord.Client):
                 return
             await handle_coverage_lookup(url, message.channel)
             await self.add_response(message)
-
 
         elif discord_message.startswith("!bracket") and is_staff(message.author):
             if not global_settings.is_discord_mod(message.author):
