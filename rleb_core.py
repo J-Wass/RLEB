@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 from queue import Queue
 from threading import Thread
 from tornado.platform.asyncio import AnyThreadEventLoopPolicy
@@ -13,6 +14,7 @@ from reddit_bridge import (
 import global_settings
 from global_settings import rleb_log_info
 import health_check
+import tasks
 
 
 def start():
@@ -40,16 +42,13 @@ def start():
     global_settings.queues["direct_messages"] = direct_message_queue
     global_settings.queues["thread_creation"] = thread_creation_queue
 
-    # Stores all threads used to run the bot.
-    threads = []
-
     # Initialize all threads.
     submissions_thread = Thread(target=read_new_submissions, name="Submissions thread")
     submissions_thread.setDaemon(True)
     subreddit_thread = Thread(target=monitor_subreddit, name="Subreddit thread")
     subreddit_thread.setDaemon(True)
     health_thread = Thread(
-        target=health_check.health_check, args=(threads,), name="Health thread"
+        target=health_check.health_check, name="Health thread"
     )
     health_thread.setDaemon(True)
     modmail_thread = Thread(target=monitor_modmail, name="ModMail thread")
@@ -57,9 +56,11 @@ def start():
     modlog_thread = Thread(target=monitor_modlog, name="ModLog thread")
     modlog_thread.setDaemon(True)
     task_alert_thread = Thread(
-        target=health_check.task_alert_check, name="Task alert thread"
+        target=tasks.task_alert_check, name="Task alert thread"
     )
     task_alert_thread.setDaemon(True)
+
+    # Stores all threads used to run the bot.
     threads = [
         modmail_thread,
         subreddit_thread,
@@ -68,6 +69,10 @@ def start():
         task_alert_thread,
         modlog_thread,
     ]
+
+    # Setup each thread's heartbeat for future health checks.
+    for t in threads:
+        global_settings.threads_heartbeats[t.name] = datetime.now()
 
     rleb_log_info(
         "Starting RLEB. Running under {0} in {1} mode.".format(
@@ -101,7 +106,7 @@ def start():
 
     # Start the discord thread, running on main thread.
     rleb_log_info("Starting discord thread.")
-    discord_bridge.start(threads)
+    discord_bridge.start()
 
 
 # Here's where it all begins.

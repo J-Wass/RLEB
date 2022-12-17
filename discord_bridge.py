@@ -38,16 +38,9 @@ def is_staff(user: discord.Member) -> bool:
 
 
 class RLEsportsBot(discord.Client):
-    def __init__(self, threads):
-        """Initialize a new instance of RLEsportsBot.
-
-        Args:
-            threads (List of Thread): List of threads used for monitoring both health.
-        """
+    def __init__(self):
+        """Initialize a new instance of RLEsportsBot."""
         super().__init__(intents=discord.Intents.all())
-
-        # List of all threads running RLEB.
-        self.threads = threads
 
         # The datetime the bot started.
         self.start_datetime = datetime.now()
@@ -56,7 +49,7 @@ class RLEsportsBot(discord.Client):
         self.responses = {}
 
         # The subreddit of memes or images to flood into #bot-commands.
-        self.meme_subreddit = "EarthPorn"
+        self.meme_subreddit = "maps"
 
     async def on_ready(self):
         """Indicate bot has joined the discord."""
@@ -95,14 +88,25 @@ class RLEsportsBot(discord.Client):
         meme_sub = global_settings.r.subreddit(self.meme_subreddit)
         if meme_sub.over18:
             return
-        randomizer = random.randint(1, 20)
+
+        randomizer = random.randint(1, 10)
         count = 0
+
+        tries = 0
         for meme in meme_sub.top("day"):
-            if meme.over_18:
+            if tries > 3:
+                await channel.send("Couldn't find a suitable meme :(")
+                break 
+            if meme.over_18 or meme.is_video or "gallery" in meme.url or "v.reddit" in meme.url:
+                tries += 1
                 continue
-            if count <= randomizer:
+
+            # Randomly decide whether or not to take a meme. Makes the algo spicey.
+            if count <= randomizer or tries > 2:
                 count += 1
                 continue
+
+            # If meme is suitable and we hit the randomizer, send it.
             link = meme.url
             await channel.send("{0}".format(link))
             break
@@ -132,7 +136,7 @@ class RLEsportsBot(discord.Client):
                         await self.roster_news_channel.send(embed=embed)
 
                     await self.new_post_channel.send(embed=embed)
-                global_settings.asyncio_threads["submissions"] = datetime.now()
+                global_settings.asyncio_threads_heartbeats["submissions"] = datetime.now()
                 if not global_settings.discord_check_new_submission_enabled:
                     break
             except Exception as e:
@@ -171,7 +175,7 @@ class RLEsportsBot(discord.Client):
                     )
                     await thread_creation_message.edit(suppress=True)
 
-                global_settings.asyncio_threads["thread_creation"] = datetime.now()
+                global_settings.asyncio_threads_heartbeats["thread_creation"] = datetime.now()
                 if not global_settings.discord_check_new_thread_creation_enabled:
                     break
             except Exception as e:
@@ -231,7 +235,7 @@ class RLEsportsBot(discord.Client):
                         DM = await discord_user.send(message)
                         await DM.edit(suppress=True)
 
-                global_settings.asyncio_threads["direct_messages"] = datetime.now()
+                global_settings.asyncio_threads_heartbeats["direct_messages"] = datetime.now()
                 if not global_settings.discord_check_direct_messages_enabled:
                     break
             except Exception as e:
@@ -276,7 +280,7 @@ class RLEsportsBot(discord.Client):
                     except:
                         channel = self.bot_command_channel
                         await channel.send(message)
-                global_settings.asyncio_threads["alerts"] = datetime.now()
+                global_settings.asyncio_threads_heartbeats["alerts"] = datetime.now()
                 if not global_settings.discord_check_new_alerts_enabled:
                     break
             except Exception as e:
@@ -381,7 +385,7 @@ class RLEsportsBot(discord.Client):
                         # Message has invalid formatting. Just send basic msg.
                         await self.modmail_channel.send(f"**{item.subject}** by {item.author.name}")
 
-                global_settings.asyncio_threads["modmail"] = datetime.now()
+                global_settings.asyncio_threads_heartbeats["modmail"] = datetime.now()
                 if not global_settings.discord_check_new_modmail_enabled:
                     break
             except Exception as e:
@@ -505,6 +509,9 @@ class RLEsportsBot(discord.Client):
             if not global_settings.is_discord_mod(message.author):
                 return
 
+            # increase asyncio timeout so it doesn't seem like a crash
+            global_settings.asyncio_timeout = 60 * 15
+
             global_settings.rleb_log_info("DISCORD: Starting migration")
             tokens = discord_message.split()
             from_flair = None
@@ -516,8 +523,10 @@ class RLEsportsBot(discord.Client):
                 await message.channel.send(
                     "Couldn't understand that. Expected '!migrate :from_flair: :to_flair:'."
                 )
+                global_settings.asyncio_timeout = 60 * 5
                 return
             count = 0
+            await message.channel.send("Checking flairs...")
             for flair in sub.flair(limit=None):
                 if flair["flair_text"] != None and from_flair in flair["flair_text"]:
                     count += 1
@@ -532,15 +541,22 @@ class RLEsportsBot(discord.Client):
                 self.migrate_request_time = datetime.now()
                 await self.add_response(message)
 
+                # reset asyncio timeout
+                global_settings.asyncio_timeout = 60 * 5
+
         elif discord_message == "!confirm migrate" and is_staff(message.author):
 
             if not global_settings.is_discord_mod(message.author):
                 return
 
+            # increase asyncio timeout so it doesn't seem like a crash
+            global_settings.asyncio_timeout = 60 * 15
+
             if (datetime.now() - self.migrate_request_time).total_seconds() > 120:
                 await message.channel.send(
                     "Migration timed out. You must confirm within 2 minutes to migrate flairs."
                 )
+                global_settings.asyncio_timeout = 60 * 5
                 return
             await message.channel.send(
                 "Starting migration {0} -> {1}.".format(self.from_flair, self.to_flair)
@@ -562,6 +578,9 @@ class RLEsportsBot(discord.Client):
                     sub.flair.set(user, text=new_flair, css_class="")
             await message.channel.send("Flair migration finished.")
             await self.add_response(message)
+
+            # reset asyncio timeout
+            global_settings.asyncio_timeout = 60 * 5
 
         elif discord_message.startswith("!dualflairs") and is_staff(message.author):
             if not global_settings.is_discord_mod(message.author):
@@ -863,11 +882,11 @@ class RLEsportsBot(discord.Client):
                     )
                 )
 
-            await message.channel.send(
-                "**Found {0} out of 6 threads running:** {1}".format(
-                    len(self.threads), list(map(lambda x: x.name, self.threads))
-                )
-            )
+            thread_heartbeat = [f"{k}: {round((datetime.now()-v).total_seconds(),1)}s ago" for k,v in global_settings.threads_heartbeats.items()]
+            await message.channel.send(f"**Thread heartbeats:** {thread_heartbeat}")
+
+            thread_heartbeat = [f"{k}: {round((datetime.now()-v).total_seconds(),1)}s ago" for k,v in global_settings.asyncio_threads_heartbeats.items()]
+            await message.channel.send(f"**Asyncio heartbeats:** {thread_heartbeat}")
 
             await self.add_response(message)
 
@@ -1240,13 +1259,9 @@ class RLEsportsBot(discord.Client):
             await self.add_response(message)
 
 
-def start(threads: list[Thread]) -> None:
-    """Spawns the various discord asyncio threads.
-
-    Args:
-        threads (list[Thread]): List of threads used for monitoring both health.
-    """
-    client = RLEsportsBot(threads)
+def start() -> None:
+    """Spawns the various discord asyncio threads."""
+    client = RLEsportsBot()
 
     # Create asyncronoush discord tasks.
     client.loop.create_task(client.check_new_submissions())

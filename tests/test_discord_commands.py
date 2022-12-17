@@ -47,7 +47,7 @@ class TestDiscordCommands(RLEBAsyncTestCase):
         import global_settings
         import discord_bridge
 
-        self.discord_client = discord_bridge.RLEsportsBot([])
+        self.discord_client = discord_bridge.RLEsportsBot()
         self.mock_channel = mock.MagicMock(discord.TextChannel)
         self.mock_channel.id = 1
 

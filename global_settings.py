@@ -43,13 +43,28 @@ thread_health_check_enabled = True
 task_alert_check_enabled = True
 
 # Mapping of each asyncio thread to the last time it sent a heartbeat out. Used to determine if an asnycio thread has crashed.
-asyncio_threads = {
+asyncio_threads_heartbeats = {
     "submissions": datetime.now(),
     "alerts": datetime.now(),
     "modmail": datetime.now(),
     "direct_messages": datetime.now(),
     "thread_creation": datetime.now(),
 }
+
+# Mapping of each thread to the last time it sent a heartbeat out. Used to determine if a thread has crashed.
+threads_heartbeats = {
+
+}
+
+# seconds until an asyncio_thread is considered timed-out.
+asyncio_timeout = 60 * 5
+thread_timeout = 60 * 30
+
+# The number of times a thread or asyncio thread crashed and had to be restarted.
+thread_crashes = {"asyncio": 0, "thread": 0}
+
+# The last time a thread or asyncio thread crashed and had to be restarted. Used for logging.
+last_datetime_crashed = {"asyncio": None, "thread": None}
 
 # Mapping of reminder_ids to Timers
 remindme_timers = {}
@@ -85,12 +100,6 @@ def refresh_remindmes() -> None:
     for remindme in remindmes:
         schedule_remindme(remindme)
 
-
-# The number of times a thread or asyncio thread crashed and had to be restarted.
-thread_crashes = {"asyncio": 0, "thread": 0}
-
-# The last time a thread or asyncio thread crashed and had to be restarted. Used for logging.
-last_datetime_crashed = {"asyncio": None, "thread": None}
 
 # REDDIT
 reddit_enabled = True
