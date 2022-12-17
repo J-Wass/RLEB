@@ -14,7 +14,6 @@ import praw
 
 
 class TestFlairCensus(RLEBAsyncTestCase):
-
     async def asyncSetUp(self):
         await super().asyncSetUp()
 

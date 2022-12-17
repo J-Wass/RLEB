@@ -788,12 +788,14 @@ class RLEsportsBot(discord.Client):
             if not global_settings.is_discord_mod(message.author):
                 return
 
-            # Absolutely shrek the running process.
             await message.channel.send("Later nerds.")
+            global_settings.rleb_log_info("Shutting down.", should_flush=True)
 
+            # Absolutely shrek the running process.
             if global_settings.RUNNING_ENVIRONMENT == "windows":
                 os.kill(os.getpid(), signal.SIGTERM)
             else:
+                os.popen("pkill -9 -f diesel")
                 os.popen("pkill -9 -f rleb_core.py")
 
         elif discord_message.startswith("!deploy") and is_staff(message.author):
@@ -801,9 +803,10 @@ class RLEsportsBot(discord.Client):
                 return
 
             await message.channel.send("brb")
+            global_settings.rleb_log_info("Deploying.", should_flush=True)
 
             if global_settings.RUNNING_ENVIRONMENT == "windows":
-                os.kill(os.getpid(), signal.SIGTERM)  # just shutdown
+                os.kill(os.getpid(), signal.SIGTERM)  # just shutdown on win
             else:
                 current_path = str(pathlib.Path(__file__).parent.resolve())
                 os.popen(f"{current_path}/deploy.sh")
@@ -813,8 +816,10 @@ class RLEsportsBot(discord.Client):
                 return
 
             await message.channel.send("See ya in a few minutes <3")
+            global_settings.rleb_log_info("Restarting.", should_flush=True)
+
             if global_settings.RUNNING_ENVIRONMENT == "windows":
-                os.kill(os.getpid(), signal.SIGTERM)  # just shutdown
+                os.kill(os.getpid(), signal.SIGTERM)  # just shutdown on win
             else:
                 os.popen("sudo reboot now")
 
