@@ -26,7 +26,7 @@ class TestDiscord(RLEBAsyncTestCase):
         import global_settings
         import discord_bridge
 
-        self.discord_client = discord_bridge.RLEsportsBot([])
+        self.discord_client = discord_bridge.RLEsportsBot()
         self.discord_client.new_post_channel = mock.AsyncMock()
         self.discord_client.roster_news_channel = mock.AsyncMock()
         self.discord_client.modmail_channel = mock.AsyncMock()

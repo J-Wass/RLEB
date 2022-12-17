@@ -2,7 +2,6 @@ import unittest
 import unittest.mock as mock
 from unittest.mock import patch
 
-import psycopg2
 import praw
 import requests
 

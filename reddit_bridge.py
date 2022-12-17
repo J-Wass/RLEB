@@ -40,6 +40,9 @@ def read_new_submissions():
                     "REDDIT: Submission - {0}".format(submission)
                 )
                 global_settings.queues["submissions"].put(submission)
+                global_settings.threads_heartbeats[
+                    "Submissions thread"
+                ] = datetime.now()
         except prawcore.exceptions.ServerError as e:
             pass  # Reddit server borked, try again
         except prawcore.exceptions.RequestException as e:
@@ -75,6 +78,7 @@ def monitor_subreddit():
                 subject = unread_message.subject.lower().replace(" ", "")
                 if subject in multiflair_request_keys:
                     handle_flair_request(sub, user, body)
+                global_settings.threads_heartbeats["Subreddit thread"] = datetime.now()
         except prawcore.exceptions.ServerError as e:
             pass  # Reddit server borked, wait an interval and try again
         except prawcore.exceptions.RequestException as e:
@@ -116,6 +120,7 @@ def monitor_modlog():
                 ):
                     continue
                 global_settings.queues["modlog"].put(log)
+                global_settings.threads_heartbeats["ModLog thread"] = datetime.now()
                 time.sleep(global_settings.modmail_polling_interval_seconds)
         except prawcore.exceptions.ServerError as e:
             pass  # Reddit server borked, wait an interval and try again
@@ -160,6 +165,7 @@ def monitor_modmail():
 
                 # Send modmail to discord.
                 global_settings.queues["modmail"].put(item)
+                global_settings.threads_heartbeats["ModMail thread"] = datetime.now()
             time.sleep(global_settings.modmail_polling_interval_seconds)
         except prawcore.exceptions.ServerError as e:
             pass  # Reddit server borked, wait an interval and try again

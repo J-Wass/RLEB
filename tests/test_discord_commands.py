@@ -47,7 +47,7 @@ class TestDiscordCommands(RLEBAsyncTestCase):
         import global_settings
         import discord_bridge
 
-        self.discord_client = discord_bridge.RLEsportsBot([])
+        self.discord_client = discord_bridge.RLEsportsBot()
         self.mock_channel = mock.MagicMock(discord.TextChannel)
         self.mock_channel.id = 1
 
@@ -169,7 +169,9 @@ class TestDiscordCommands(RLEBAsyncTestCase):
 
         # No url.
         await self._send_message("!teams", from_staff_user=True)
-        self.mock_channel.send.assert_awaited_with("Couldn't understand that. Expected '!teams liquipedia-url'.")
+        self.mock_channel.send.assert_awaited_with(
+            "Couldn't understand that. Expected '!teams liquipedia-url'."
+        )
         self.mock_channel.send.reset_mock()
         mock_handle_team_lookup.assert_not_awaited()
 
@@ -187,7 +189,9 @@ class TestDiscordCommands(RLEBAsyncTestCase):
 
         # No url.
         await self._send_message("!swiss", from_staff_user=True)
-        self.mock_channel.send.assert_awaited_with("Couldn't understand that. Expected '!swiss liquipedia-url'.")
+        self.mock_channel.send.assert_awaited_with(
+            "Couldn't understand that. Expected '!swiss liquipedia-url'."
+        )
         self.mock_channel.send.reset_mock()
         mock_handle_swiss_lookup.assert_not_awaited()
 
@@ -205,7 +209,9 @@ class TestDiscordCommands(RLEBAsyncTestCase):
 
         # No url.
         await self._send_message("!coverage", from_staff_user=True)
-        self.mock_channel.send.assert_awaited_with("Couldn't understand that. Expected '!coverage liquipedia-url'.")
+        self.mock_channel.send.assert_awaited_with(
+            "Couldn't understand that. Expected '!coverage liquipedia-url'."
+        )
         self.mock_channel.send.reset_mock()
         mock_handle_coverage_lookup.assert_not_awaited()
 
@@ -223,7 +229,9 @@ class TestDiscordCommands(RLEBAsyncTestCase):
 
         # No url.
         await self._send_message("!bracket", from_staff_user=True)
-        self.mock_channel.send.assert_awaited_with("Couldn't understand that. Expected '!bracket liquipedia-url'.")
+        self.mock_channel.send.assert_awaited_with(
+            "Couldn't understand that. Expected '!bracket liquipedia-url'."
+        )
         self.mock_channel.send.reset_mock()
         mock_handle_bracket_lookup.assert_not_awaited()
 
@@ -241,7 +249,9 @@ class TestDiscordCommands(RLEBAsyncTestCase):
 
         # No url.
         await self._send_message("!groups", from_staff_user=True)
-        self.mock_channel.send.assert_awaited_with("Couldn't understand that. Expected '!groups liquipedia-url'.")
+        self.mock_channel.send.assert_awaited_with(
+            "Couldn't understand that. Expected '!groups liquipedia-url'."
+        )
         self.mock_channel.send.reset_mock()
         mock_handle_group_lookup.assert_not_awaited()
 
@@ -259,7 +269,9 @@ class TestDiscordCommands(RLEBAsyncTestCase):
 
         # No url.
         await self._send_message("!prizepool", from_staff_user=True)
-        self.mock_channel.send.assert_awaited_with("Couldn't understand that. Expected '!prizepool liquipedia-url'.")
+        self.mock_channel.send.assert_awaited_with(
+            "Couldn't understand that. Expected '!prizepool liquipedia-url'."
+        )
         self.mock_channel.send.reset_mock()
         mock_handle_prizepool_lookup.assert_not_awaited()
 
@@ -272,7 +284,9 @@ class TestDiscordCommands(RLEBAsyncTestCase):
     async def test_mvp_creation(self, mock_handle_mvp_form_creation):
         # Happy path, multiple urls.
         await self._send_message("!mvp create url1 url2", from_staff_user=True)
-        mock_handle_mvp_form_creation.assert_awaited_with(["url1", "url2"], self.mock_channel)
+        mock_handle_mvp_form_creation.assert_awaited_with(
+            ["url1", "url2"], self.mock_channel
+        )
         mock_handle_mvp_form_creation.reset_mock()
 
         # Happy path, one url.
@@ -282,7 +296,9 @@ class TestDiscordCommands(RLEBAsyncTestCase):
 
         # No urls.
         await self._send_message("!mvp create", from_staff_user=True)
-        self.mock_channel.send.assert_awaited_with("Couldn't understand that. Expected '!mvp [create OR results] [list of liqui urls OR form url]'.")
+        self.mock_channel.send.assert_awaited_with(
+            "Couldn't understand that. Expected '!mvp [create OR results] [list of liqui urls OR form url]'."
+        )
         self.mock_channel.send.reset_mock()
         mock_handle_mvp_form_creation.assert_not_awaited()
 
@@ -300,7 +316,9 @@ class TestDiscordCommands(RLEBAsyncTestCase):
 
         # No url.
         await self._send_message("!mvp results", from_staff_user=True)
-        self.mock_channel.send.assert_awaited_with("Couldn't understand that. Expected '!mvp [create OR results] [list of liqui urls OR form url]'.")
+        self.mock_channel.send.assert_awaited_with(
+            "Couldn't understand that. Expected '!mvp [create OR results] [list of liqui urls OR form url]'."
+        )
         self.mock_channel.send.reset_mock()
         mock_handle_mvp_results_lookup.assert_not_awaited()
 
@@ -313,7 +331,9 @@ class TestDiscordCommands(RLEBAsyncTestCase):
 
         # Not create or results.
         await self._send_message("!mvp bad_option url", from_staff_user=True)
-        self.mock_channel.send.assert_awaited_with("Couldn't understand that. Expected either 'create' or 'results' in the second parameter. Ex) '!mvp create liqui_url_1 liqui_url_2'.")
+        self.mock_channel.send.assert_awaited_with(
+            "Couldn't understand that. Expected either 'create' or 'results' in the second parameter. Ex) '!mvp create liqui_url_1 liqui_url_2'."
+        )
         mock_handle_mvp_results_lookup.assert_not_awaited()
 
     @mock.patch("discord_bridge.handle_calendar_lookup")
@@ -330,7 +350,9 @@ class TestDiscordCommands(RLEBAsyncTestCase):
 
         # Missing number of days
         await self._send_message("!events sheets", from_staff_user=True)
-        self.mock_channel.send.assert_awaited_with("Couldn't understand that. Expected '!events [formatter] [# days]'. Example is '!events reddit 7' to get the next 7 days of events. Valid formatters are `reddit` and `sheets`.")
+        self.mock_channel.send.assert_awaited_with(
+            "Couldn't understand that. Expected '!events [formatter] [# days]'. Example is '!events reddit 7' to get the next 7 days of events. Valid formatters are `reddit` and `sheets`."
+        )
         self.mock_channel.send.reset_mock()
         mock_handle_calendar_lookup.assert_not_awaited()
         mock_handle_calendar_lookup.reset_mock()
