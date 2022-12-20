@@ -26,6 +26,28 @@ async def handle_stream_lookup(url: str, channel: discord.channel.TextChannel) -
         await channel.send("Failed to build streams table :(")
         await channel.send(e)
 
+async def handle_schedule_lookup(liquipedia_url: str, day_number: int, channel: discord.channel.TextChannel) -> None:
+    """Handle schedule table lookup message.
+
+    Args:
+        url (str): Liquipedia URL string to look for stream tables.
+        day_number (int): The day (usually 1, 2, or 3) of the event to create a schedule for.
+        channel (discord.channel.TextChannel): Channel the lookup is being used in.
+    """
+    global_settings.rleb_log_info(f"DIESEL: Creating schedule lookup for {liquipedia_url} day {day_number}".format(liquipedia_url))
+
+    try:
+        response = requests.get(
+        f"http://127.0.0.1:8080/schedule/{string_to_base64(liquipedia_url)}/day/{day_number}"
+    )
+        markdown = base64_to_string(response.content)
+        await stdout.print_to_channel(channel, markdown, title="Streams")
+        return
+    except Exception as e:
+        await channel.send("Failed to build schedule table :(")
+        await channel.send(e)
+       
+
 async def handle_coverage_lookup(url: str, channel: discord.channel.TextChannel) -> None:
     """Handle coverage table lookup message.
 
