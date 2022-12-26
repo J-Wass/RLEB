@@ -2,12 +2,10 @@ from bs4 import BeautifulSoup
 import re
 import traceback
 import discord
-import requests
-import base64
 
 import global_settings
 import stdout
-from liqui import liqui_utils
+from liqui import diesel, liqui_utils
 
 
 async def handle_swiss_lookup(url, channel: discord.channel.TextChannel):
@@ -20,17 +18,13 @@ async def handle_swiss_lookup(url, channel: discord.channel.TextChannel):
     global_settings.rleb_log_info("DISCORD: Creating lookup for {0}".format(url))
 
     # Attempt to load markdown from Diesel.
-    try:
-        await channel.send("Building swiss table from Diesel...")
-        response = requests.get(
-            f"http://127.0.0.1:8080/swiss/{base64.b64encode(url.encode('utf-8')).decode('utf-8')}"
-        )
-        markdown = base64.b64decode(response.content).decode("utf-8").strip()
+    await channel.send("Building swiss table from Diesel...")
+    markdown = await diesel.get_swiss_markdown(url)
+    if markdown:
         await stdout.print_to_channel(channel, markdown, title="Swiss Bracket")
-        return
-    except Exception as e:
-        await channel.send("Diesel failed :(")
-        await channel.send(e)
+
+    # If Diesel fails, fallback to RLEB, python parsing.
+    await channel.send("Failed to build swiss table from Diesel. Trying RLEB...")
 
     # If Diesel fails, fallback to RLEB, python parsing.
     try:

@@ -61,6 +61,8 @@ class TestGroupLookup(RLEBAsyncTestCase):
         self.assertEquals(
             mock_channel.send.mock_calls,
             [
+                mock.call("Building group table from Diesel..."),
+                mock.call("Failed to build group table from Diesel. Trying RLEB..."),
                 mock.call("Couldn't load bad url!\nError: list index out of range"),
                 mock.call(f"Couldn't find groups in {bad_url}."),
             ],

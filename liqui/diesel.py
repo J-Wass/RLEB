@@ -1,3 +1,4 @@
+from typing import Optional
 import discord
 import requests
 from liqui.liqui_utils import string_to_base64, base64_to_string
@@ -91,3 +92,23 @@ async def get_mvp_candidates(liquipedia_url: str, teams_allowed: int = 4) -> str
     )
     eligible_candidates = base64_to_string(response.content)
     return eligible_candidates
+
+async def get_swiss_markdown(liquipedia_url: str) -> Optional[str]:
+    try:
+        response = requests.get(
+            f"http://127.0.0.1:8080/swiss/{string_to_base64(liquipedia_url)}"
+        )
+        markdown = base64_to_string(response.content)
+        return markdown
+    except:
+        return None
+
+async def get_group_markdown(liquipedia_url: str) -> Optional[str]:
+    try:
+        response = requests.get(
+            f"http://127.0.0.1:8080/groups/{string_to_base64(liquipedia_url)}"
+        )
+        markdown = base64_to_string(response.content)
+        return markdown
+    except:
+        return None
