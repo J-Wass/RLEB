@@ -1,3 +1,4 @@
+import base64
 from bs4 import BeautifulSoup
 import time
 import traceback
@@ -6,6 +7,7 @@ import requests
 import global_settings
 import stdout
 from liqui import liqui_utils
+from . import diesel
 
 
 async def handle_group_lookup(url, channel):
@@ -19,6 +21,14 @@ async def handle_group_lookup(url, channel):
     start = time.time()
     global_settings.rleb_log_info("DISCORD: Creating group lookup for {0}".format(url))
 
+    # Attempt to load markdown from Diesel.
+    await channel.send("Building group table from Diesel...")
+    markdown = await diesel.get_group_markdown(url)
+    if markdown:
+        await stdout.print_to_channel(channel, markdown, title="Groups")
+
+    # If Diesel fails, fallback to RLEB, python parsing.
+    await channel.send("Failed to build group table from Diesel. Trying RLEB...")
     try:
         page = None
         try:
