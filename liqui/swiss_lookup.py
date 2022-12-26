@@ -22,6 +22,7 @@ async def handle_swiss_lookup(url, channel: discord.channel.TextChannel):
     markdown = await diesel.get_swiss_markdown(url)
     if markdown:
         await stdout.print_to_channel(channel, markdown, title="Swiss Bracket")
+        return
 
     # If Diesel fails, fallback to RLEB, python parsing.
     await channel.send("Failed to build swiss table from Diesel. Trying RLEB...")

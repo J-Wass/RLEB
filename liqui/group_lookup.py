@@ -26,6 +26,7 @@ async def handle_group_lookup(url, channel):
     markdown = await diesel.get_group_markdown(url)
     if markdown:
         await stdout.print_to_channel(channel, markdown, title="Groups")
+        return
 
     # If Diesel fails, fallback to RLEB, python parsing.
     await channel.send("Failed to build group table from Diesel. Trying RLEB...")
