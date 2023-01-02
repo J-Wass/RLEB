@@ -6,6 +6,7 @@ import traceback
 import global_settings
 import stdout
 from liqui import liqui_utils
+from . import diesel
 
 import discord
 
@@ -37,17 +38,27 @@ def bracket_names(round):
     return output
 
 
-async def handle_bracket_lookup(url: str, channel: discord.channel.TextChannel) -> None:
+async def handle_bracket_lookup(url: str, channel: discord.channel.TextChannel, day_number: int) -> None:
     """Handle bracket lookup message.
 
     Args:
         channel (discord.channel.TextChannel): Channel the lookup is being used in.
         url (str): Liquipedia URL string to look for elimination brackets.
+        day_number (int): The day (usually 1, 2, or 3) of the event to generate a bracket for.
     """
     global_settings.rleb_log_info(
         "DISCORD: Creating bracket lookup for {0}".format(url)
     )
 
+    # Attempt to load markdown from Diesel.
+    await channel.send("Building bracket table from Diesel...")
+    markdown = await diesel.get_bracket_markdown(url, day_number)
+    if markdown:
+        await stdout.print_to_channel(channel, markdown, title="Bracket")
+        return
+
+    # If Diesel fails, fallback to RLEB, python parsing.
+    await channel.send("Failed to build bracket table from Diesel. Trying RLEB...")
     try:
         content = None
         try:

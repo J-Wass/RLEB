@@ -1,8 +1,6 @@
-import base64
 from bs4 import BeautifulSoup
 import time
 import traceback
-import requests
 
 import global_settings
 import stdout
