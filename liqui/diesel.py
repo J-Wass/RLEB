@@ -103,6 +103,22 @@ async def get_swiss_markdown(liquipedia_url: str) -> Optional[str]:
     except:
         return None
 
+async def get_bracket_markdown(liquipedia_url: str, day_number: int) -> Optional[str]:
+    """Handle schedule table lookup message.
+
+    Args:
+        url (str): Liquipedia URL string to look for stream tables.
+        day_number (int): The day (usually 1, 2, or 3) of the event to generate a bracket for.
+    """
+    try:
+        response = requests.get(
+            f"http://127.0.0.1:8080/bracket/{string_to_base64(liquipedia_url)}/day/{day_number}"
+        )
+        markdown = base64_to_string(response.content)
+        return markdown
+    except:
+        return None
+
 async def get_group_markdown(liquipedia_url: str) -> Optional[str]:
     try:
         response = requests.get(

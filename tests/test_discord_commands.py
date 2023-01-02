@@ -83,13 +83,13 @@ class TestDiscordCommands(RLEBAsyncTestCase):
         # Missing liqui url.
         await self._send_message("!bracket", from_staff_user=True)
         self.mock_channel.send.assert_awaited_with(
-            "Couldn't understand that. Expected '!bracket liquipedia-url'."
+            "Couldn't understand that. Expected '!bracket liquipedia-url day-number'."
         )
         self.mock_channel.reset_mock()
 
         # Happy path.
         await self._send_message(
-            "!bracket https://liquipedia.net/rocketleague/Rocket_League_Championship_Series/2021-22/Winter",
+            "!bracket https://liquipedia.net/rocketleague/Rocket_League_Championship_Series/2021-22/Winter 1",
             from_staff_user=True,
         )
         self.mock_channel.send.assert_awaited_with(
@@ -223,20 +223,20 @@ class TestDiscordCommands(RLEBAsyncTestCase):
     @mock.patch("discord_bridge.handle_bracket_lookup")
     async def test_bracket(self, mock_handle_bracket_lookup):
         # Happy path.
-        await self._send_message("!bracket url", from_staff_user=True)
-        mock_handle_bracket_lookup.assert_awaited_with("url", self.mock_channel)
+        await self._send_message("!bracket url 1", from_staff_user=True)
+        mock_handle_bracket_lookup.assert_awaited_with("url", self.mock_channel, '1')
         mock_handle_bracket_lookup.reset_mock()
 
         # No url.
         await self._send_message("!bracket", from_staff_user=True)
         self.mock_channel.send.assert_awaited_with(
-            "Couldn't understand that. Expected '!bracket liquipedia-url'."
+            "Couldn't understand that. Expected '!bracket liquipedia-url day-number'."
         )
         self.mock_channel.send.reset_mock()
         mock_handle_bracket_lookup.assert_not_awaited()
 
         # Not a mod.
-        await self._send_message("!bracket url", from_staff_user=False)
+        await self._send_message("!bracket url 1", from_staff_user=False)
         self.mock_channel.send.assert_not_awaited()
         mock_handle_bracket_lookup.assert_not_awaited()
 

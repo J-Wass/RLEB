@@ -1033,15 +1033,15 @@ class RLEsportsBot(discord.Client):
             global_settings.rleb_log_info("DISCORD: Starting elim bracket generation.")
             await message.channel.send("Starting elimination bracket lookup...")
             tokens = discord_message.split()
-            url = ""
             try:
                 url = tokens[1]
+                day_number = tokens[2]
             except Exception:
                 await message.channel.send(
-                    "Couldn't understand that. Expected '!bracket liquipedia-url'."
+                    "Couldn't understand that. Expected '!bracket liquipedia-url day-number'."
                 )
                 return
-            await handle_bracket_lookup(url, message.channel)
+            await handle_bracket_lookup(url, message.channel, day_number)
             await self.add_response(message)
 
         elif discord_message.startswith("!groups") and is_staff(message.author):
