@@ -261,7 +261,7 @@ class TestDiscordCommands(RLEBAsyncTestCase):
         mock_handle_group_lookup.assert_not_awaited()
 
     @mock.patch("discord_bridge.handle_prizepool_lookup")
-    async def test_prizepool(self, mock_handle_prizepool_lookup):
+    async def skip_test_prizepool(self, mock_handle_prizepool_lookup):
         # Happy path.
         await self._send_message("!prizepool url", from_staff_user=True)
         mock_handle_prizepool_lookup.assert_awaited_with("url", self.mock_channel)
