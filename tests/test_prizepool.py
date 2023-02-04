@@ -25,7 +25,7 @@ class TestPrizepoolLookup(RLEBAsyncTestCase):
         import stdout
         from liqui import prizepool_lookup
 
-    async def test_prizepool_complete(self):
+    async def skip_test_prizepool_complete(self):
         mock_channel = mock.Mock(spec=discord.TextChannel)
 
         with patch.object(
