@@ -2,6 +2,7 @@ import base64
 import requests
 import json
 import random
+from urllib.parse import quote as urlescape
 
 headers = {"User-Agent": "r/RocketLeagueEsports Thread Tools"}
 
@@ -58,7 +59,8 @@ def get_page_html_from_url(liquipedia_url: str) -> str:
 
 
 def string_to_base64(in_string: str) -> str:
-    return base64.b64encode(in_string.encode("utf-8")).decode("utf-8")
+    b64_str = base64.b64encode(in_string.encode("utf-8")).decode("utf-8")
+    return urlescape(b64_str, safe='')
 
 
 def base64_to_string(in_string: str) -> str:

@@ -51,14 +51,14 @@ async def handle_bracket_lookup(url: str, channel: discord.channel.TextChannel, 
     )
 
     # Attempt to load markdown from Diesel.
-    #await channel.send("Building bracket table from Diesel...")
-    #markdown = await diesel.get_bracket_markdown(url, day_number)
-    #if markdown:
-    #    await stdout.print_to_channel(channel, markdown, title="Bracket")
-    #    return
+    await channel.send("Building bracket table from Diesel...")
+    markdown = await diesel.get_bracket_markdown(url, day_number)
+    if markdown:
+       await stdout.print_to_channel(channel, markdown, title="Bracket")
+       return
 
     # If Diesel fails, fallback to RLEB, python parsing.
-    #await channel.send("Failed to build bracket table from Diesel. Trying RLEB...")
+    await channel.send("Failed to build bracket table from Diesel. Trying RLEB...")
     try:
         content = None
         try:
