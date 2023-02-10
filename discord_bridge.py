@@ -1087,9 +1087,6 @@ class RLEsportsBot(discord.Client):
             if not global_settings.is_discord_mod(message.author):
                 return
 
-            await message.channel.send("Sorry :(. !prizepool is currently disabled due to a change in liquipedia HTML. Should be back to normal in a couple weeks.")
-            return
-
             global_settings.rleb_log_info("DISCORD: Starting prizepool generation.")
             await message.channel.send("Starting prizepool lookup...")
             tokens = discord_message.split()

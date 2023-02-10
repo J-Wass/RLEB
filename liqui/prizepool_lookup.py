@@ -3,7 +3,7 @@ import traceback
 
 from bs4 import BeautifulSoup
 
-from liqui import liqui_utils
+from liqui import diesel, liqui_utils
 from stdout import print_to_channel
 import global_settings
 
@@ -14,6 +14,16 @@ async def handle_prizepool_lookup(liquipedia_url: str, channel: str) -> str:
     global_settings.rleb_log_info(
         "Prizepool: Creating prizepool lookup for {0}".format(liquipedia_url)
     )
+
+    # Attempt to load markdown from Diesel.
+    await channel.send("Building prizepool table from Diesel...")
+    markdown = await diesel.get_prizepool_markdown(liquipedia_url)
+    if markdown:
+       await print_to_channel(channel, markdown, title="Prizepool")
+       return
+
+    # If Diesel fails, fallback to RLEB, python parsing.
+    await channel.send("Failed to build bracket table from Diesel. Trying RLEB...")
 
     page = None
     try:

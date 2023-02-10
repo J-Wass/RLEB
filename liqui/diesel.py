@@ -80,6 +80,15 @@ async def healthcheck() -> str:
     except Exception as e:
         return f"Diesel is not running properly: {e}"
 
+async def get_prizepool_markdown(liquipedia_url: str) -> Optional[str]:
+    try:
+        response = requests.get(
+            f"http://127.0.0.1:8080/prizepool/{string_to_base64(liquipedia_url)}"
+        )
+        markdown = base64_to_string(response.content)
+        return markdown
+    except:
+        return None
 
 async def get_mvp_candidates(liquipedia_url: str, teams_allowed: int = 4) -> str:
     """Returns a \n delimited string of mvp candidates for a given liqui url. `teams_allowed` = # of top teams to list mvp candidates for."""
