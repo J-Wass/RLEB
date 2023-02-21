@@ -8,6 +8,7 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
+import discord
 
 import global_settings
 import stdout
@@ -24,7 +25,7 @@ ABOUT_SECTION = """
 # todo: use pytz to get the timezone abbreviations (EST vs EDT, AEST vs AEDT) dynamically
 TABLE_HEADER = """
 # {day-name}, {month-name} {day-number}
-|Scroll to view start times / links >>|**EDT**|**CET**|**AEST**|**Streams**|**Matches**|
+|Scroll to view times / links >>|**ET**|**CET**|**AET**|**Streams**|**Matches**|
 |:-|:-|:-|:-|:-|:-|"""
 
 TABLE_ROW = """|⚪ [**{title}**]({link}) |[**{ET}**](https://www.google.com/search?q={ET}+ET) |{CET} |{AET} | {STREAM} |[**Bracket**]({BRACKET})|"""
@@ -113,7 +114,7 @@ def formatted_calendar_events(calendar_events, formatter):
         )
 
 
-def sheets_formatted_calendar_events(calendar_events):
+def sheets_formatted_calendar_events(calendar_events: list[CalendarEvent]) -> str:
     """Returns tab separated calendar events for google sheets (or other spreadsheet software)."""
 
     lines = ["" for x in range(3)]
@@ -136,7 +137,7 @@ def sheets_formatted_calendar_events(calendar_events):
     return ("\n".join(lines)).replace(",", "\t")
 
 
-def reddit_formatted_calendar_events(calendar_events):
+def reddit_formatted_calendar_events(calendar_events: list[CalendarEvent]) -> str:
     """Returns a reddit markdown post featuring all events in calendar_events."""
 
     reddit_submission = ABOUT_SECTION
@@ -187,7 +188,7 @@ def reddit_formatted_calendar_events(calendar_events):
     return reddit_submission
 
 
-async def handle_calendar_lookup(channel, formatter="reddit", days_in_advance=7):
+async def handle_calendar_lookup(channel: discord.channel.TextChannel, formatter:str ="reddit", days_in_advance:str = 7) -> None:
     """Retrieves calendar events, formats them, and then sends them to the discord channel with the supplied formatter."""
 
     try:
