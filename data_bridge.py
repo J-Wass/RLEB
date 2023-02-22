@@ -63,10 +63,10 @@ class Data(object):
         return connection
 
     def write_remindme(
-        self, user: str, message: str, total_time: int, channel_id: int
+        self, user: str, message: str, elapsed_time: int, channel_id: int
     ) -> Remindme:
         """Adds a remindme notification to the database."""
-        target_timestamp = total_time + time.time()
+        target_timestamp = elapsed_time + time.time()
         remindme_id = -1
         with Data._db_lock:
 

@@ -188,7 +188,11 @@ def reddit_formatted_calendar_events(calendar_events: list[CalendarEvent]) -> st
     return reddit_submission
 
 
-async def handle_calendar_lookup(channel: discord.channel.TextChannel, formatter:str ="reddit", days_in_advance:str = 7) -> None:
+async def handle_calendar_lookup(
+    channel: discord.channel.TextChannel,
+    formatter: str = "reddit",
+    days_in_advance: str = 7,
+) -> None:
     """Retrieves calendar events, formats them, and then sends them to the discord channel with the supplied formatter."""
 
     try:

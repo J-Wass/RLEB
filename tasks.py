@@ -11,7 +11,7 @@ import pytz
 
 import global_settings
 import stdout
-from data_bridge import Data
+from data_bridge import Data, Remindme
 
 
 class Task:
@@ -229,10 +229,18 @@ async def handle_task_lookup(
         await channel.send(traceback.format_exc())
 
 
+# todo, replace this with just task? Or combine them?
 class Event:
     """Encapsulation of an event in time."""
 
-    def __init__(self, event_name, event_creator, event_seconds_since_epoch, id=None):
+    def __init__(
+        self,
+        event_name,
+        event_creator,
+        event_updater,
+        event_seconds_since_epoch,
+        id=None,
+    ):
         """Initialize a new task."""
 
         # Human-readable name of event.
@@ -240,6 +248,9 @@ class Event:
 
         # User who created the event. (may be discord id or reddit username)
         self.event_creator = event_creator
+
+        # User who created the event. (may be discord id or reddit username)
+        self.event_updater = event_creator
 
         # When the event is due.
         self.event_seconds_since_epoch = event_seconds_since_epoch
@@ -309,7 +320,9 @@ def get_weekly_tasks() -> list[Event]:
             ).replace(tzinfo=pytz.UTC)
             timestamp = task_datetime.timestamp()
 
-            task_event = Event(t.event_name, t.event_creator, timestamp)
+            task_event = Event(
+                t.event_name, t.event_creator, t.event_updater1, timestamp
+            )
             weekly_tasks.append(task_event)
         except Exception as e:
             global_settings.rleb_log_info(f"TASK CHECK: Skipping weekly task: {(e)}")
@@ -395,6 +408,22 @@ def task_alert_check():
                     global_settings.rleb_log_info(
                         f"TASK CHECK: Found new scheduled post: {task.event_name}."
                     )
+
+                    # If thread has an updater, remind them 1hr after thread post.
+                    updater = task.event_updater
+                    time_until_alert = (
+                        task.event_seconds_since_epoch - time.time() + 60 * 60
+                    )
+
+                    # Uncomment this once confident that the timing is correct.
+                    # update_reminder = Data.singleton().write_remindme(
+                    #     user=updater,
+                    #     message="",
+                    #     elapsed_time=time_until_alert,
+                    #     channel_id=global_settings.SCHEDULE_CHAT_CHANNEL_ID,
+                    # )
+                    # global_settings.schedule_remindme(update_reminder)
+                    global_settings.queues["alerts"].put((f"Send out remindme for `{str(updater)}` in {time_until_alert}s", global_settings.BOT_COMMANDS_CHANNEL_ID))
 
                     message = random.choice(global_settings.success_emojis)
                     message += f" Task is scheduled: **{task.event_name}** by {task.event_creator}.\nhttps://new.reddit.com/r/RocketLeagueEsports/about/scheduledposts"
