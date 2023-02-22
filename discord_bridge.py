@@ -91,6 +91,7 @@ class RLEsportsBot(discord.Client):
         else:
             await self.send_meme(self.bot_command_channel)
 
+
     async def send_meme(self, channel):
         meme_sub = global_settings.r.subreddit(self.meme_subreddit)
         if meme_sub.over18:
