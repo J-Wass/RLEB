@@ -250,7 +250,7 @@ class Event:
         self.event_creator = event_creator
 
         # User who created the event. (may be discord id or reddit username)
-        self.event_updater = event_creator
+        self.event_updater = event_updater
 
         # When the event is due.
         self.event_seconds_since_epoch = event_seconds_since_epoch
