@@ -41,6 +41,8 @@ class TestHealth(RLEBTestCase):
 
         global_settings.queues["alerts"] = Queue()
 
+        global_settings.threads_heartbeats["Task alert thread"] =  datetime.now()
+
     def test_alerts_on_dead_asyncio_thread(self):
         global_settings.asyncio_health_check_enabled = True
         global_settings.asyncio_threads_heartbeats = {
@@ -49,6 +51,7 @@ class TestHealth(RLEBTestCase):
             "modmail": datetime.now() - timedelta(seconds=250),
         }
         global_settings.thread_crashes["asyncio"] = 2
+        
 
         with patch("health_check.rleb_log_error") as mock_log_error:
             health_check.health_check()
