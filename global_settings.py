@@ -51,6 +51,9 @@ asyncio_threads_heartbeats = {
     "thread_creation": datetime.now(),
 }
 
+# List of threads to check for heartbeat in health check.
+threads_to_check = ["Task alert thread"]
+
 # Mapping of each thread to the last time it sent a heartbeat out. Used to determine if a thread has crashed.
 threads_heartbeats = {}
 

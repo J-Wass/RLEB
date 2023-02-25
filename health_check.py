@@ -29,6 +29,7 @@ def health_check():
 
         # Monitor Asyncio Threads
         dead_asyncio_threads = []
+
         for (
             asyncio_thread,
             update_time,
@@ -58,6 +59,19 @@ def health_check():
         # Don't warn about this asyncio thread again.
         for dead_asyncio_thread in dead_asyncio_threads:
             del global_settings.asyncio_threads_heartbeats[dead_asyncio_thread]
+
+        # Monitor dead threads.
+        threads_to_check = ["Task alert thread"]
+        dead_threads = []
+        for thread in global_settings.threads_to_check:
+            if (datetime.now() - global_settings.threads_heartbeats[thread]).total_seconds() > global_settings.thread_timeout:
+                rleb_log_error(f"HEALTH: {thread} has stopped responding!")
+                global_settings.queues["alerts"].put(f"{thread} has stopped responding!", global_settings.SCHEDULE_CHAT_CHANNEL_ID,)
+                dead_threads.append(thread)
+
+        # Don't warn about this thread again.
+        for dead_thread in dead_threads:
+            del global_settings.threads_to_check[dead_thread]
 
         # Break before waiting for the interval.
         if not global_settings.health_enabled:

@@ -482,7 +482,7 @@ def task_alert_check():
                         unscheduled_task.event_creator,
                         unscheduled_task.event_seconds_since_epoch,
                     )
-                )
+                )            
 
         # Break before waiting for the interval.
         if not global_settings.task_alert_check_enabled:

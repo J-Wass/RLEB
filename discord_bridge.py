@@ -19,7 +19,7 @@ from liqui.team_lookup import handle_team_lookup
 from liqui.group_lookup import handle_group_lookup
 from census import handle_flair_census
 from calendar_event import handle_calendar_lookup
-from tasks import handle_task_lookup
+from tasks import handle_task_lookup, get_scheduled_posts, get_weekly_tasks
 from liqui.swiss_lookup import handle_swiss_lookup
 from liqui.bracket_lookup import handle_bracket_lookup
 from liqui.mvp_lookup import (
@@ -735,14 +735,14 @@ class RLEsportsBot(discord.Client):
             await message.channel.send(
                 "**Found the following scheduled posts on reddit:**"
             )
-            scheduled_posts = health_check.get_scheduled_posts()
+            scheduled_posts = get_scheduled_posts()
             for s in scheduled_posts:
                 await message.channel.send(s)
 
             await message.channel.send(
                 "**Found the following tasks on the weekly sheet:**"
             )
-            weekly_tasks = health_check.get_weekly_tasks()
+            weekly_tasks = get_weekly_tasks()
             for t in weekly_tasks:
                 await message.channel.send(t)
 
@@ -932,6 +932,7 @@ class RLEsportsBot(discord.Client):
             await message.channel.send("Thread crash count was reset")
             global_settings.rleb_log_info("DISCORD: Thread count was reset.")
             await self.add_response(message)
+
 
         elif discord_message.startswith("!search"):
             tokens = discord_message.split()
