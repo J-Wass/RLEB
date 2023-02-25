@@ -250,7 +250,7 @@ class Event:
         self.event_creator = event_creator
 
         # User who created the event. (may be discord id or reddit username)
-        self.event_updater = event_creator
+        self.event_updater = event_updater
 
         # When the event is due.
         self.event_seconds_since_epoch = event_seconds_since_epoch
@@ -285,7 +285,7 @@ def get_scheduled_posts(
                 description, "scheduled for %a, %d %b %Y %I:%M %p %z"
             ).replace(tzinfo=pytz.UTC)
             scheduled_event = Event(
-                log.details, log.mod, scheduled_datetime.timestamp(), log.id
+                log.details, log.mod, "", scheduled_datetime.timestamp(), log.id
             )
             scheduled_posts.append(scheduled_event)
         except Exception as e:
@@ -301,9 +301,9 @@ def get_scheduled_posts(
     return scheduled_posts
 
 
-def get_weekly_tasks() -> list[Event]:
-    """Fetches tasks from google sheets and returns them as a list of events."""
-    weekly_tasks = []
+def get_weekly_events() -> list[Event]:
+    """Fetches events from google sheets."""
+    weekly_events = []
     new_tasks = get_tasks()
     for t in new_tasks:
         try:
@@ -323,11 +323,11 @@ def get_weekly_tasks() -> list[Event]:
             task_event = Event(
                 t.event_name, t.event_creator, t.event_updater1, timestamp
             )
-            weekly_tasks.append(task_event)
+            weekly_events.append(task_event)
         except Exception as e:
             global_settings.rleb_log_info(f"TASK CHECK: Skipping weekly task: {(e)}")
             continue
-    return weekly_tasks
+    return weekly_events
 
 
 def task_alert_check():
@@ -370,7 +370,7 @@ def task_alert_check():
             already_warned_late_posts = []
 
         # List of events from the weekly spreadsheet.
-        tasks = get_weekly_tasks()
+        tasks = get_weekly_events()
 
         # List of scheduled posts recently made.
         new_scheduled_posts = get_scheduled_posts(already_warned_scheduled_posts)
