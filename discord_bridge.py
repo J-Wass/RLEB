@@ -19,7 +19,7 @@ from liqui.team_lookup import handle_team_lookup
 from liqui.group_lookup import handle_group_lookup
 from census import handle_flair_census
 from calendar_event import handle_calendar_lookup
-from tasks import handle_task_lookup, get_scheduled_posts, get_weekly_tasks
+from tasks import handle_task_lookup, get_scheduled_posts, get_weekly_events
 from liqui.swiss_lookup import handle_swiss_lookup
 from liqui.bracket_lookup import handle_bracket_lookup
 from liqui.mvp_lookup import (
@@ -740,10 +740,10 @@ class RLEsportsBot(discord.Client):
                 await message.channel.send(s)
 
             await message.channel.send(
-                "**Found the following tasks on the weekly sheet:**"
+                "**Found the following events on the weekly sheet:**"
             )
-            weekly_tasks = get_weekly_tasks()
-            for t in weekly_tasks:
+            weekly_events = get_weekly_events()
+            for t in weekly_events:
                 await message.channel.send(t)
 
             await self.add_response(message)
