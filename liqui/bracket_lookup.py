@@ -11,7 +11,7 @@ from . import diesel
 import discord
 
 BRACKET_MARKDOWN_TEMPLATE = """
-|**Double Elimination**|**UTC**|[**Liquipedia Bracket**]({LIQUI_URL}#Results)|
+|**Elimination**|**UTC**|[**Liquipedia Bracket**]({LIQUI_URL}#Results)|
 |:-|:-|:-|"""
 
 BRACKET_ROUND_TEMPLATE = "|`▼ {ROUND_NAME}`||`(Bo?)`|"
