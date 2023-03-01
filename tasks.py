@@ -416,14 +416,14 @@ def task_alert_check():
                     )
 
                     # Uncomment this once confident that the timing is correct.
-                    # update_reminder = Data.singleton().write_remindme(
-                    #     user=updater,
-                    #     message="",
-                    #     elapsed_time=time_until_alert,
-                    #     channel_id=global_settings.SCHEDULE_CHAT_CHANNEL_ID,
-                    # )
-                    # global_settings.schedule_remindme(update_reminder)
-                    global_settings.queues["alerts"].put((f"Send out remindme for `{str(updater)}` in {time_until_alert}s", global_settings.BOT_COMMANDS_CHANNEL_ID))
+                    if updater != "" and updater != "No one needed":
+                        update_reminder = Data.singleton().write_remindme(
+                            user=updater,
+                            message=f"**{task.event_name}** is starting now.",
+                            elapsed_time=time_until_alert,
+                            channel_id=global_settings.SCHEDULE_CHAT_CHANNEL_ID,
+                        )
+                        global_settings.schedule_remindme(update_reminder)
 
                     message = random.choice(global_settings.success_emojis)
                     message += f" Task is scheduled: **{task.event_name}** by {task.event_creator}.\nhttps://new.reddit.com/r/RocketLeagueEsports/about/scheduledposts"
