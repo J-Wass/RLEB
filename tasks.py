@@ -490,4 +490,4 @@ def task_alert_check():
         global_settings.threads_heartbeats["Task alert thread"] = datetime.now()
         counter += 1
         time.sleep(60 * 10)  # 60 seconds, 10 minutes
-    global_settings.rleb_log_info(f"TASK CHECK: Existing task_check loop.")
+    global_settings.rleb_log_info(f"TASK CHECK: Exiting task_check loop.")
