@@ -28,6 +28,7 @@ from liqui.mvp_lookup import (
 )
 from liqui.diesel import (
     handle_stream_lookup,
+    handle_broadcast_lookup,
     healthcheck,
     handle_coverage_lookup,
     handle_schedule_lookup,
@@ -1008,6 +1009,27 @@ class RLEsportsBot(discord.Client):
                 )
                 return
             seconds = await handle_stream_lookup(url, message.channel)
+            await self.add_response(message)
+
+        elif (
+            discord_message.startswith("!broadcast")
+            or discord_message.startswith("!broadcasts")
+        ) and is_staff(message.author):
+            if not global_settings.is_discord_mod(message.author):
+                return
+
+            global_settings.rleb_log_info("DISCORD: Starting broadcast generation.")
+            await message.channel.send("Starting broadcast stream lookup...")
+            tokens = discord_message.split()
+            url = ""
+            try:
+                url = tokens[1]
+            except Exception:
+                await message.channel.send(
+                    "Couldn't understand that. Expected '!broadcasts liquipedia-url'."
+                )
+                return
+            seconds = await handle_broadcast_lookup(url, message.channel)
             await self.add_response(message)
 
         elif discord_message.startswith("!coverage") and is_staff(message.author):

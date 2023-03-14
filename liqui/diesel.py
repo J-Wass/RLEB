@@ -6,6 +6,25 @@ from liqui.liqui_utils import string_to_base64, base64_to_string
 import global_settings
 import stdout
 
+async def handle_broadcast_lookup(url: str, channel: discord.channel.TextChannel) -> None:
+    """Handle broadcast stream table lookup message.
+
+    Args:
+        channel (discord.channel.TextChannel): Channel the lookup is being used in.
+        url (str): Liquipedia URL string to look for broadcast streams.
+    """
+    global_settings.rleb_log_info("DIESEL: Creating broadcast stream lookup for {0}".format(url))
+
+    try:
+        response = requests.get(
+            f"http://127.0.0.1:8080/broadcast/{string_to_base64(url)}"
+        )
+        markdown = base64_to_string(response.content)
+        await stdout.print_to_channel(channel, markdown, title="Broadcasts", force_pastebin=True)
+        return
+    except Exception as e:
+        await channel.send("Failed to build broadcast streams table :(")
+        await channel.send(e)
 
 async def handle_stream_lookup(url: str, channel: discord.channel.TextChannel) -> None:
     """Handle stream table lookup message.
@@ -21,7 +40,7 @@ async def handle_stream_lookup(url: str, channel: discord.channel.TextChannel) -
             f"http://127.0.0.1:8080/streams/{string_to_base64(url)}"
         )
         markdown = base64_to_string(response.content)
-        await stdout.print_to_channel(channel, markdown, title="Streams")
+        await stdout.print_to_channel(channel, markdown, title="Streams", force_pastebin=True)
         return
     except Exception as e:
         await channel.send("Failed to build streams table :(")
@@ -42,7 +61,7 @@ async def handle_schedule_lookup(liquipedia_url: str, day_number: int, channel: 
         f"http://127.0.0.1:8080/schedule/{string_to_base64(liquipedia_url)}/day/{day_number}"
     )
         markdown = base64_to_string(response.content)
-        await stdout.print_to_channel(channel, markdown, title="Streams")
+        await stdout.print_to_channel(channel, markdown, title="Streams", force_pastebin=True)
         return
     except Exception as e:
         await channel.send("Failed to build schedule table :(")
@@ -63,7 +82,7 @@ async def handle_coverage_lookup(url: str, channel: discord.channel.TextChannel)
             f"http://127.0.0.1:8080/coverage/{string_to_base64(url)}"
         )
         markdown = base64_to_string(response.content)
-        await stdout.print_to_channel(channel, markdown, title="Coverage")
+        await stdout.print_to_channel(channel, markdown, title="Coverage", force_pastebin=True)
         return
     except Exception as e:
         await channel.send("Failed to build coverage table :(")
