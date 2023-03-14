@@ -71,7 +71,7 @@ def health_check():
 
             # Don't warn about this thread again.
             for dead_thread in dead_threads:
-                del global_settings.threads_to_check[dead_thread]
+                global_settings.threads_to_check.remove(dead_thread)
 
             # Break before waiting for the interval.
             if not global_settings.health_enabled:
