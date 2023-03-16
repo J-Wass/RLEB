@@ -355,6 +355,8 @@ def task_alert_check():
     counter = 0
 
     while True:
+        global_settings.threads_heartbeats["Task alert thread"] = datetime.now()
+
         use_enhanced_logging = counter % 10 == 0
         if use_enhanced_logging:
             global_settings.rleb_log_info(
@@ -487,7 +489,6 @@ def task_alert_check():
         # Break before waiting for the interval.
         if not global_settings.task_alert_check_enabled:
             break
-        global_settings.threads_heartbeats["Task alert thread"] = datetime.now()
         counter += 1
         time.sleep(60 * 10)  # 60 seconds, 10 minutes
     global_settings.rleb_log_info(f"TASK CHECK: Exiting task_check loop.")
