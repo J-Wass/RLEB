@@ -27,6 +27,7 @@ from liqui.mvp_lookup import (
     handle_mvp_results_lookup,
 )
 from liqui.diesel import (
+    handle_makethread_lookup,
     handle_stream_lookup,
     handle_broadcast_lookup,
     healthcheck,
@@ -1066,6 +1067,33 @@ class RLEsportsBot(discord.Client):
                 )
                 return
             await handle_bracket_lookup(url, message.channel, day_number)
+            await self.add_response(message)
+
+        elif discord_message.startswith("!makethread") and is_staff(message.author):
+            if not global_settings.is_discord_mod(message.author):
+                return
+
+            global_settings.rleb_log_info("DISCORD: Starting makethread")
+            await message.channel.send("Starting to make thread...")
+            tokens = discord_message.split()
+            try:
+                url = tokens[1]
+                tourney_system = tokens[2]
+                options = tokens[3]
+                day_number = tokens[4]
+            except Exception:
+                await message.channel.send(
+                    "Couldn't understand that. Expected `!makethread [liquipedia-url] [tourney_system] [options] [day]`. Example command is `!makethread www.google.com groups BracketRd1,Streams 1`. Valid tourney_systems are groups, swiss, and bracket. Valid options are bracketrd1, prizepool, streams and/or none. To use more than 1 option, list together separated by commas with no space such as: bracketrd1,prizepool,stream."
+                )
+                return
+
+            # turn "groups Streams,BracketRd1" into "groups-bracketrd1-streams"
+            stringified_options = "-".join(sorted(options.lower().split(",")))
+            if stringified_options == "none":
+                template = tourney_system
+            else:
+                template = f"{tourney_system}-{stringified_options}"
+            await handle_makethread_lookup(url, template, day_number, message.channel)
             await self.add_response(message)
 
         elif discord_message.startswith("!groups") and is_staff(message.author):
