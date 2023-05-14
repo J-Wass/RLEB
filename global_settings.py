@@ -87,6 +87,7 @@ def schedule_remindme(remindme: Remindme) -> None:
 
     seconds_remaining = remindme.trigger_timestamp - time.time()
     delay = max(60, seconds_remaining)
+
     timer = Timer(delay, _trigger_remindme, args=(remindme,))
     remindme_timers[remindme.remindme_id] = timer
     timer.start()
@@ -96,7 +97,12 @@ def schedule_remindme(remindme: Remindme) -> None:
 
 def refresh_remindmes() -> None:
     """Loads !remindme schedulers from db."""
-    remindme_timers = {}
+    # Delete old timers.
+    for timer in remindme_timers.values():
+        timer.cancel()
+    remindme_timers.clear()
+
+    # Create new timers from db.
     remindmes = Data.singleton().read_remindmes()
     for remindme in remindmes:
         schedule_remindme(remindme)
