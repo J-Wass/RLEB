@@ -3,6 +3,8 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 import traceback
 
+import pytz
+
 import global_settings
 import stdout
 from liqui import liqui_utils
@@ -50,7 +52,7 @@ async def handle_bracket_lookup(url: str, channel: discord.channel.TextChannel, 
         "DISCORD: Creating bracket lookup for {0}".format(url)
     )
 
-    # Attempt to load markdown from Diesel.
+    # # Attempt to load markdown from Diesel.
     # await channel.send("Building bracket table from Diesel...")
     # markdown = await diesel.get_bracket_markdown(url, day_number)
     # if markdown:
@@ -87,15 +89,16 @@ async def handle_bracket_lookup(url: str, channel: discord.channel.TextChannel, 
         def datetime_from_liqui_timestring(
             liqui_timestring: str, timezone: str
         ) -> datetime:
-            """Returns a datetime off of the time string from liquipedia."""
-            # Make sure the hour is 0-padded.
-            tz_tokens = timezone.split(":")
-            if len(tz_tokens[0]) == 2:
-                tz_tokens[0] = tz_tokens[0].replace("-", "-0").replace("+", "+0")
-            tz = ":".join(tz_tokens)
-
+            """Returns a UTC datetime off of the time string from liquipedia."""
+            # Clean timezone offset.
+            tz = timezone.replace(":","")  
+            if len(tz) == 4:
+                # Add a padding 0 to the first digit, after the +/-.
+                tz = tz[0] + '0' + tz[1:]
+            
             # Liqui format example: March 26, 2022 - 13:15
-            return datetime.strptime(liqui_timestring + tz, "%B %d, %Y - %H:%M%z")
+            local_datetime = datetime.strptime(liqui_timestring + tz, "%B %d, %Y - %H:%M%z")
+            return local_datetime.astimezone(pytz.timezone("Etc/UTC"))
 
         def time_of_day_from_datetime(dt: datetime) -> str:
             """Returns 'hh:mm UTC' from a datetime."""
