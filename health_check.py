@@ -18,14 +18,20 @@ def health_check():
                 global_settings.health_enabled = False
                 rleb_log_error("HEALTH: More than 5 thread crashes.")
                 global_settings.queues["alerts"].put(
-                    "More than 5 thread crashes detected. Consider using `!restart`."
+                    (
+                        "More than 5 thread crashes detected. Consider using `!restart`.",
+                        global_settings.BOT_COMMANDS_CHANNEL_ID,
+                    )
                 )
             if global_settings.thread_crashes["asyncio"] >= 5:
                 global_settings.thread_health_check_enabled = False
                 global_settings.health_enabled = False
                 rleb_log_error("HEALTH: More than 5 asyncio crashes.")
                 global_settings.queues["alerts"].put(
-                    "More than 5 asyncio crashes detected. Consider using `!restart`."
+                    (
+                        "More than 5 asyncio crashes detected. Consider using `!restart`.",
+                        global_settings.BOT_COMMANDS_CHANNEL_ID,
+                    )
                 )
 
             # Monitor Asyncio Threads
@@ -50,7 +56,8 @@ def health_check():
                     global_settings.queues["alerts"].put(
                         (
                             "{0} asyncio thread has stopped responding! ({1} crashes)".format(
-                                asyncio_thread, global_settings.thread_crashes["asyncio"]
+                                asyncio_thread,
+                                global_settings.thread_crashes["asyncio"],
                             ),
                             global_settings.BOT_COMMANDS_CHANNEL_ID,
                         )
@@ -64,9 +71,16 @@ def health_check():
             # Monitor dead threads.
             dead_threads = []
             for thread in global_settings.threads_to_check:
-                if (datetime.now() - global_settings.threads_heartbeats[thread]).total_seconds() > global_settings.thread_timeout:
+                if (
+                    datetime.now() - global_settings.threads_heartbeats[thread]
+                ).total_seconds() > global_settings.thread_timeout:
                     rleb_log_error(f"HEALTH: {thread} has stopped responding!")
-                    global_settings.queues["alerts"].put(f"{thread} has stopped responding!", global_settings.BOT_COMMANDS_CHANNEL_ID,)
+                    global_settings.queues["alerts"].put(
+                        (
+                            f"{thread} has stopped responding!",
+                            global_settings.BOT_COMMANDS_CHANNEL_ID,
+                        )
+                    )
                     dead_threads.append(thread)
 
             # Don't warn about this thread again.
@@ -82,5 +96,10 @@ def health_check():
             time.sleep(30)
         except Exception as e:
             rleb_log_error(f"HEALTH: Hit exception when checking threads.\n{e}")
-            global_settings.queues["alerts"].put(f"HEALTH: Hit exception when checking threads. {e}", global_settings.BOT_COMMANDS_CHANNEL_ID,)
+            global_settings.queues["alerts"].put(
+                (
+                    f"HEALTH: Hit exception when checking threads. {e}",
+                    global_settings.BOT_COMMANDS_CHANNEL_ID,
+                )
+            )
             time.sleep(30)
