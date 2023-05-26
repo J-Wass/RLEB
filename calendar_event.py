@@ -1,6 +1,7 @@
 ﻿from __future__ import print_function
 import datetime
 import traceback
+from typing import List
 import pytz
 import json
 
@@ -73,7 +74,7 @@ def timestring(datetime, relative_datetime, offset_hours=0):
     return f"{hour}:{minute}"
 
 
-def process_calendar_events(calendar_event):
+def process_calendar_events(calendar_event: CalendarEvent) -> None:
     """Builds the list of calendar event objects from the google calendar api response."""
     calendar_event.title = calendar_event.rawtext.split("**")[1].replace("|", "-")
     calendar_event.link = calendar_event.rawtext.split("(")[1].split(")")[0]
@@ -103,7 +104,7 @@ def process_calendar_events(calendar_event):
     ]
 
 
-def formatted_calendar_events(calendar_events, formatter):
+def formatted_calendar_events(calendar_events: List[CalendarEvent], formatter: str) -> str:
     if formatter == "reddit":
         return reddit_formatted_calendar_events(calendar_events)
     elif formatter == "sheets":
@@ -122,9 +123,9 @@ def sheets_formatted_calendar_events(calendar_events: list[CalendarEvent]) -> st
     # 0 - Title
     # 1 - Date & Day of the Week
     # 2 - Schedule Time & Update Time
-    for event in sorted(calendar_events, key=lambda e: e.start_datetime):
+    for event in sorted(calendar_events, key=lambda e: e.utc_datetime):
         lines[0] += event.title + ",,"
-        lines[1] += event.start_datetime.strftime("%x") + "," + event.day_name + ","
+        lines[1] += event.utc_datetime.strftime("%x") + "," + global_settings.DAYS[event.utc_datetime.weekday()] + ","
         lines[2] += (
             "Schedule "
             + timestring(event.utc_datetime, event.utc_datetime, offset_hours=1)
