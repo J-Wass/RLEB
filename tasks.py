@@ -72,6 +72,7 @@ async def send_tasks(
     # Fetch the user id from mappings, and their tasks.
     user_tasks = await tasks_for_user(tasks, user)
     user_mapping = global_settings.user_names_to_ids
+    breakpoint()
     discord_user = (
         None if user not in user_mapping else client.get_user(user_mapping[user])
     )

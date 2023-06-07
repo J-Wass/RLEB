@@ -79,9 +79,12 @@ class RLEsportsBot(discord.Client):
 
         # Create a mapping of discord usernames to discord ids for future use.
         for m in self.new_post_channel.members:
-            global_settings.user_names_to_ids[
-                m.name.lower() + "#" + m.discriminator
-            ] = m.id
+            if m.discriminator == '0':
+                global_settings.user_names_to_ids[m.name.lower()] = m.id
+            else:
+                global_settings.user_names_to_ids[
+                    m.name.lower() + "#" + m.discriminator
+                ] = m.id
 
         # If testing, ping the discord channel.
         if global_settings.RUNNING_MODE != "production":
@@ -1257,7 +1260,10 @@ class RLEsportsBot(discord.Client):
                 await self.add_response(message)
                 return
 
-            user = message.author.name.lower() + "#" + message.author.discriminator
+            if message.author.discriminator == 0:
+                user = message.author.name.lower()
+            else:
+                user = message.author.name.lower() + "#" + message.author.discriminator
             extra = None
             try:
                 target_time = tokens[1]
