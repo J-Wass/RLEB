@@ -1260,7 +1260,7 @@ class RLEsportsBot(discord.Client):
                 await self.add_response(message)
                 return
 
-            if message.author.discriminator == 0:
+            if message.author.discriminator == '0':
                 user = message.author.name.lower()
             else:
                 user = message.author.name.lower() + "#" + message.author.discriminator
