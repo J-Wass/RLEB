@@ -250,7 +250,10 @@ def refresh_discord_username_id_mapping(channel: discord.TextChannel) -> None:
 
 def is_discord_mod(user: discord.Member):
     """Returns true if the discord user is a verified moderator."""
-    username = user.name.lower() + "#" + user.discriminator
+    if user.discriminator == "0":
+        username = user.name.lower()
+    else:
+        username = user.name.lower() + "#" + user.discriminator
     return username in verified_moderators
 
 
