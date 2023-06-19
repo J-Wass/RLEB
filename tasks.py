@@ -289,7 +289,7 @@ def get_scheduled_posts(
                 log.details, log.mod, "", scheduled_datetime.timestamp(), log.id
             )
             scheduled_posts.append(scheduled_event)
-        except (ValueError, TypeError, OverflowError) as e:
+        except Exception as e:
             # only send warnings of the caller provided a list to be filled out (already_warned_scheduled_posts)
             if already_warned_scheduled_posts:
                 global_settings.queues["thread_creation"].put(
