@@ -1,6 +1,7 @@
 from datetime import datetime
 import json
 import random
+import threading
 import time
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
@@ -288,7 +289,7 @@ def get_scheduled_posts(
                 log.details, log.mod, "", scheduled_datetime.timestamp(), log.id
             )
             scheduled_posts.append(scheduled_event)
-        except Exception as e:
+        except (ValueError, TypeError, OverflowError) as e:
             # only send warnings of the caller provided a list to be filled out (already_warned_scheduled_posts)
             if already_warned_scheduled_posts:
                 global_settings.queues["thread_creation"].put(
@@ -298,6 +299,7 @@ def get_scheduled_posts(
                 Data.singleton().write_already_warned_scheduled_post(
                     log.id, datetime.now().timestamp()
                 )
+            global_settings.rleb_log_error(f"Failed to handle get_scheduled_posts: {str(e)}")
     return scheduled_posts
 
 
@@ -371,11 +373,37 @@ def task_alert_check():
             last_emptied_already_late_posts = datetime.now().timestamp()
             already_warned_late_posts = []
 
-        # List of events from the weekly spreadsheet.
-        tasks = get_weekly_events()
+        # Use threading events here to make sure we don't hang on fetching posts.
+        new_scheduled_posts = None
+        tasks = None
+        get_weekly_events_ready = threading.Event()
+        get_scheduled_posts_ready = threading.Event()
+        def get_weekly_events_wrapper():
+            global get_weekly_events_result
+            get_weekly_events_result = get_weekly_events()
+            get_weekly_events_ready.set()
+        def get_scheduled_posts_wrapper():
+            global get_scheduled_posts_result
+            get_scheduled_posts_result = get_scheduled_posts(already_warned_scheduled_posts)
+            get_scheduled_posts_ready.set()
+        weekly_events_thread = threading.Thread(target=get_weekly_events_wrapper)
+        weekly_events_thread.start()
+        scheduled_posts_thread = threading.Thread(target=get_scheduled_posts_wrapper)
+        scheduled_posts_thread.start()
+        get_weekly_events_ready.wait(5)
+        get_scheduled_posts_ready.wait(5)
 
-        # List of scheduled posts recently made.
-        new_scheduled_posts = get_scheduled_posts(already_warned_scheduled_posts)
+        # After the threads are done, check if the data is available.
+        if get_weekly_events_ready.is_set():
+            tasks = get_weekly_events_result
+        if get_scheduled_posts_ready.is_set():
+            new_scheduled_posts = get_scheduled_posts_result 
+
+        # If the data was unobtainable, wait 5m and try again.
+        if tasks == None or new_scheduled_posts == None:
+            time.sleep(60 * 5)
+            continue 
+
 
         if use_enhanced_logging:
             global_settings.rleb_log_info(
