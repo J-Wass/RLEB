@@ -118,7 +118,7 @@ class Data(object):
     def read_already_warned_scheduled_posts(
         self, min_seconds_since_epoch: int
     ) -> list[int]:
-        """ "Returns a list of log ids for already warned scheduled posts."""
+        """Returns a list of log ids for already warned scheduled posts."""
         with Data._db_lock:
             db = self.postgres_connection()
             cursor = db.cursor()
@@ -144,7 +144,7 @@ class Data(object):
     def read_already_confirmed_scheduled_posts(
         self, min_seconds_since_epoch: int
     ) -> list[int]:
-        """ "Returns a list of log ids for already confirmed scheduled posts."""
+        """Returns a list of log ids for already confirmed scheduled posts."""
         with Data._db_lock:
             db = self.postgres_connection()
             cursor = db.cursor()
@@ -177,7 +177,7 @@ class Data(object):
 
             db = self.postgres_connection()
             cursor = db.cursor()
-            cursor.execute("SELECT * FROM logs;")
+            cursor.execute("SELECT * FROM logs ORDER BY log DESC;")
             all_logs = cursor.fetchall()
             Data._cache["logs"] = all_logs
             return all_logs
