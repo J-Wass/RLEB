@@ -291,9 +291,9 @@ def get_scheduled_posts(
             scheduled_posts.append(scheduled_event)
         except Exception as e:
             # only send warnings of the caller provided a list to be filled out (already_warned_scheduled_posts)
-            if already_warned_scheduled_posts:
+            if already_warned_scheduled_posts is not None:
                 global_settings.queues["thread_creation"].put(
-                    f"**{log.details}** {log.description} wasn't scheduled in UTC! Please recreate this thread and schedule it in UTC.\n\n(internal error = {e})"
+                    f"Failed to parse scheduled post **{log.details}** {log.description}.\nMost likely reason is timezone wasn't made in UTC.\nUse `!logs` to debug further.)"
                 )
                 already_warned_scheduled_posts.append(log.id)
                 Data.singleton().write_already_warned_scheduled_post(
