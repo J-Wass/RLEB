@@ -364,6 +364,7 @@ def task_alert_check():
             global_settings.rleb_log_info(
                 f"TASK CHECK: At {counter} cycles: enabled enhanced logging."
             )
+        counter += 1
 
         # Every 3 hours, empty the already warned posts list and rewarn the world.
         if (datetime.now().timestamp() - last_emptied_already_late_posts) > 60 * 60 * 3:
@@ -399,16 +400,15 @@ def task_alert_check():
         if get_scheduled_posts_ready.is_set():
             new_scheduled_posts = get_scheduled_posts_result 
 
-        # If the data was unobtainable, wait 5m and try again.
-        if tasks == None or new_scheduled_posts == None:
-            time.sleep(60 * 5)
-            continue 
-
-
         if use_enhanced_logging:
             global_settings.rleb_log_info(
                 f"TASK CHECK: Found {len(tasks)} weekly tasks & {(len(new_scheduled_posts))} posts already scheduled."
             )
+
+        # If the data was unobtainable, wait 5m and try again.
+        if tasks == None or new_scheduled_posts == None:
+            time.sleep(60 * 5)
+            continue 
 
         # Gather tasks which don't have a scheduled post.
         unscheduled_tasks: list[Event] = []
@@ -517,6 +517,5 @@ def task_alert_check():
         # Break before waiting for the interval.
         if not global_settings.task_alert_check_enabled:
             break
-        counter += 1
         time.sleep(60 * 10)  # 60 seconds, 10 minutes
     global_settings.rleb_log_info(f"TASK CHECK: Exiting task_check loop.")
