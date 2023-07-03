@@ -391,8 +391,8 @@ def task_alert_check():
         weekly_events_thread.start()
         scheduled_posts_thread = threading.Thread(target=get_scheduled_posts_wrapper)
         scheduled_posts_thread.start()
-        get_weekly_events_ready.wait(5)
-        get_scheduled_posts_ready.wait(5)
+        get_weekly_events_ready.wait(20)
+        get_scheduled_posts_ready.wait(20)
 
         # After the threads are done, check if the data is available.
         if get_weekly_events_ready.is_set():
