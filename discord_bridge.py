@@ -1319,7 +1319,11 @@ class RLEsportsBot(discord.Client):
             tokens = discord_message.split()
 
             # User = the person requesting the command, unless explicitly stated.
+            username = message.author.name.lower()
+            discrim = message.author.discriminator
             user = message.author.name.lower() + "#" + message.author.discriminator
+            if discrim == "0":
+                user = message.author.name.lower()
             extra = None
             try:
                 user = tokens[1]
