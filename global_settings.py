@@ -221,10 +221,14 @@ hooks = [
     "Fresh outa the oven",
     "This one was made with love",
     "Enjoy",
-    "Congrats! You won! Prize",
+    "Congrats, you won a prize",
+    "This is my greatest work yet",
+    "I promise this isn't a virus",
+    "This message will self distruct in 2 minutes",
+    "I made this one without even trying"
 ]
 greetings = ["Incoming!", "Why hello there.", "Hola, amigo", "Bonjour, mon ami"]
-success_emojis = ["🥳", "💪", "✅", "🔥"]
+success_emojis = ["🥳", "💪", "✅", "🔥", "🚀", "💯", "🌟", "🏆", "🆒"]
 verified_moderators = json.loads(
     os.environ.get("VERIFIED_MODERATORS") or rleb_secrets.VERIFIED_MODERATORS
 )

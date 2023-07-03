@@ -293,7 +293,7 @@ def get_scheduled_posts(
             # only send warnings of the caller provided a list to be filled out (already_warned_scheduled_posts)
             if already_warned_scheduled_posts is not None:
                 global_settings.queues["thread_creation"].put(
-                    f"Failed to parse scheduled post **{log.details}** {log.description}.\nMost likely reason is timezone wasn't made in UTC.\nUse `!logs` to debug further.)"
+                    f"Failed to parse scheduled post **{log.details}** {log.description}.\nMost likely reason is timezone wasn't made in UTC.\nUse `!logs` to debug further."
                 )
                 already_warned_scheduled_posts.append(log.id)
                 Data.singleton().write_already_warned_scheduled_post(
@@ -401,12 +401,17 @@ def task_alert_check():
             new_scheduled_posts = get_scheduled_posts_result 
 
         if use_enhanced_logging:
+            tasks_num = len(tasks) if tasks else "0"
+            post_num = len(new_scheduled_posts) if new_scheduled_posts else "0"
             global_settings.rleb_log_info(
-                f"TASK CHECK: Found {len(tasks)} weekly tasks & {(len(new_scheduled_posts))} posts already scheduled."
+                f"TASK CHECK: Found {tasks_num} weekly tasks & {post_num} posts already scheduled."
             )
 
         # If the data was unobtainable, wait 5m and try again.
         if tasks == None or new_scheduled_posts == None:
+            global_settings.rleb_log_info(
+                f"TASK CHECK: Skipping null posts. tasks={tasks}, schedule posts={new_scheduled_posts}. tasks is set={get_weekly_events_ready.is_set()}, scheduled posts is set={get_scheduled_posts_ready.is_set()}"
+            )
             time.sleep(60 * 5)
             continue 
 
