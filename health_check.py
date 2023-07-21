@@ -102,7 +102,7 @@ def health_check():
             global_settings.threads_heartbeats["Health thread"] = datetime.now()
 
             current_path = str(pathlib.Path(__file__).parent.resolve())
-            with open(f"{current_path}/heartbeat.sh", "w") as f:
+            with open(f"{current_path}/heartbeat.txt", "w") as f:
                 f.write(str(worst_heartbeat))
 
             time.sleep(30)
