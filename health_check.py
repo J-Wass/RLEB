@@ -1,3 +1,4 @@
+import pathlib
 import global_settings
 from global_settings import rleb_log_error
 
@@ -100,7 +101,8 @@ def health_check():
 
             global_settings.threads_heartbeats["Health thread"] = datetime.now()
 
-            with open("heartbeat.txt", "w") as f:
+            current_path = str(pathlib.Path(__file__).parent.resolve())
+            with open(f"{current_path}/heartbeat.txt", "w") as f:
                 f.write(str(worst_heartbeat))
 
             time.sleep(30)
