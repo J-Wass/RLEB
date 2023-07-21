@@ -59,7 +59,7 @@ threads_heartbeats = {}
 
 # seconds until an asyncio_thread is considered timed-out.
 asyncio_timeout = 60 * 5
-thread_timeout = 60 * 30
+thread_timeout = 60 * 15
 
 # The number of times a thread or asyncio thread crashed and had to be restarted.
 thread_crashes = {"asyncio": 0, "thread": 0}
