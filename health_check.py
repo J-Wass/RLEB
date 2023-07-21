@@ -34,6 +34,8 @@ def health_check():
                     )
                 )
 
+            worst_heartbeat = 0
+
             # Monitor Asyncio Threads
             dead_asyncio_threads = []
 
@@ -45,9 +47,12 @@ def health_check():
                     break
 
                 # Can't check if an asyncio thread is alive, check heartbeat instead.
-                if (
+                asyncio_heartbeat = (
                     datetime.now() - update_time
-                ).total_seconds() > global_settings.asyncio_timeout:
+                ).total_seconds()
+
+                worst_heartbeat = max(worst_heartbeat, round(asyncio_heartbeat))
+                if asyncio_heartbeat > global_settings.asyncio_timeout:
                     rleb_log_error(
                         "HEALTH: {0} asyncio thread has stopped responding! ({1} crashes)".format(
                             asyncio_thread, global_settings.thread_crashes["asyncio"]
@@ -71,9 +76,11 @@ def health_check():
             # Monitor dead threads.
             dead_threads = []
             for thread in global_settings.threads_to_check:
-                if (
+                thread_heartbeat = (
                     datetime.now() - global_settings.threads_heartbeats[thread]
-                ).total_seconds() > global_settings.thread_timeout:
+                ).total_seconds()
+                worst_heartbeat = max(worst_heartbeat, round(thread_heartbeat))
+                if thread_heartbeat > global_settings.thread_timeout:
                     rleb_log_error(f"HEALTH: {thread} has stopped responding!")
                     global_settings.queues["alerts"].put(
                         (
@@ -92,6 +99,9 @@ def health_check():
                 break
 
             global_settings.threads_heartbeats["Health thread"] = datetime.now()
+
+            with open("heartbeat.txt", "w") as f:
+                f.write(str(worst_heartbeat))
 
             time.sleep(30)
         except Exception as e:
