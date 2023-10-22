@@ -299,7 +299,9 @@ def get_scheduled_posts(
                 Data.singleton().write_already_warned_scheduled_post(
                     log.id, datetime.now().timestamp()
                 )
-            global_settings.rleb_log_error(f"Failed to handle get_scheduled_posts: {str(e)}")
+            global_settings.rleb_log_error(
+                f"Failed to handle get_scheduled_posts: {str(e)}"
+            )
     return scheduled_posts
 
 
@@ -379,14 +381,19 @@ def task_alert_check():
         tasks = None
         get_weekly_events_ready = threading.Event()
         get_scheduled_posts_ready = threading.Event()
+
         def get_weekly_events_wrapper():
             global get_weekly_events_result
             get_weekly_events_result = get_weekly_events()
             get_weekly_events_ready.set()
+
         def get_scheduled_posts_wrapper():
             global get_scheduled_posts_result
-            get_scheduled_posts_result = get_scheduled_posts(already_warned_scheduled_posts)
+            get_scheduled_posts_result = get_scheduled_posts(
+                already_warned_scheduled_posts
+            )
             get_scheduled_posts_ready.set()
+
         weekly_events_thread = threading.Thread(target=get_weekly_events_wrapper)
         weekly_events_thread.start()
         scheduled_posts_thread = threading.Thread(target=get_scheduled_posts_wrapper)
@@ -398,7 +405,7 @@ def task_alert_check():
         if get_weekly_events_ready.is_set():
             tasks = get_weekly_events_result
         if get_scheduled_posts_ready.is_set():
-            new_scheduled_posts = get_scheduled_posts_result 
+            new_scheduled_posts = get_scheduled_posts_result
 
         if use_enhanced_logging:
             tasks_num = len(tasks) if tasks else "0"
@@ -413,7 +420,7 @@ def task_alert_check():
                 f"TASK CHECK: Skipping null posts. tasks={tasks}, schedule posts={new_scheduled_posts}. tasks is set={get_weekly_events_ready.is_set()}, scheduled posts is set={get_scheduled_posts_ready.is_set()}"
             )
             time.sleep(60 * 5)
-            continue 
+            continue
 
         # Gather tasks which don't have a scheduled post.
         unscheduled_tasks: list[Event] = []
@@ -517,7 +524,7 @@ def task_alert_check():
                         unscheduled_task.event_creator,
                         unscheduled_task.event_seconds_since_epoch,
                     )
-                )            
+                )
 
         # Break before waiting for the interval.
         if not global_settings.task_alert_check_enabled:
