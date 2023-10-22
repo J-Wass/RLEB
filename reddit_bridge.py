@@ -155,10 +155,10 @@ def monitor_modmail():
                     handle_flair_request(sub, item.author, item.body)
                     continue
 
-                # Filter modmail from removed comment reason.
+                # Filter modmail from removal reasons.
+                # Make sure replies to removal reasons aren't filtered (check if they have a parent).
                 if (
-                    subject == "Your comment was removed from /r/RocketLeagueEsports"
-                    or subject == "Your comment from RocketLeagueEsports was removed"
+                    subject in {"Your comment was removed from /r/RocketLeagueEsports", "Your comment from RocketLeagueEsports was removed", "Your submission was removed from /r/RocketLeagueEsports"}
                     and not item.parent_id
                 ):
                     continue
