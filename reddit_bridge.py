@@ -158,7 +158,12 @@ def monitor_modmail():
                 # Filter modmail from removal reasons.
                 # Make sure replies to removal reasons aren't filtered (check if they have a parent).
                 if (
-                    subject in {"Your comment was removed from /r/RocketLeagueEsports", "Your comment from RocketLeagueEsports was removed", "Your submission was removed from /r/RocketLeagueEsports"}
+                    subject
+                    in {
+                        "Your comment was removed from /r/RocketLeagueEsports",
+                        "Your comment from RocketLeagueEsports was removed",
+                        "Your submission was removed from /r/RocketLeagueEsports",
+                    }
                     and not item.parent_id
                 ):
                     continue

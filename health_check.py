@@ -48,9 +48,7 @@ def health_check():
                     break
 
                 # Can't check if an asyncio thread is alive, check heartbeat instead.
-                asyncio_heartbeat = (
-                    datetime.now() - update_time
-                ).total_seconds()
+                asyncio_heartbeat = (datetime.now() - update_time).total_seconds()
 
                 worst_heartbeat = max(worst_heartbeat, round(asyncio_heartbeat))
                 if asyncio_heartbeat > global_settings.asyncio_timeout:

@@ -79,7 +79,7 @@ class RLEsportsBot(discord.Client):
 
         # Create a mapping of discord usernames to discord ids for future use.
         for m in self.new_post_channel.members:
-            if m.discriminator == '0':
+            if m.discriminator == "0":
                 global_settings.user_names_to_ids[m.name.lower()] = m.id
             else:
                 global_settings.user_names_to_ids[
@@ -95,7 +95,6 @@ class RLEsportsBot(discord.Client):
             )
         else:
             await self.send_meme(self.bot_command_channel)
-
 
     async def send_meme(self, channel):
         meme_sub = global_settings.r.subreddit(self.meme_subreddit)
@@ -938,7 +937,6 @@ class RLEsportsBot(discord.Client):
             global_settings.rleb_log_info("DISCORD: Thread count was reset.")
             await self.add_response(message)
 
-
         elif discord_message.startswith("!search"):
             tokens = discord_message.split()
             target = ""
@@ -1260,7 +1258,7 @@ class RLEsportsBot(discord.Client):
                 await self.add_response(message)
                 return
 
-            if message.author.discriminator == '0':
+            if message.author.discriminator == "0":
                 user = message.author.name.lower()
             else:
                 user = message.author.name.lower() + "#" + message.author.discriminator

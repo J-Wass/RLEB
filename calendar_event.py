@@ -104,7 +104,9 @@ def process_calendar_events(calendar_event: CalendarEvent) -> None:
     ]
 
 
-def formatted_calendar_events(calendar_events: List[CalendarEvent], formatter: str) -> str:
+def formatted_calendar_events(
+    calendar_events: List[CalendarEvent], formatter: str
+) -> str:
     if formatter == "reddit":
         return reddit_formatted_calendar_events(calendar_events)
     elif formatter == "sheets":
@@ -125,7 +127,12 @@ def sheets_formatted_calendar_events(calendar_events: list[CalendarEvent]) -> st
     # 2 - Schedule Time & Update Time
     for event in sorted(calendar_events, key=lambda e: e.utc_datetime):
         lines[0] += event.title + ",,"
-        lines[1] += event.utc_datetime.strftime("%x") + "," + global_settings.DAYS[event.utc_datetime.weekday()] + ","
+        lines[1] += (
+            event.utc_datetime.strftime("%x")
+            + ","
+            + global_settings.DAYS[event.utc_datetime.weekday()]
+            + ","
+        )
         lines[2] += (
             "Schedule "
             + timestring(event.utc_datetime, event.utc_datetime, offset_hours=1)
