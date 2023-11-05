@@ -13,7 +13,7 @@ import math
 import health_check
 import global_settings
 import stdout
-from data_bridge import Data, Remindme
+from data_bridge import AutoUpdate, Data, Remindme
 from global_settings import sub, user_names_to_ids
 from liqui.team_lookup import handle_team_lookup
 from liqui.group_lookup import handle_group_lookup
@@ -1068,6 +1068,86 @@ class RLEsportsBot(discord.Client):
                 )
                 return
             await handle_bracket_lookup(url, message.channel, day_number)
+            await self.add_response(message)
+
+        elif discord_message.startswith("!autoupdate") and is_staff(message.author):
+            if not global_settings.is_discord_mod(message.author):
+                return
+
+            global_settings.rleb_log_info("DISCORD: Beginning autoupdate command")
+            tokens = discord_message.split()
+            
+            try:
+                # stop
+                if tokens[1] == "stop":
+                    global_settings.rleb_log_info("DISCORD: Stopping autoupdate")
+                    if not tokens[2]:
+                        await message.channel.send(
+                            "Couldn't understand that. Expected `!autoupdate stop [auto update id]`"
+                        )
+                        return
+                    auto_update_id = int(tokens[2])
+                    auto_update = Data.singleton().read_auto_update_from_id(auto_update_id)
+                    if not auto_update:
+                        await message.channel.send(
+                            "Couldn't find that auto update! Use `!autoupdate list` to view all auto update ids, and then use `!autoupdate stop id`."
+                        )
+                        return
+                    Data.singleton().delete_auto_update(auto_update)
+                    if auto_update_id in global_settings.auto_updates:
+                        del global_settings.auto_updates[auto_update_id]
+                    await message.channel.send(
+                        random.choice(global_settings.success_emojis)
+                        + " auto update stopped.\nUse `!autoupdate list` to see all updates."
+                    )
+                    await self.add_response(message)
+                    
+                    return
+                
+                # list
+                if tokens[1] == "list":
+                    global_settings.rleb_log_info("DISCORD: Listing autoupdate")
+                    auto_updates: list[AutoUpdate] = Data.singleton().read_all_auto_updates()
+                    output = ""
+                    for auto_update in auto_updates:
+                        seconds_ago = time.time() - auto_update.seconds_since_epoch
+                        hours_ago = round(seconds_ago / 3600, 1)
+                        reddit_url = auto_update.reddit_url.split("reddit.com/")[-1]
+                        output += f"[id {auto_update.auto_update_id}] - `{reddit_url}` started {hours_ago} hours ago\n"
+                    if len(auto_updates) == 0:
+                        output = "No auto updates are set. Use `!autoupdate [reddit-url] [liquipedia-url] [tourney_system] [options] [day]` to start one.\n"
+                    output += "Use `!autoupdate stop [id]` to stop an autoupdate."
+                    await message.channel.send(output)
+                    await self.add_response(message)
+                    return
+            
+                # start
+                global_settings.rleb_log_info("DISCORD: Starting autoupdate")
+                reddit_url = tokens[1]
+                liqui_url = tokens[2]
+                tourney_system = tokens[3]
+                options = tokens[4]
+                day_number = tokens[5]
+            except Exception as e:
+                await message.channel.send(
+                    "Couldn't understand that. Expected `!autoupdate [reddit-url] [liquipedia-url] [tourney_system] [options] [day]` OR `!autoupdate stop [auto update id]` OR `!autoupdate list`.\n\nExample command is `!autoupdate reddit.com/xyz liquipedia.com/xyz groups BracketRd1,Streams 1`.\n\nValid tourney_systems are groups, swiss, and bracket.\n\nValid options are bracketrd1, prizepool, streams and/or none.\nTo use more than 1 option, list together separated by commas with no space such as: bracketrd1,prizepool,stream."
+                )
+                return
+
+            # cleanup all user input
+            liqui_url = liqui_url.split("#")[0] if "#" in liqui_url else liqui_url
+            reddit_url = reddit_url.split("#")[0] if "#" in reddit_url else reddit_url
+            stringified_options = "-".join(sorted(options.lower().split(",")))
+            if stringified_options == "none":
+                template = tourney_system
+            else:
+                template = f"{tourney_system}-{stringified_options}"
+            auto_update = Data.singleton().write_auto_update(reddit_url, liqui_url, tourney_system, stringified_options)
+            global_settings.auto_updates[auto_update.auto_update_id] = auto_update
+            await message.channel.send(
+                random.choice(global_settings.success_emojis)
+                + " auto update set.\nUse `!autoupdate list` to see all updates."
+            )
             await self.add_response(message)
 
         elif discord_message.startswith("!makethread") and is_staff(message.author):

@@ -1,5 +1,6 @@
 # Utilities file. Houses methods that are used throughout rleb.
 import time
+from typing import Dict
 import praw
 import datetime
 import requests
@@ -10,7 +11,7 @@ import os
 from sys import platform
 import discord
 
-from data_bridge import Data, Remindme
+from data_bridge import AutoUpdate, Data, Remindme
 
 # This is bad code, don't tell anyone I wrote this.
 try:
@@ -69,6 +70,9 @@ last_datetime_crashed = {"asyncio": None, "thread": None}
 
 # Mapping of reminder_ids to Timers
 remindme_timers = {}
+
+# Mapping of auto_update_ids to autoupdates.
+auto_updates: Dict[int, AutoUpdate] = {}
 
 
 def _trigger_remindme(remindme: Remindme) -> None:

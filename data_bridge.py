@@ -32,7 +32,7 @@ class AutoUpdate:
     reddit_url: str
     liquipedia_url: str
     thread_type: str
-    thread_options: list[str]
+    thread_options: str
     seconds_since_epoch: int # start time
 
 
@@ -76,11 +76,7 @@ class Data(object):
         return connection
     
     def read_auto_update_from_id(self, auto_update_id: int) -> Optional[AutoUpdate]:
-        cache_key = f"auto_update_id-{auto_update_id}"
         with Data._db_lock:
-            if cache_key in Data._cache:
-                return Data._cache[cache_key]
-
             db = self.postgres_connection()
             cursor = db.cursor()
             cursor.execute("""SELECT * FROM auto_updates WHERE auto_update_id = %s""", (auto_update_id,))
@@ -88,15 +84,11 @@ class Data(object):
             if not r:
                 return None
             
-            auto_update = AutoUpdate(r[0],r[1],r[2],r[3],r[4],r[5],r[6])
-            Data._cache[cache_key] = auto_update
+            auto_update = AutoUpdate(r[0],r[1],r[2],r[3],r[4],r[5])
             return auto_update
 
     def read_auto_update_from_reddit_thread(self, reddit_thread_url: str) -> Optional[AutoUpdate]:
-        cache_key = f"reddit_thread_url-{reddit_thread_url}"
         with Data._db_lock:
-            if cache_key in Data._cache:
-                return Data._cache[cache_key]
 
             db = self.postgres_connection()
             cursor = db.cursor()
@@ -105,15 +97,11 @@ class Data(object):
             if not r:
                 return None
 
-            auto_update = AutoUpdate(r[0],r[1],r[2],r[3],r[4],r[5].split(","),r[6])
-            Data._cache[cache_key] = auto_update
+            auto_update = AutoUpdate(r[0],r[1],r[2],r[3],r[4],r[5])
             return auto_update
         
     def read_all_auto_updates(self) -> list[AutoUpdate]:
-        cache_key = f"auto_updates"
         with Data._db_lock:
-            if cache_key in Data._cache:
-                return Data._cache[cache_key]
 
             db = self.postgres_connection()
             cursor = db.cursor()
@@ -122,8 +110,7 @@ class Data(object):
 
             auto_updates: list[AutoUpdate] = []
             for r in rows:
-                auto_updates.append(AutoUpdate(r[0],r[1],r[2],r[3],r[4],r[5].split(","),r[6]))
-            Data._cache[cache_key] = auto_updates
+                auto_updates.append(AutoUpdate(r[0],r[1],r[2],r[3],r[4],r[5]))
             return auto_updates
         
     def delete_auto_update(self, auto_update: AutoUpdate) -> None:
@@ -135,23 +122,29 @@ class Data(object):
                 (auto_update.auto_update_id,),
             )
             db.commit()
-            del Data._cache[f"auto_update_id-{auto_update.auto_update_id}"]
-            del Data._cache[f"reddit_thread_url-{auto_update.reddit_url}"]
 
-    def write_auto_update(self, reddit_thread_url: str, liquipedia_url: str, thread_type: str, thread_options: list[str]) -> AutoUpdate:
+    def write_auto_update(self, reddit_thread_url: str, liquipedia_url: str, tourney_system: str, thread_options: str) -> AutoUpdate:
+        """
+        Writes a new autoupdate for an RL tourney.
+
+        Params:
+            reddit_thread_url: The thread that is being auto update.
+            liquipedia_url: The liquipedia url to read data from.
+            tourney_system: The type of thread to create (groups, swiss, bracket, etc)
+            thread_options: Additional options on top of the tourney system, delimited by -dashes-.
+        """
         seconds_since_epoch = datetime.now().timestamp()
         liquipedia_url = liquipedia_url.split("#")[0] if '#' in liquipedia_url else liquipedia_url
-        thread_option_stringified = ",".join(thread_options)
         with Data._db_lock:
             db = self.postgres_connection()
             cursor = db.cursor()
             cursor.execute(
-                """INSERT INTO auto_updates (reddit_thread_url, liquipedia_url, thread_type, thread_options, seconds_since_epoch) VALUES (%s, %s, %s, %s, %s) RETURNING remindme_id;""",
-                (reddit_thread_url, liquipedia_url, thread_type, thread_option_stringified, seconds_since_epoch),
+                """INSERT INTO auto_updates (reddit_thread_url, liquipedia_url, thread_type, thread_options, seconds_since_epoch) VALUES (%s, %s, %s, %s, %s) RETURNING auto_update_id;""",
+                (reddit_thread_url, liquipedia_url, tourney_system, thread_options, seconds_since_epoch),
             )
             auto_update_id = cursor.fetchone()[0]
             db.commit()
-        return AutoUpdate(auto_update_id, reddit_thread_url, liquipedia_url, thread_type, thread_options, seconds_since_epoch)
+        return AutoUpdate(auto_update_id, reddit_thread_url, liquipedia_url, tourney_system, thread_options, seconds_since_epoch)
 
     def write_remindme(
         self, user: str, message: str, elapsed_time: int, channel_id: int
