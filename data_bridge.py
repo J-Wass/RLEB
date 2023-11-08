@@ -34,6 +34,7 @@ class AutoUpdate:
     thread_type: str
     thread_options: str
     seconds_since_epoch: int # start time
+    day_number: int # represents first, second, third day (etc) of the tournament
 
 
 class Data(object):
@@ -84,7 +85,7 @@ class Data(object):
             if not r:
                 return None
             
-            auto_update = AutoUpdate(r[0],r[1],r[2],r[3],r[4],r[5])
+            auto_update = AutoUpdate(r[0],r[1],r[2],r[3],r[4],r[5],r[6])
             return auto_update
 
     def read_auto_update_from_reddit_thread(self, reddit_thread_url: str) -> Optional[AutoUpdate]:
@@ -97,7 +98,7 @@ class Data(object):
             if not r:
                 return None
 
-            auto_update = AutoUpdate(r[0],r[1],r[2],r[3],r[4],r[5])
+            auto_update = AutoUpdate(r[0],r[1],r[2],r[3],r[4],r[5],r[6])
             return auto_update
         
     def read_all_auto_updates(self) -> list[AutoUpdate]:
@@ -110,7 +111,7 @@ class Data(object):
 
             auto_updates: list[AutoUpdate] = []
             for r in rows:
-                auto_updates.append(AutoUpdate(r[0],r[1],r[2],r[3],r[4],r[5]))
+                auto_updates.append(AutoUpdate(r[0],r[1],r[2],r[3],r[4],r[5],r[6]))
             return auto_updates
         
     def delete_auto_update(self, auto_update: AutoUpdate) -> None:
@@ -123,7 +124,7 @@ class Data(object):
             )
             db.commit()
 
-    def write_auto_update(self, reddit_thread_url: str, liquipedia_url: str, tourney_system: str, thread_options: str) -> AutoUpdate:
+    def write_auto_update(self, reddit_thread_url: str, liquipedia_url: str, tourney_system: str, thread_options: str, day_number: int) -> AutoUpdate:
         """
         Writes a new autoupdate for an RL tourney.
 
@@ -132,6 +133,7 @@ class Data(object):
             liquipedia_url: The liquipedia url to read data from.
             tourney_system: The type of thread to create (groups, swiss, bracket, etc)
             thread_options: Additional options on top of the tourney system, delimited by -dashes-.
+            day_number: The first, second, third, (etc) day of the tournament.
         """
         seconds_since_epoch = datetime.now().timestamp()
         liquipedia_url = liquipedia_url.split("#")[0] if '#' in liquipedia_url else liquipedia_url
@@ -139,12 +141,12 @@ class Data(object):
             db = self.postgres_connection()
             cursor = db.cursor()
             cursor.execute(
-                """INSERT INTO auto_updates (reddit_thread_url, liquipedia_url, thread_type, thread_options, seconds_since_epoch) VALUES (%s, %s, %s, %s, %s) RETURNING auto_update_id;""",
-                (reddit_thread_url, liquipedia_url, tourney_system, thread_options, seconds_since_epoch),
+                """INSERT INTO auto_updates (reddit_thread_url, liquipedia_url, thread_type, thread_options, seconds_since_epoch, day_number) VALUES (%s, %s, %s, %s, %s, %s) RETURNING auto_update_id;""",
+                (reddit_thread_url, liquipedia_url, tourney_system, thread_options, seconds_since_epoch, day_number),
             )
             auto_update_id = cursor.fetchone()[0]
             db.commit()
-        return AutoUpdate(auto_update_id, reddit_thread_url, liquipedia_url, tourney_system, thread_options, seconds_since_epoch)
+        return AutoUpdate(auto_update_id, reddit_thread_url, liquipedia_url, tourney_system, thread_options, seconds_since_epoch, day_number)
 
     def write_remindme(
         self, user: str, message: str, elapsed_time: int, channel_id: int

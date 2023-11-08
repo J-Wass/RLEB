@@ -15,6 +15,7 @@ import global_settings
 from global_settings import rleb_log_info
 import health_check
 import tasks
+import autoupdater
 
 
 def start():
@@ -33,14 +34,17 @@ def start():
     direct_message_queue = Queue()
     # Used to send messages to #thread_creation on discord.
     thread_creation_queue = Queue()
+     # Used to send messages to #auto_updates on discord.
+    auto_update_queue = Queue()
 
-    # Place all queues in rleb_settings. These queues are used to communicate throughout the bot.
+    # Place all queues in rleb_settings. These queues are used to communicate from threads to discord.
     global_settings.queues["submissions"] = submissions_queue
     global_settings.queues["modmail"] = modmail_queue
     global_settings.queues["modlog"] = modlog_queue
     global_settings.queues["alerts"] = alert_queue
     global_settings.queues["direct_messages"] = direct_message_queue
     global_settings.queues["thread_creation"] = thread_creation_queue
+    global_settings.queues["auto_update"] = auto_update_queue
 
     # Initialize all threads.
     submissions_thread = Thread(target=read_new_submissions, name="Submissions thread")
@@ -55,6 +59,8 @@ def start():
     modlog_thread.setDaemon(True)
     task_alert_thread = Thread(target=tasks.task_alert_check, name="Task alert thread")
     task_alert_thread.setDaemon(True)
+    auto_update_thread = Thread(target=autoupdater.auto_update, name="Auto update thread")
+    auto_update_thread.setDaemon(True)
 
     # Stores all threads used to run the bot.
     threads = [
@@ -64,6 +70,7 @@ def start():
         health_thread,
         task_alert_thread,
         modlog_thread,
+        auto_update_thread
     ]
 
     # Setup each thread's heartbeat for future health checks.
@@ -99,6 +106,11 @@ def start():
         task_alert_thread.start()
 
     global_settings.refresh_remindmes()
+    global_settings.refresh_autoupdates()
+    rleb_log_info("Starting auto updater thread.")
+    auto_update_thread.start()
+
+        
 
     # Start the discord thread, running on main thread.
     rleb_log_info("Starting discord thread.")
