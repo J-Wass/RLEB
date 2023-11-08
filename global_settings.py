@@ -116,6 +116,7 @@ def refresh_remindmes() -> None:
     for remindme in remindmes:
         schedule_remindme(remindme)
 
+
 def refresh_autoupdates() -> bool:
     """
     Loads !autoupdate tasks from db.

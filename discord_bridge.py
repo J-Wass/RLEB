@@ -1096,6 +1096,8 @@ class RLEsportsBot(discord.Client):
                     Data.singleton().delete_auto_update(auto_update)
                     if auto_update_id in global_settings.auto_updates:
                         del global_settings.auto_updates[auto_update_id]
+                    if len(global_settings.auto_updates) == 0:
+                        global_settings.auto_update_enabled.clear()
                     await message.channel.send(
                         random.choice(global_settings.success_emojis)
                         + " auto update stopped.\nUse `!autoupdate list` to see all updates."
@@ -1155,7 +1157,7 @@ class RLEsportsBot(discord.Client):
                 options = tokens[4]
                 day_number = tokens[5]
 
-                            # cleanup all user input
+                # cleanup all user input
                 liqui_url = liqui_url.split("#")[0] if "#" in liqui_url else liqui_url
                 reddit_url = reddit_url.split("#")[0] if "#" in reddit_url else reddit_url
                 stringified_options = "-".join(sorted(options.lower().split(",")))
@@ -1169,6 +1171,7 @@ class RLEsportsBot(discord.Client):
                     random.choice(global_settings.success_emojis)
                     + " auto update set.\nUse `!autoupdate list` to see all updates. `!autoupdate help` for more."
                 )
+                global_settings.auto_update_enabled.set()
                 await self.add_response(message)
             except Exception as e:
                 await message.channel.send(

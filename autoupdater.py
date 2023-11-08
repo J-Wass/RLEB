@@ -8,7 +8,6 @@ def auto_update():
         global_settings.rleb_log_info("[AUTO UPDATER]: Starting auto update check.")
         
         auto_updates = global_settings.auto_updates.values()
-        breakpoint()
         for auto_update in auto_updates:
 
             day_number = auto_update.day_number
