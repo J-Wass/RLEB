@@ -1097,6 +1097,7 @@ class RLEsportsBot(discord.Client):
                     if auto_update_id in global_settings.auto_updates:
                         del global_settings.auto_updates[auto_update_id]
                     if len(global_settings.auto_updates) == 0:
+                        global_settings.rleb_log_info("DISCORD: Autoupdate thread cleared.")
                         global_settings.auto_update_enabled.clear()
                     await message.channel.send(
                         random.choice(global_settings.success_emojis)
@@ -1138,10 +1139,10 @@ class RLEsportsBot(discord.Client):
                         reddit_url = auto_update.reddit_url.split("reddit.com/")[-1]
                         embed = discord.Embed(
                             title=reddit_url,
-                            url="https://www.reddit.com/r/RocketLeagueEsports/about/log/",
+                            url=auto_update.reddit_url,
                             color=random.choice(global_settings.colors),
                         )
-                        embed.set_author(name=f"Auto Update ID {auto_update.auto_update_id}")
+                        embed.set_author(name=f"Auto Update ID - {auto_update.auto_update_id}")
                         embed.description = f"Started {hours_ago} hours ago"
                         await message.channel.send(embed=embed)
 

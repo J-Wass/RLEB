@@ -1,6 +1,8 @@
 import time
+
 import global_settings
 from liqui import diesel
+import data_bridge
 
 def auto_update():
     while True:
@@ -23,6 +25,18 @@ def auto_update():
 
             fresh_markdown = diesel.get_make_thread_markdown(liquipedia_url, template, day_number)
             reddit_url = auto_update.reddit_url
-            print(f"updating {reddit_url} with \n\n{fresh_markdown}")
+
+            # https://www.reddit.com/r/RLCSnewsTest/comments/17oh7u8/auto_update_test/
+            # becomes
+            # 17oh7u8
+            submission_id = reddit_url.split("/comments/")[1].split("/")[0]
+            submission = global_settings.r.submission(id=submission_id)
+            if not submission:
+                global_settings.rleb_log_error(f"Could not find reddit url to autoupdating {reddit_url}")
+                del global_settings.auto_updates[auto_update.auto_update_id]
+                data_bridge.Data.singleton().delete_auto_update(auto_update)
+
+            submission.edit(fresh_markdown)
+            print(f"updating {reddit_url}")
         
         time.sleep(60)
