@@ -1,4 +1,5 @@
 import time
+import prawcore
 
 import global_settings
 from liqui import diesel
@@ -32,16 +33,29 @@ def auto_update():
             # https://www.reddit.com/r/RLCSnewsTest/comments/17oh7u8/auto_update_test/
             # becomes
             # 17oh7u8
-            submission_id = reddit_url.split("/comments/")[1].split("/")[0]
-            submission = global_settings.r.submission(id=submission_id)
-            if not submission:
-                global_settings.rleb_log_error(
-                    f"Could not find reddit url to autoupdating {reddit_url}"
-                )
-                del global_settings.auto_updates[auto_update.auto_update_id]
-                data_bridge.Data.singleton().delete_auto_update(auto_update)
+            try:
+                submission_id = reddit_url.split("/comments/")[1].split("/")[0]
+                submission = global_settings.r.submission(id=submission_id)
+                if not submission:
+                    global_settings.rleb_log_error(
+                        f"Could not find reddit url to auto update {reddit_url}"
+                    )
+                    # todo uncomment this once the discord thread is consuming from it.
+                    #global_settings.queues["auto_update"].append(f"Could not find reddit url to auto update {reddit_url}")
+                    del global_settings.auto_updates[auto_update.auto_update_id]
+                    data_bridge.Data.singleton().delete_auto_update(auto_update)
 
-            submission.edit(fresh_markdown)
-            print(f"updating {reddit_url}")
+                if submission.selftext == fresh_markdown:
+                    continue
+
+                global_settings.rleb_log_info(f"[AUTO UPDATER]: Updating {auto_update.reddit_url}")
+                
+                submission.edit(fresh_markdown)
+            except prawcore.exceptions.ServerError as e:
+                pass  # Reddit server borked, wait an interval and try again
+            except prawcore.exceptions.RequestException as e:
+                time.sleep(60)  # timeout error, just wait awhile and try again
+            except Exception as e:
+                global_settings.rleb_log_error(f"[AUTO UPDATER]: Failed to auto update reddit thread {auto_update.reddit_url}. {str(e)}")
 
         time.sleep(60)
