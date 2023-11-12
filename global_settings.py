@@ -134,7 +134,6 @@ def refresh_autoupdates() -> bool:
         auto_update_enabled.set()
 
 
-
 # REDDIT
 reddit_enabled = True
 target_sub = "rocketleagueesports" if RUNNING_MODE == "production" else "rlcsnewstest"
