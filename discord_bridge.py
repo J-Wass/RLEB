@@ -13,7 +13,7 @@ import math
 import health_check
 import global_settings
 import stdout
-from data_bridge import Data, Remindme
+from data_bridge import AutoUpdate, Data, Remindme
 from global_settings import sub, user_names_to_ids
 from liqui.team_lookup import handle_team_lookup
 from liqui.group_lookup import handle_group_lookup
@@ -1069,6 +1069,157 @@ class RLEsportsBot(discord.Client):
                 return
             await handle_bracket_lookup(url, message.channel, day_number)
             await self.add_response(message)
+
+        elif discord_message.startswith("!autoupdate") and is_staff(message.author):
+            if not global_settings.is_discord_mod(message.author):
+                return
+
+            global_settings.rleb_log_info("DISCORD: Beginning autoupdate command")
+            tokens = discord_message.split()
+
+            try:
+                # !autoupdate stop id
+                if tokens[1] == "stop":
+                    global_settings.rleb_log_info("DISCORD: Stopping autoupdate")
+                    if not tokens[2]:
+                        await message.channel.send(
+                            "Couldn't understand that. Expected `!autoupdate stop [auto update id]`"
+                        )
+                        return
+                    auto_update_id = int(tokens[2])
+                    auto_update = Data.singleton().read_auto_update_from_id(
+                        auto_update_id
+                    )
+                    if not auto_update:
+                        await message.channel.send(
+                            "Couldn't find that auto update! Use `!autoupdate list` to view all auto update ids, and then use `!autoupdate stop id`."
+                        )
+                        return
+                    Data.singleton().delete_auto_update(auto_update)
+                    if auto_update_id in global_settings.auto_updates:
+                        del global_settings.auto_updates[auto_update_id]
+                    if len(global_settings.auto_updates) == 0:
+                        global_settings.rleb_log_info(
+                            "DISCORD: Autoupdate thread cleared."
+                        )
+                        global_settings.auto_update_enabled.clear()
+                    await message.channel.send(
+                        random.choice(global_settings.success_emojis)
+                        + " auto update stopped.\nUse `!autoupdate list` to see all updates."
+                    )
+                    await self.add_response(message)
+
+                    return
+
+                # !autoupdate help
+                if tokens[1] == "help":
+                    await message.channel.send("**To start autoupdating:**")
+                    await message.channel.send(
+                        "  `!autoupdate [reddit url] [liquipedia url] [tourney system] [options] [day]`"
+                    )
+                    asyncio.sleep(1)
+                    await message.channel.send(
+                        "    `reddit url` = the url of the already made game thread that needs to be updated"
+                    )
+                    await message.channel.send(
+                        "    `liquipedia url` = the url of the liquipedia page related to the event of the post"
+                    )
+                    await message.channel.send(
+                        "    `tourney system` = one of the following: groups, swiss, or bracket"
+                    )
+                    await message.channel.send(
+                        "    `options` = any of the following: prizepool, streams (for team streams), bracketrd1 (the first round of a bracket), or none"
+                    )
+                    await message.channel.send(
+                        "      You can combine options with commas such as: prizepool,streams,bracketrd1"
+                    )
+                    await message.channel.send(
+                        "    `day` = the day of the tournament on liquipedia that the post is for"
+                    )
+                    asyncio.sleep(1)
+                    await message.channel.send(
+                        "**To list running auto updates:** `!autoupdate list`"
+                    )
+                    await message.channel.send(
+                        "**To stop an auto update:** `!autoupdate stop [auto update id]` (id can be found in `autoupdate list`)"
+                    )
+                    await self.add_response(message)
+                    return
+
+                # !autoupdate list
+                if tokens[1] == "list":
+                    global_settings.rleb_log_info("DISCORD: Listing autoupdate")
+                    auto_updates: list[
+                        AutoUpdate
+                    ] = Data.singleton().read_all_auto_updates()
+                    if len(auto_updates) == 0:
+                        await message.channel.send(
+                            "No auto updates are set. Use `!autoupdate [reddit-url] [liquipedia-url] [tourney_system] [options] [day]` to start one. `!autoupdate help` for more.\n"
+                        )
+                        await self.add_response(message)
+                        return
+
+                    for auto_update in sorted(
+                        auto_updates, key=lambda x: x.seconds_since_epoch
+                    ):
+                        seconds_ago = time.time() - auto_update.seconds_since_epoch
+                        hours_ago = round(seconds_ago / 3600, 1)
+                        reddit_url = auto_update.reddit_url.split("reddit.com/")[-1]
+                        embed = discord.Embed(
+                            title=reddit_url,
+                            url=auto_update.reddit_url,
+                            color=random.choice(global_settings.colors),
+                        )
+                        embed.set_author(
+                            name=f"Auto Update ID - {auto_update.auto_update_id}"
+                        )
+                        embed.description = f"Started {hours_ago} hours ago"
+                        await message.channel.send(embed=embed)
+
+                    await message.channel.send(
+                        "Use `!autoupdate stop [id]` to stop an autoupdate. `!autoupdate help` for more."
+                    )
+                    await self.add_response(message)
+                    return
+
+                # !autoupdate reddit_url liqui_url tourney_system tourney_options day_number
+                global_settings.rleb_log_info("DISCORD: Starting autoupdate")
+                reddit_url = tokens[1]
+                liqui_url = tokens[2]
+                tourney_system = tokens[3]
+                options = tokens[4]
+                day_number = tokens[5]
+
+                # cleanup all user input
+                liqui_url = liqui_url.split("#")[0] if "#" in liqui_url else liqui_url
+                reddit_url = (
+                    reddit_url.split("#")[0] if "#" in reddit_url else reddit_url
+                )
+                stringified_options = "-".join(sorted(options.lower().split(",")))
+                if stringified_options == "none":
+                    template = tourney_system
+                else:
+                    template = f"{tourney_system}-{stringified_options}"
+                auto_update = Data.singleton().write_auto_update(
+                    reddit_url,
+                    liqui_url,
+                    tourney_system,
+                    stringified_options,
+                    day_number,
+                )
+                global_settings.auto_updates[auto_update.auto_update_id] = auto_update
+                await message.channel.send(
+                    random.choice(global_settings.success_emojis)
+                    + " auto update set.\nUse `!autoupdate list` to see all updates. `!autoupdate help` for more."
+                )
+                global_settings.auto_update_enabled.set()
+                await self.add_response(message)
+            except Exception as e:
+                await message.channel.send(
+                    "Couldn't understand that. Use `!autoupdate help`."
+                )
+                global_settings.rleb_log_info(f"Failed to parse autoupdate: {str(e)}")
+                return
 
         elif discord_message.startswith("!makethread") and is_staff(message.author):
             if not global_settings.is_discord_mod(message.author):

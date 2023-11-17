@@ -1,5 +1,7 @@
 # Utilities file. Houses methods that are used throughout rleb.
+import threading
 import time
+from typing import Dict
 import praw
 import datetime
 import requests
@@ -10,7 +12,7 @@ import os
 from sys import platform
 import discord
 
-from data_bridge import Data, Remindme
+from data_bridge import AutoUpdate, Data, Remindme
 
 # This is bad code, don't tell anyone I wrote this.
 try:
@@ -70,6 +72,13 @@ last_datetime_crashed = {"asyncio": None, "thread": None}
 # Mapping of reminder_ids to Timers
 remindme_timers = {}
 
+# Mapping of auto_update_ids to autoupdates.
+auto_updates: Dict[int, AutoUpdate] = {}
+
+# The number of times the auto update thread didn't find anything to autoupdate.
+auto_update_empties = 0
+auto_update_enabled = threading.Event()
+
 
 def _trigger_remindme(remindme: Remindme) -> None:
     """Executes a remindme and removes it from the db."""
@@ -102,10 +111,27 @@ def refresh_remindmes() -> None:
         timer.cancel()
     remindme_timers.clear()
 
-    # Create new timers from db.
+    # Create fresh timers from db.
     remindmes = Data.singleton().read_remindmes()
     for remindme in remindmes:
         schedule_remindme(remindme)
+
+
+def refresh_autoupdates() -> bool:
+    """
+    Loads !autoupdate tasks from db.
+
+    Returns True if any autoupdates were found.
+    """
+    # Delete old auto updates.
+    auto_updates.clear()
+
+    # Create fresh auto updates from db.
+    autoupdates = Data.singleton().read_all_auto_updates()
+    for autoupdate in autoupdates:
+        auto_updates[autoupdate.auto_update_id] = autoupdate
+    if len(autoupdates):
+        auto_update_enabled.set()
 
 
 # REDDIT
