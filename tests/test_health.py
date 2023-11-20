@@ -42,6 +42,7 @@ class TestHealth(RLEBTestCase):
         global_settings.queues["alerts"] = Queue()
 
         global_settings.threads_heartbeats["Task alert thread"] =  datetime.now()
+        global_settings.threads_heartbeats["Auto update thread"] =  datetime.now()
 
     def test_alerts_on_dead_asyncio_thread(self):
         global_settings.asyncio_health_check_enabled = True

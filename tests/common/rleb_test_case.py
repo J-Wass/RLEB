@@ -59,6 +59,7 @@ class RLEBTestCase(unittest.TestCase):
         mock_cursor.execute.return_value = ""
         mock_cursor.fetchall.return_value = [(":NRG:",), (":G2:",), (":C9:",)]
 
+        self.mock_db.return_value.__enter__.return_value.cursor.return_value = mock_cursor
         self.mock_db.return_value.cursor.return_value = mock_cursor
 
     def stub_praw(self):

@@ -74,56 +74,55 @@ class Data(object):
         return connection
 
     def read_auto_update_from_id(self, auto_update_id: int) -> Optional[AutoUpdate]:
-        db = self.postgres_connection()
-        cursor = db.cursor()
-        cursor.execute(
-            """SELECT * FROM auto_updates WHERE auto_update_id = %s""",
-            (auto_update_id,),
-        )
-        r = cursor.fetchone()
-        if not r:
-            return None
+        with self.postgres_connection() as db:
+            cursor = db.cursor()
+            cursor.execute(
+                """SELECT * FROM auto_updates WHERE auto_update_id = %s""",
+                (auto_update_id,),
+            )
+            r = cursor.fetchone()
+            if not r:
+                return None
 
-        auto_update = AutoUpdate(r[0], r[1], r[2], r[3], r[4], r[5], r[6])
-        return auto_update
+            auto_update = AutoUpdate(r[0], r[1], r[2], r[3], r[4], r[5], r[6])
+            return auto_update
 
     def read_auto_update_from_reddit_thread(
         self, reddit_thread_url: str
     ) -> Optional[AutoUpdate]:
-        db = self.postgres_connection()
-        cursor = db.cursor()
-        cursor.execute(
-            """SELECT * FROM auto_updates WHERE reddit_thread_url = %s""",
-            (reddit_thread_url,),
-        )
-        r = cursor.fetchone()
-        if not r:
-            return None
+        with self.postgres_connection() as db:
+            cursor = db.cursor()
+            cursor.execute(
+                """SELECT * FROM auto_updates WHERE reddit_thread_url = %s""",
+                (reddit_thread_url,),
+            )
+            r = cursor.fetchone()
+            if not r:
+                return None
 
-        auto_update = AutoUpdate(r[0], r[1], r[2], r[3], r[4], r[5], r[6])
-        return auto_update
+            auto_update = AutoUpdate(r[0], r[1], r[2], r[3], r[4], r[5], r[6])
+            return auto_update
 
     def read_all_auto_updates(self) -> list[AutoUpdate]:
-        db = self.postgres_connection()
-        cursor = db.cursor()
-        cursor.execute("""SELECT * FROM auto_updates""")
-        rows = cursor.fetchall()
+        with self.postgres_connection() as db:
+            cursor = db.cursor()
+            cursor.execute("""SELECT * FROM auto_updates""")
+            rows = cursor.fetchall()
 
-        auto_updates: list[AutoUpdate] = []
-        for r in rows:
-            auto_updates.append(
-                AutoUpdate(r[0], r[1], r[2], r[3], r[4], r[5], r[6])
-            )
-        return auto_updates
+            auto_updates: list[AutoUpdate] = []
+            for r in rows:
+                auto_updates.append(
+                    AutoUpdate(r[0], r[1], r[2], r[3], r[4], r[5], r[6])
+                )
+            return auto_updates
 
     def delete_auto_update(self, auto_update: AutoUpdate) -> None:
-        db = self.postgres_connection()
-        cursor = db.cursor()
-        cursor.execute(
-            """DELETE FROM auto_updates WHERE auto_update_id = %s;""",
-            (auto_update.auto_update_id,),
-        )
-        db.commit()
+        with self.postgres_connection() as db:
+            cursor = db.cursor()
+            cursor.execute(
+                """DELETE FROM auto_updates WHERE auto_update_id = %s;""",
+                (auto_update.auto_update_id,),
+            )
 
     def write_auto_update(
         self,
@@ -147,21 +146,20 @@ class Data(object):
         liquipedia_url = (
             liquipedia_url.split("#")[0] if "#" in liquipedia_url else liquipedia_url
         )
-        db = self.postgres_connection()
-        cursor = db.cursor()
-        cursor.execute(
-            """INSERT INTO auto_updates (reddit_thread_url, liquipedia_url, thread_type, thread_options, seconds_since_epoch, day_number) VALUES (%s, %s, %s, %s, %s, %s) RETURNING auto_update_id;""",
-            (
-                reddit_thread_url,
-                liquipedia_url,
-                tourney_system,
-                thread_options,
-                seconds_since_epoch,
-                day_number,
-            ),
-        )
-        auto_update_id = cursor.fetchone()[0]
-        db.commit()
+        with self.postgres_connection() as db:
+            cursor = db.cursor()
+            cursor.execute(
+                """INSERT INTO auto_updates (reddit_thread_url, liquipedia_url, thread_type, thread_options, seconds_since_epoch, day_number) VALUES (%s, %s, %s, %s, %s, %s) RETURNING auto_update_id;""",
+                (
+                    reddit_thread_url,
+                    liquipedia_url,
+                    tourney_system,
+                    thread_options,
+                    seconds_since_epoch,
+                    day_number,
+                ),
+            )
+            auto_update_id = cursor.fetchone()[0]
         return AutoUpdate(
             auto_update_id,
             reddit_thread_url,
@@ -179,96 +177,91 @@ class Data(object):
         target_timestamp = elapsed_time + time.time()
         remindme_id = -1
 
-        db = self.postgres_connection()
-        cursor = db.cursor()
-        cursor.execute(
-            """INSERT INTO remindme (discord_username, remindme_message, channel_id, trigger_timestamp) VALUES (%s, %s, %s, %s) RETURNING remindme_id;""",
-            (user, message, channel_id, target_timestamp),
-        )
-        remindme_id = cursor.fetchone()[0]
-        db.commit()
+        with self.postgres_connection() as db:
+            cursor = db.cursor()
+            cursor.execute(
+                """INSERT INTO remindme (discord_username, remindme_message, channel_id, trigger_timestamp) VALUES (%s, %s, %s, %s) RETURNING remindme_id;""",
+                (user, message, channel_id, target_timestamp),
+            )
+            remindme_id = cursor.fetchone()[0]
         return Remindme(remindme_id, user, message, target_timestamp, channel_id)
 
     def delete_remindme(self, remindme_id: int) -> None:
         """Deletes a remindme notification from db. Should be used after a remindme is triggered."""
-        db = self.postgres_connection()
-        cursor = db.cursor()
-        cursor.execute(
-            """DELETE FROM remindme WHERE remindme_id = %s;""",
-            (remindme_id,),
-        )
-        db.commit()
+        with self.postgres_connection() as db:
+            cursor = db.cursor()
+            cursor.execute(
+                """DELETE FROM remindme WHERE remindme_id = %s;""",
+                (remindme_id,),
+            )
 
     def read_remindmes(self) -> list[Remindme]:
         """Returns all remindmes stored in the db."""
-        db = self.postgres_connection()
-        cursor = db.cursor()
-        cursor.execute("""SELECT * FROM remindme""")
-        remindmes = []
-        for r in list(cursor.fetchall()):
-            # Unpack the sql columns into the Remindme object.
-            remindmes.append(Remindme(r[0], r[1], r[2], r[4], r[3]))
-        return remindmes
+        with self.postgres_connection() as db:
+            cursor = db.cursor()
+            cursor.execute("""SELECT * FROM remindme""")
+            remindmes = []
+            for r in list(cursor.fetchall()):
+                # Unpack the sql columns into the Remindme object.
+                remindmes.append(Remindme(r[0], r[1], r[2], r[4], r[3]))
+            return remindmes
 
     def write_already_warned_scheduled_post(
         self, log_id: int, seconds_since_epoch: int
     ) -> None:
-        db = self.postgres_connection()
-        cursor = db.cursor()
-        cursor.execute(
-            """INSERT INTO already_warned_scheduled_posts VALUES (%s, %s);""",
-            (log_id, seconds_since_epoch),
-        )
-        db.commit()
+        with self.postgres_connection() as db:
+            cursor = db.cursor()
+            cursor.execute(
+                """INSERT INTO already_warned_scheduled_posts VALUES (%s, %s);""",
+                (log_id, seconds_since_epoch),
+            )
 
     def read_already_warned_scheduled_posts(
         self, min_seconds_since_epoch: int
     ) -> list[int]:
         """Returns a list of log ids for already warned scheduled posts."""
-        db = self.postgres_connection()
-        cursor = db.cursor()
-        cursor.execute(
-            """SELECT id FROM already_warned_scheduled_posts WHERE seconds_since_epoch > %s;""",
-            (min_seconds_since_epoch,),
-        )
-        post_ids = list(map(lambda x: x[0], cursor.fetchall()))
-        return post_ids
+        with self.postgres_connection() as db:
+            cursor = db.cursor()
+            cursor.execute(
+                """SELECT id FROM already_warned_scheduled_posts WHERE seconds_since_epoch > %s;""",
+                (min_seconds_since_epoch,),
+            )
+            post_ids = list(map(lambda x: x[0], cursor.fetchall()))
+            return post_ids
 
     def write_already_warned_confirmed_post(
         self, log_id: int, seconds_since_epoch: int
     ) -> None:
-        db = self.postgres_connection()
-        cursor = db.cursor()
-        cursor.execute(
-            """INSERT INTO already_confirmed_scheduled_posts VALUES (%s, %s);""",
-            (log_id, seconds_since_epoch),
-        )
-        db.commit()
+        with self.postgres_connection() as db:
+            cursor = db.cursor()
+            cursor.execute(
+                """INSERT INTO already_confirmed_scheduled_posts VALUES (%s, %s);""",
+                (log_id, seconds_since_epoch),
+            )
 
     def read_already_confirmed_scheduled_posts(
         self, min_seconds_since_epoch: int
     ) -> list[int]:
         """Returns a list of log ids for already confirmed scheduled posts."""
-        db = self.postgres_connection()
-        cursor = db.cursor()
-        cursor.execute(
-            """SELECT post_id FROM already_confirmed_scheduled_posts WHERE seconds_since_epoch > %s;""",
-            (min_seconds_since_epoch,),
-        )
-        post_ids = list(map(lambda x: x[0], cursor.fetchall()))
-        return post_ids
+        with self.postgres_connection() as db:
+            cursor = db.cursor()
+            cursor.execute(
+                """SELECT post_id FROM already_confirmed_scheduled_posts WHERE seconds_since_epoch > %s;""",
+                (min_seconds_since_epoch,),
+            )
+            post_ids = list(map(lambda x: x[0], cursor.fetchall()))
+            return post_ids
 
     def write_to_logs(self, logs: list[str]) -> None:
         """ "Writes all logs to the database."""
-        db = self.postgres_connection()
-        cursor = db.cursor()
-        memory_logs_tuples = list(map(lambda x: (x,), logs))
-        psycopg2.extras.execute_values(
-            cursor, "INSERT INTO logs VALUES %s", memory_logs_tuples
-        )
-        db.commit()
-
-        Data._empty_cache("logs")
+        with self.postgres_connection() as db:
+            cursor = db.cursor()
+            memory_logs_tuples = list(map(lambda x: (x,), logs))
+            cursor.execute(
+                "INSERT INTO logs VALUES %s",
+                (memory_logs_tuples,),
+            )
+            Data._empty_cache("logs")
 
     def read_logs(self) -> list[str]:
         """ Reads logs to the database."""
@@ -276,22 +269,21 @@ class Data(object):
         if "logs" in Data._cache:
             return Data._cache["logs"]
 
-        db = self.postgres_connection()
-        cursor = db.cursor()
-        cursor.execute("SELECT * FROM logs ORDER BY log DESC;")
-        all_logs = cursor.fetchall()
-        Data._cache["logs"] = all_logs
-        return all_logs
+        with self.postgres_connection() as db:
+            cursor = db.cursor()
+            cursor.execute("SELECT * FROM logs ORDER BY log DESC;")
+            all_logs = cursor.fetchall()
+            Data._cache["logs"] = all_logs
+            return all_logs
 
     def add_triflair(self, flair_to_add) -> list[str]:
         """ Yeets a triflair out of the database."""
-        db = self.postgres_connection()
-        cursor = db.cursor()
-        # NOTE: For legacy reasons, triflairs are called "dualflairs" in postgres.
-        cursor.execute("""INSERT INTO dualflairs VALUES (%s)""", (flair_to_add,))
-        db.commit()
+        with self.postgres_connection() as db:
+            cursor = db.cursor()
+            # NOTE: For legacy reasons, triflairs are called "dualflairs" in postgres.
+            cursor.execute("""INSERT INTO dualflairs VALUES (%s)""", (flair_to_add,))
 
-        Data._empty_cache("triflair")
+            Data._empty_cache("triflair")
 
     def read_triflairs(self) -> list[str]:
         """ Reads all the triflair from the database."""
@@ -299,20 +291,19 @@ class Data(object):
         if "triflair" in Data._cache:
             return Data._cache["triflair"]
 
-        db = self.postgres_connection()
-        cursor = db.cursor()
-        cursor.execute("SELECT * FROM dualflairs;")
-        all_dualflairs = cursor.fetchall()
-        Data._cache["dualflairs"] = all_dualflairs
-        return all_dualflairs
+        with self.postgres_connection() as db:
+            cursor = db.cursor()
+            cursor.execute("SELECT * FROM dualflairs;")
+            all_dualflairs = cursor.fetchall()
+            Data._cache["dualflairs"] = all_dualflairs
+            return all_dualflairs
 
     def yeet_triflair(self, flair_to_remove) -> list[str]:
         """ Yeets a triflair out of the database."""
-        db = self.postgres_connection()
-        cursor = db.cursor()
-        cursor.execute(
-            "DELETE FROM dualflairs WHERE dualflair = %s", (flair_to_remove,)
-        )
-        db.commit()
+        with self.postgres_connection() as db:
+            cursor = db.cursor()
+            cursor.execute(
+                "DELETE FROM dualflairs WHERE dualflair = %s", (flair_to_remove,)
+            )
 
-        Data._empty_cache("triflair")
+            Data._empty_cache("triflair")
