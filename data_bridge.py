@@ -256,11 +256,7 @@ class Data(object):
         """ "Writes all logs to the database."""
         with self.postgres_connection() as db:
             cursor = db.cursor()
-            memory_logs_tuples = list(map(lambda x: (x,), logs))
-            cursor.execute(
-                "INSERT INTO logs VALUES %s",
-                (memory_logs_tuples,),
-            )
+            cursor.executemany("INSERT INTO logs VALUES (%s);",[(log,) for log in logs])
             Data._empty_cache("logs")
 
     def read_logs(self) -> list[str]:
