@@ -1,3 +1,4 @@
+from datetime import datetime
 import time
 import prawcore
 
@@ -8,12 +9,12 @@ import data_bridge
 
 def auto_update():
     while True:
-        global_settings.auto_update_enabled.wait()  # Wait for there be autoupdates to check.
-        global_settings.rleb_log_info("[AUTO UPDATER]: Starting auto update check.")
+        global_settings.threads_heartbeats["Auto update thread"] = datetime.now()
 
         auto_updates = global_settings.auto_updates.values()
+        if auto_updates:
+            global_settings.rleb_log_info("[AUTO UPDATER]: Starting auto update check.")
         for auto_update in auto_updates:
-
             day_number = auto_update.day_number
             liquipedia_url = auto_update.liquipedia_url
 
@@ -28,12 +29,17 @@ def auto_update():
             fresh_markdown = diesel.get_make_thread_markdown(
                 liquipedia_url, template, day_number
             )
+
+            # If markdown is the same as last time, don't write to reddit
+            if global_settings.auto_update_markdown[liquipedia_url] == fresh_markdown:
+                continue
+
             reddit_url = auto_update.reddit_url
 
-            # https://www.reddit.com/r/RLCSnewsTest/comments/17oh7u8/auto_update_test/
-            # becomes
-            # 17oh7u8
             try:
+                # https://www.reddit.com/r/RLCSnewsTest/comments/17oh7u8/auto_update_test/
+                # becomes
+                # 17oh7u8
                 submission_id = reddit_url.split("/comments/")[1].split("/")[0]
                 submission = global_settings.r.submission(id=submission_id)
                 if not submission:
@@ -51,6 +57,7 @@ def auto_update():
                 global_settings.rleb_log_info(f"[AUTO UPDATER]: Updating {auto_update.reddit_url}")
                 
                 submission.edit(fresh_markdown)
+                global_settings.auto_update_markdown[liquipedia_url] = fresh_markdown
             except prawcore.exceptions.ServerError as e:
                 pass  # Reddit server borked, wait an interval and try again
             except prawcore.exceptions.RequestException as e:

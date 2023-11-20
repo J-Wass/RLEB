@@ -54,7 +54,7 @@ asyncio_threads_heartbeats = {
 }
 
 # List of threads to check for heartbeat in health check.
-threads_to_check = {"Task alert thread"}
+threads_to_check = {"Task alert thread", "Auto update thread"}
 
 # Mapping of each thread to the last time it sent a heartbeat out. Used to determine if a thread has crashed.
 threads_heartbeats = {}
@@ -77,7 +77,9 @@ auto_updates: Dict[int, AutoUpdate] = {}
 
 # The number of times the auto update thread didn't find anything to autoupdate.
 auto_update_empties = 0
-auto_update_enabled = threading.Event()
+
+# Caches reddit markdown for liqui url -> markdown.
+auto_update_markdown: Dict[str, str] = {}
 
 
 def _trigger_remindme(remindme: Remindme) -> None:
@@ -130,8 +132,6 @@ def refresh_autoupdates() -> bool:
     autoupdates = Data.singleton().read_all_auto_updates()
     for autoupdate in autoupdates:
         auto_updates[autoupdate.auto_update_id] = autoupdate
-    if len(autoupdates):
-        auto_update_enabled.set()
 
 
 # REDDIT
@@ -299,7 +299,7 @@ logging_enabled = True
 
 
 def _flush_memory_log():
-    """Write all logs from memory to db. MUST HAVE LOG_LOCK."""
+    """Write all logs from memory to db."""
     if RUNNING_MODE == "local":
         return
     Data.singleton().write_to_logs(memory_log)
@@ -307,7 +307,6 @@ def _flush_memory_log():
 
 
 memory_log = []
-log_lock = Lock()  # Used when writing to the memory_log
 
 
 def _rleb_log(message, should_flush=False) -> None:
@@ -315,10 +314,9 @@ def _rleb_log(message, should_flush=False) -> None:
     print("{0} UTC {1}".format(datetime.utcnow(), message))
     if not logging_enabled:
         return
-    with log_lock:
-        memory_log.append("{0} UTC {1}".format(datetime.utcnow(), message))
-        if len(memory_log) > 100 or should_flush:
-            _flush_memory_log()
+    memory_log.append("{0} UTC {1}".format(datetime.utcnow(), message))
+    if len(memory_log) > 100 or should_flush:
+        _flush_memory_log()
 
 
 def rleb_log_info(message: str, should_flush: bool = False) -> None:
