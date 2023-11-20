@@ -315,7 +315,7 @@ def _rleb_log(message, should_flush=False) -> None:
     if not logging_enabled:
         return
     memory_log.append("{0} UTC {1}".format(datetime.utcnow(), message))
-    if len(memory_log) > 100 or should_flush:
+    if len(memory_log) > 0 or should_flush:
         _flush_memory_log()
 
 
