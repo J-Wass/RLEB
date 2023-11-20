@@ -28,7 +28,6 @@ class TestDualFlairs(RLEBTestCase):
         global global_settings
         global rleb_reddit
         from triflairs import handle_flair_request
-        from reddit_bridge import monitor_modmail
         import global_settings
 
         # Dualflairs spams the console so much.

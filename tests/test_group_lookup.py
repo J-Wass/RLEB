@@ -58,7 +58,7 @@ class TestGroupLookup(RLEBAsyncTestCase):
         mock_channel = mock.Mock(spec=discord.TextChannel)
         await group_lookup.handle_group_lookup("bad url", mock_channel)
 
-        self.assertEquals(
+        self.assertEqual(
             mock_channel.send.mock_calls,
             [
                 mock.call("Building group table from Diesel..."),

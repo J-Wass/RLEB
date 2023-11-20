@@ -4,7 +4,6 @@ from typing import Optional
 import psycopg2
 import os
 from dataclasses import dataclass
-from psycopg2.sql import connections
 
 # This is bad code, don't tell anyone I wrote this.
 try:
