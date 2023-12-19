@@ -31,7 +31,7 @@ def auto_update():
             )
 
             # If markdown is the same as last time, don't write to reddit
-            if global_settings.auto_update_markdown[liquipedia_url] == fresh_markdown:
+            if liquipedia_url in global_settings.auto_update_markdown and global_settings.auto_update_markdown[liquipedia_url] == fresh_markdown:
                 continue
 
             reddit_url = auto_update.reddit_url
