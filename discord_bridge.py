@@ -60,7 +60,7 @@ class RLEsportsBot(discord.Client):
 
     async def on_ready(self):
         """Indicate bot has joined the discord."""
-        global_settings.rleb_log_info("DISCORD: Logged on as {0}".format(self.user))
+        global_settings.rleb_log_info("[DISCORD]: Logged on as {0}".format(self.user))
         self.new_post_channel = self.get_channel(global_settings.NEW_POSTS_CHANNEL_ID)
         self.modmail_channel = self.get_channel(global_settings.MODMAIL_CHANNEL_ID)
         self.bot_command_channel = self.get_channel(
@@ -135,7 +135,7 @@ class RLEsportsBot(discord.Client):
                 while not global_settings.queues["submissions"].empty():
                     submission = global_settings.queues["submissions"].get()
                     global_settings.rleb_log_info(
-                        "DISCORD: Received submission id {0}: {1}".format(
+                        "[DISCORD]: Received submission id {0}: {1}".format(
                             submission, submission.title
                         )
                     )
@@ -173,7 +173,7 @@ class RLEsportsBot(discord.Client):
                     )
                     break
                 global_settings.rleb_log_error(
-                    "Discord: Submissions asyncio thread failed - {0}".format(e)
+                    "[DISCORD]: Submissions asyncio thread failed - {0}".format(e)
                 )
                 global_settings.rleb_log_error(traceback.format_exc())
                 global_settings.thread_crashes["asyncio"] += 1
@@ -187,7 +187,7 @@ class RLEsportsBot(discord.Client):
                 while not global_settings.queues["thread_creation"].empty():
                     message = global_settings.queues["thread_creation"].get()
                     global_settings.rleb_log_info(
-                        "DISCORD: Received thread creation alert '{0}'".format(message)
+                        "[DISCORD]: Received thread creation alert '{0}'".format(message)
                     )
                     thread_creation_message = await self.thread_creation_channel.send(
                         message
@@ -214,7 +214,7 @@ class RLEsportsBot(discord.Client):
                     )
                     break
                 global_settings.rleb_log_error(
-                    "DISCORD: Alert asyncio thread failed - {0}".format(e)
+                    "[DISCORD]: Alert asyncio thread failed - {0}".format(e)
                 )
                 global_settings.rleb_log_error(traceback.format_exc())
                 global_settings.thread_crashes["asyncio"] += 1
@@ -230,7 +230,7 @@ class RLEsportsBot(discord.Client):
                         "direct_messages"
                     ].get()
                     global_settings.rleb_log_info(
-                        "DISCORD: Received DM '{0}'".format(author_message_tuple)
+                        "[DISCORD]: Received DM '{0}'".format(author_message_tuple)
                     )
                     author = author_message_tuple[0]
                     message = author_message_tuple[1]
@@ -276,7 +276,7 @@ class RLEsportsBot(discord.Client):
                     )
                     break
                 global_settings.rleb_log_error(
-                    "DISCORD: Alert asyncio thread failed - {0}".format(e)
+                    "[DISCORD]: Alert asyncio thread failed - {0}".format(e)
                 )
                 global_settings.rleb_log_error(traceback.format_exc())
                 global_settings.thread_crashes["asyncio"] += 1
@@ -293,7 +293,7 @@ class RLEsportsBot(discord.Client):
                     channel_id = alert[1]
 
                     global_settings.rleb_log_info(
-                        "DISCORD: Received alert '{0}'".format(alert)
+                        "[DISCORD]: Received alert '{0}'".format(alert)
                     )
 
                     # Send to specific channel. If any issue arrises, send to bot commands instead.
@@ -321,7 +321,7 @@ class RLEsportsBot(discord.Client):
                     )
                     break
                 global_settings.rleb_log_error(
-                    "DISCORD: Alert asyncio thread failed - {0}".format(e)
+                    "[DISCORD]: Alert asyncio thread failed - {0}".format(e)
                 )
                 global_settings.rleb_log_error(traceback.format_exc())
                 global_settings.thread_crashes["asyncio"] += 1
@@ -376,7 +376,7 @@ class RLEsportsBot(discord.Client):
                 while not global_settings.queues["modmail"].empty():
                     item = global_settings.queues["modmail"].get()
                     global_settings.rleb_log_info(
-                        "DISCORD: Received modmail id {0}: {1}".format(
+                        "[DISCORD]: Received modmail id {0}: {1}".format(
                             item.id, item.body
                         )
                     )
@@ -428,7 +428,7 @@ class RLEsportsBot(discord.Client):
                     )
                     break
                 global_settings.rleb_log_error(
-                    "DISCORD: Modfeed asyncio thread failed - {0}".format(e)
+                    "[DISCORD]: Modfeed asyncio thread failed - {0}".format(e)
                 )
                 global_settings.rleb_log_error(traceback.format_exc())
                 global_settings.thread_crashes["asyncio"] += 1
@@ -470,7 +470,7 @@ class RLEsportsBot(discord.Client):
 
         if str(message.channel) == "voting":
             global_settings.rleb_log_info(
-                "DISCORD: New voting message: {0}".format(discord_message)
+                "[DISCORD]: New voting message: {0}".format(discord_message)
             )
             await message.add_reaction("👍")
             await message.add_reaction("👎")
@@ -479,7 +479,7 @@ class RLEsportsBot(discord.Client):
 
         if str(message.channel) == "ban-review":
             global_settings.rleb_log_info(
-                "DISCORD: New ban-review message: {0}".format(discord_message)
+                "[DISCORD]: New ban-review message: {0}".format(discord_message)
             )
             await message.add_reaction("⚠️")
             await message.add_reaction("1️⃣")
@@ -506,7 +506,7 @@ class RLEsportsBot(discord.Client):
             if not global_settings.is_discord_mod(message.author):
                 return
 
-            global_settings.rleb_log_info("DISCORD: Starting flair census.")
+            global_settings.rleb_log_info("[DISCORD]: Starting flair census.")
             await message.channel.send(
                 "Starting flair census, this may take a minute..."
             )
@@ -537,7 +537,7 @@ class RLEsportsBot(discord.Client):
             # increase asyncio timeout so it doesn't seem like a crash
             global_settings.asyncio_timeout = 60 * 15
 
-            global_settings.rleb_log_info("DISCORD: Starting migration")
+            global_settings.rleb_log_info("[DISCORD]: Starting migration")
             tokens = discord_message.split()
             from_flair = None
             to_flair = None
@@ -596,7 +596,7 @@ class RLEsportsBot(discord.Client):
                         self.from_flair, self.to_flair
                     )
                     global_settings.rleb_log_info(
-                        "DISCORD: Setting {0} to {1} (was {2})".format(
+                        "[DISCORD]: Setting {0} to {1} (was {2})".format(
                             user.name, new_flair, flair["flair_text"]
                         )
                     )
@@ -934,7 +934,7 @@ class RLEsportsBot(discord.Client):
             global_settings.thread_crashes["thread"] = 0
             global_settings.thread_crashes["asyncio"] = 0
             await message.channel.send("Thread crash count was reset")
-            global_settings.rleb_log_info("DISCORD: Thread count was reset.")
+            global_settings.rleb_log_info("[DISCORD]: Thread count was reset.")
             await self.add_response(message)
 
         elif discord_message.startswith("!search"):
@@ -960,7 +960,7 @@ class RLEsportsBot(discord.Client):
             if not global_settings.is_discord_mod(message.author):
                 return
 
-            global_settings.rleb_log_info("DISCORD: Starting team generation.")
+            global_settings.rleb_log_info("[DISCORD]: Starting team generation.")
             await message.channel.send("Starting team lookup...")
             tokens = discord_message.split()
             url = ""
@@ -978,7 +978,7 @@ class RLEsportsBot(discord.Client):
             if not global_settings.is_discord_mod(message.author):
                 return
 
-            global_settings.rleb_log_info("DISCORD: Starting swiss bracket generation.")
+            global_settings.rleb_log_info("[DISCORD]: Starting swiss bracket generation.")
             await message.channel.send("Starting swiss bracket lookup...")
             tokens = discord_message.split()
             url = ""
@@ -999,7 +999,7 @@ class RLEsportsBot(discord.Client):
             if not global_settings.is_discord_mod(message.author):
                 return
 
-            global_settings.rleb_log_info("DISCORD: Starting stream generation.")
+            global_settings.rleb_log_info("[DISCORD]: Starting stream generation.")
             await message.channel.send("Starting stream lookup...")
             tokens = discord_message.split()
             url = ""
@@ -1020,7 +1020,7 @@ class RLEsportsBot(discord.Client):
             if not global_settings.is_discord_mod(message.author):
                 return
 
-            global_settings.rleb_log_info("DISCORD: Starting broadcast generation.")
+            global_settings.rleb_log_info("[DISCORD]: Starting broadcast generation.")
             await message.channel.send("Starting broadcast stream lookup...")
             tokens = discord_message.split()
             url = ""
@@ -1038,7 +1038,7 @@ class RLEsportsBot(discord.Client):
             if not global_settings.is_discord_mod(message.author):
                 return
 
-            global_settings.rleb_log_info("DISCORD: Starting coverage generation.")
+            global_settings.rleb_log_info("[DISCORD]: Starting coverage generation.")
             await message.channel.send("Starting coverage lookup...")
             tokens = discord_message.split()
             url = ""
@@ -1056,7 +1056,7 @@ class RLEsportsBot(discord.Client):
             if not global_settings.is_discord_mod(message.author):
                 return
 
-            global_settings.rleb_log_info("DISCORD: Starting elim bracket generation.")
+            global_settings.rleb_log_info("[DISCORD]: Starting elim bracket generation.")
             await message.channel.send("Starting elimination bracket lookup...")
             tokens = discord_message.split()
             try:
@@ -1074,13 +1074,13 @@ class RLEsportsBot(discord.Client):
             if not global_settings.is_discord_mod(message.author):
                 return
 
-            global_settings.rleb_log_info("DISCORD: Beginning autoupdate command")
+            global_settings.rleb_log_info("[DISCORD]: Beginning autoupdate command")
             tokens = discord_message.split()
 
             try:
                 # !autoupdate stop id
                 if tokens[1] == "stop":
-                    global_settings.rleb_log_info("DISCORD: Stopping autoupdate")
+                    global_settings.rleb_log_info("[DISCORD]: Stopping autoupdate")
                     if not tokens[2]:
                         await message.channel.send(
                             "Couldn't understand that. Expected `!autoupdate stop [auto update id]`"
@@ -1143,7 +1143,7 @@ class RLEsportsBot(discord.Client):
 
                 # !autoupdate list
                 if tokens[1] == "list":
-                    global_settings.rleb_log_info("DISCORD: Listing autoupdate")
+                    global_settings.rleb_log_info("[DISCORD]: Listing autoupdate")
                     auto_updates: list[
                         AutoUpdate
                     ] = Data.singleton().read_all_auto_updates()
@@ -1178,7 +1178,7 @@ class RLEsportsBot(discord.Client):
                     return
 
                 # !autoupdate reddit_url liqui_url tourney_system tourney_options day_number
-                global_settings.rleb_log_info("DISCORD: Starting autoupdate")
+                global_settings.rleb_log_info("[DISCORD]: Starting autoupdate")
                 reddit_url = tokens[1]
                 liqui_url = tokens[2]
                 tourney_system = tokens[3]
@@ -1219,7 +1219,7 @@ class RLEsportsBot(discord.Client):
             if not global_settings.is_discord_mod(message.author):
                 return
 
-            global_settings.rleb_log_info("DISCORD: Starting makethread")
+            global_settings.rleb_log_info("[DISCORD]: Starting makethread")
             await message.channel.send("Starting to make thread...")
             tokens = discord_message.split()
             try:
@@ -1246,7 +1246,7 @@ class RLEsportsBot(discord.Client):
             if not global_settings.is_discord_mod(message.author):
                 return
 
-            global_settings.rleb_log_info("DISCORD: Starting group generation.")
+            global_settings.rleb_log_info("[DISCORD]: Starting group generation.")
             await message.channel.send("Starting group lookup...")
             tokens = discord_message.split()
             url = ""
@@ -1265,7 +1265,7 @@ class RLEsportsBot(discord.Client):
                 return
 
             global_settings.rleb_log_info(
-                "DISCORD: Starting schedule markdown generation."
+                "[DISCORD]: Starting schedule markdown generation."
             )
             await message.channel.send("Starting schedule creation...")
             tokens = discord_message.split()
@@ -1285,7 +1285,7 @@ class RLEsportsBot(discord.Client):
             if not global_settings.is_discord_mod(message.author):
                 return
 
-            global_settings.rleb_log_info("DISCORD: Starting prizepool generation.")
+            global_settings.rleb_log_info("[DISCORD]: Starting prizepool generation.")
             await message.channel.send("Starting prizepool lookup...")
             tokens = discord_message.split()
             url = ""
@@ -1304,7 +1304,7 @@ class RLEsportsBot(discord.Client):
                 return
 
             global_settings.rleb_log_info(
-                f"DISCORD: Starting mvp generation: {discord_message}"
+                f"[DISCORD]: Starting mvp generation: {discord_message}"
             )
 
             tokens = discord_message.split()
@@ -1339,7 +1339,7 @@ class RLEsportsBot(discord.Client):
             if not global_settings.is_discord_mod(message.author):
                 return
 
-            global_settings.rleb_log_info("DISCORD: Starting event lookup.")
+            global_settings.rleb_log_info("[DISCORD]: Starting event lookup.")
             tokens = discord_message.split()
             formatter = "reddit"
             days = 7
@@ -1355,7 +1355,7 @@ class RLEsportsBot(discord.Client):
             await self.add_response(message)
 
         elif discord_message.startswith("!remindme") and is_staff(message.author):
-            global_settings.rleb_log_info("DISCORD: Handling remindme.")
+            global_settings.rleb_log_info("[DISCORD]: Handling remindme.")
             tokens = discord_message.split()
 
             if len(tokens) < 1:
@@ -1458,7 +1458,7 @@ class RLEsportsBot(discord.Client):
             if not global_settings.is_discord_mod(message.author):
                 return
 
-            global_settings.rleb_log_info("DISCORD: Starting task lookup.")
+            global_settings.rleb_log_info("[DISCORD]: Starting task lookup.")
             tokens = discord_message.split()
 
             # User = the person requesting the command, unless explicitly stated.
