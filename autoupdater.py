@@ -58,6 +58,10 @@ def auto_update():
                 
                 submission.edit(fresh_markdown)
                 global_settings.auto_update_markdown[liquipedia_url] = fresh_markdown
+            except AssertionError as e:
+                if "429" in str(e):
+                    time.sleep(60 * 11)
+                    global_settings.rleb_log_error(f"[AUTO UPDATER]: {str(e)}")
             except prawcore.exceptions.ServerError as e:
                 pass  # Reddit server borked, wait an interval and try again
             except prawcore.exceptions.RequestException as e:

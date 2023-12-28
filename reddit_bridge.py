@@ -37,12 +37,16 @@ def read_new_submissions():
                     continue
 
                 global_settings.rleb_log_info(
-                    "REDDIT: Submission - {0}".format(submission)
+                    "[REDDIT]: Submission - {0}".format(submission)
                 )
                 global_settings.queues["submissions"].put(submission)
                 global_settings.threads_heartbeats[
                     "Submissions thread"
                 ] = datetime.now()
+        except AssertionError as e:
+            if "429" in str(e):
+                time.sleep(60 * 11)
+                global_settings.rleb_log_error(f"[REDDIT]: read_new_submissions() -> {str(e)}")
         except prawcore.exceptions.ServerError as e:
             pass  # Reddit server borked, try again
         except prawcore.exceptions.RequestException as e:
@@ -51,7 +55,7 @@ def read_new_submissions():
             if global_settings.thread_crashes["thread"] > 5:
                 break
             global_settings.rleb_log_error(
-                "REDDIT: Monitoring new submissions failed - {0}".format(e)
+                "[REDDIT]: Monitoring new submissions failed - {0}".format(e)
             )
             global_settings.rleb_log_error(traceback.format_exc())
             global_settings.thread_crashes["thread"] += 1
@@ -79,6 +83,10 @@ def monitor_subreddit():
                 if subject in multiflair_request_keys:
                     handle_flair_request(sub, user, body)
                 global_settings.threads_heartbeats["Subreddit thread"] = datetime.now()
+        except AssertionError as e:
+            if "429" in str(e):
+                time.sleep(60 * 11)
+                global_settings.rleb_log_error(f"[REDDIT]: monitor_subreddit() -> {str(e)}")
         except prawcore.exceptions.ServerError as e:
             pass  # Reddit server borked, wait an interval and try again
         except prawcore.exceptions.RequestException as e:
@@ -87,7 +95,7 @@ def monitor_subreddit():
             if global_settings.thread_crashes["thread"] > 5:
                 break
             global_settings.rleb_log_error(
-                "REDDIT: Monitoring RLMatchThreads inbox failed - {0}".format(e)
+                "[REDDIT]: Monitoring RLMatchThreads inbox failed - {0}".format(e)
             )
             global_settings.rleb_log_error(traceback.format_exc())
             global_settings.thread_crashes["thread"] += 1
@@ -122,6 +130,10 @@ def monitor_modlog():
                 global_settings.queues["modlog"].put(log)
                 global_settings.threads_heartbeats["ModLog thread"] = datetime.now()
                 time.sleep(global_settings.modmail_polling_interval_seconds)
+        except AssertionError as e:
+            if "429" in str(e):
+                time.sleep(60 * 11)
+                global_settings.rleb_log_error(f"[REDDIT]: monitor_modlog() -> {str(e)}")
         except prawcore.exceptions.ServerError as e:
             pass  # Reddit server borked, wait an interval and try again
         except prawcore.exceptions.RequestException as e:
@@ -130,7 +142,7 @@ def monitor_modlog():
             if global_settings.thread_crashes["thread"] > 5:
                 break
             global_settings.rleb_log_error(
-                "REDDIT: Monitoring subreddit modlogs failed - {0}".format(e)
+                "[REDDIT]: Monitoring subreddit modlogs failed - {0}".format(e)
             )
             global_settings.rleb_log_error(traceback.format_exc())
             global_settings.thread_crashes["thread"] += 1
@@ -147,7 +159,7 @@ def monitor_modmail():
         try:
             for item in sub.mod.unread():
                 item.mark_read()
-                global_settings.rleb_log_info("REDDIT: Modmail - {0}".format(item.id))
+                global_settings.rleb_log_info("[REDDIT]: Modmail - {0}".format(item.id))
 
                 # Handle multiflairs from subreddit.
                 subject = item.subject
@@ -172,6 +184,10 @@ def monitor_modmail():
                 global_settings.queues["modmail"].put(item)
                 global_settings.threads_heartbeats["ModMail thread"] = datetime.now()
             time.sleep(global_settings.modmail_polling_interval_seconds)
+        except AssertionError as e: # rate limit
+            if "429" in str(e):
+                time.sleep(60 * 11)
+                global_settings.rleb_log_error(f"[REDDIT]: monitor_modmail() -> {str(e)}")
         except prawcore.exceptions.ServerError as e:
             pass  # Reddit server borked, wait an interval and try again
         except prawcore.exceptions.RequestException as e:
@@ -180,7 +196,7 @@ def monitor_modmail():
             if global_settings.thread_crashes["thread"] > 5:
                 break
             global_settings.rleb_log_error(
-                "REDDIT: Monitoring subreddit modmail failed - {0}".format(e)
+                "[REDDIT]: Monitoring subreddit modmail failed - {0}".format(e)
             )
             global_settings.rleb_log_error(traceback.format_exc())
             global_settings.thread_crashes["thread"] += 1
