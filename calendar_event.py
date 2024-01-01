@@ -252,6 +252,7 @@ async def handle_calendar_lookup(
             channel,
             formatted_text,
             title="{0} calendar for next {1} days".format(formatter, days_in_advance),
+            force_pastebin=True,
         )
     except Exception as e:
         global_settings.rleb_log_error(traceback.format_exc())
