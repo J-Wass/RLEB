@@ -525,7 +525,6 @@ class RLEsportsBot(discord.Client):
                 if tokens[1] == "all":
                     user_statistics = Data.singleton().read_all_user_statistics()
                 else:
-                    print("getting ")
                     user_stat = Data.singleton().read_user_statistics(tokens[1])
                     if not user_stat:
                         await message.channel.send(
