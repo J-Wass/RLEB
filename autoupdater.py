@@ -31,7 +31,11 @@ def auto_update():
             )
 
             # If markdown is the same as last time, don't write to reddit
-            if liquipedia_url in global_settings.auto_update_markdown and global_settings.auto_update_markdown[liquipedia_url] == fresh_markdown:
+            if (
+                liquipedia_url in global_settings.auto_update_markdown
+                and global_settings.auto_update_markdown[liquipedia_url]
+                == fresh_markdown
+            ):
                 continue
 
             reddit_url = auto_update.reddit_url
@@ -47,15 +51,17 @@ def auto_update():
                         f"Could not find reddit url to auto update {reddit_url}"
                     )
                     # todo uncomment this once the discord thread is consuming from it.
-                    #global_settings.queues["auto_update"].append(f"Could not find reddit url to auto update {reddit_url}")
+                    # global_settings.queues["auto_update"].append(f"Could not find reddit url to auto update {reddit_url}")
                     del global_settings.auto_updates[auto_update.auto_update_id]
                     data_bridge.Data.singleton().delete_auto_update(auto_update)
 
                 if submission.selftext == fresh_markdown:
                     continue
 
-                global_settings.rleb_log_info(f"[AUTO UPDATER]: Updating {auto_update.reddit_url}")
-                
+                global_settings.rleb_log_info(
+                    f"[AUTO UPDATER]: Updating {auto_update.reddit_url}"
+                )
+
                 submission.edit(fresh_markdown)
                 global_settings.auto_update_markdown[liquipedia_url] = fresh_markdown
             except AssertionError as e:
@@ -67,6 +73,8 @@ def auto_update():
             except prawcore.exceptions.RequestException as e:
                 time.sleep(60)  # timeout error, just wait awhile and try again
             except Exception as e:
-                global_settings.rleb_log_error(f"[AUTO UPDATER]: Failed to auto update reddit thread {auto_update.reddit_url}. {str(e)}")
+                global_settings.rleb_log_error(
+                    f"[AUTO UPDATER]: Failed to auto update reddit thread {auto_update.reddit_url}. {str(e)}"
+                )
 
         time.sleep(60)

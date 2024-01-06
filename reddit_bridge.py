@@ -46,7 +46,9 @@ def read_new_submissions():
         except AssertionError as e:
             if "429" in str(e):
                 time.sleep(60 * 11)
-                global_settings.rleb_log_error(f"[REDDIT]: read_new_submissions() -> {str(e)}")
+                global_settings.rleb_log_error(
+                    f"[REDDIT]: read_new_submissions() -> {str(e)}"
+                )
         except prawcore.exceptions.ServerError as e:
             pass  # Reddit server borked, try again
         except prawcore.exceptions.RequestException as e:
@@ -86,7 +88,9 @@ def monitor_subreddit():
         except AssertionError as e:
             if "429" in str(e):
                 time.sleep(60 * 11)
-                global_settings.rleb_log_error(f"[REDDIT]: monitor_subreddit() -> {str(e)}")
+                global_settings.rleb_log_error(
+                    f"[REDDIT]: monitor_subreddit() -> {str(e)}"
+                )
         except prawcore.exceptions.ServerError as e:
             pass  # Reddit server borked, wait an interval and try again
         except prawcore.exceptions.RequestException as e:
@@ -133,7 +137,9 @@ def monitor_modlog():
         except AssertionError as e:
             if "429" in str(e):
                 time.sleep(60 * 11)
-                global_settings.rleb_log_error(f"[REDDIT]: monitor_modlog() -> {str(e)}")
+                global_settings.rleb_log_error(
+                    f"[REDDIT]: monitor_modlog() -> {str(e)}"
+                )
         except prawcore.exceptions.ServerError as e:
             pass  # Reddit server borked, wait an interval and try again
         except prawcore.exceptions.RequestException as e:
@@ -184,10 +190,12 @@ def monitor_modmail():
                 global_settings.queues["modmail"].put(item)
                 global_settings.threads_heartbeats["ModMail thread"] = datetime.now()
             time.sleep(global_settings.modmail_polling_interval_seconds)
-        except AssertionError as e: # rate limit
+        except AssertionError as e:  # rate limit
             if "429" in str(e):
                 time.sleep(60 * 11)
-                global_settings.rleb_log_error(f"[REDDIT]: monitor_modmail() -> {str(e)}")
+                global_settings.rleb_log_error(
+                    f"[REDDIT]: monitor_modmail() -> {str(e)}"
+                )
         except prawcore.exceptions.ServerError as e:
             pass  # Reddit server borked, wait an interval and try again
         except prawcore.exceptions.RequestException as e:

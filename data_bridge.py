@@ -14,6 +14,13 @@ except Exception as e:
 
 
 @dataclass
+class UserStatistics:
+    discord_username: str
+    commands_used: int
+    thanks_given: int
+
+
+@dataclass
 class Remindme:
     """Encapsulation of data needed to trigger a !remindme notification."""
 
@@ -72,6 +79,61 @@ class Data(object):
         )
         Data._cache["connection"] = connection
         return connection
+
+    def read_all_user_statistics(self) -> list[UserStatistics]:
+        if "user_statistics" in Data._cache:
+            return Data._cache["user_statistics"]
+
+        with self.postgres_connection() as db:
+            cursor = db.cursor()
+            cursor.execute("""SELECT * FROM user_statistics""")
+            statistics = []
+            for s in list(cursor.fetchall()):
+                statistics.append(UserStatistics(s[0], s[1], s[2]))
+            return statistics
+
+    def read_user_statistics(self, discord_username: str) -> Optional[UserStatistics]:
+        if f"user_statistics_{discord_username}" in Data._cache:
+            return Data._cache[f"user_statistics_{discord_username}"]
+
+        with self.postgres_connection() as db:
+            cursor = db.cursor()
+            cursor.execute(
+                """SELECT * FROM user_statistics WHERE discord_user_name = %s""",
+                (discord_username,),
+            )
+            s = cursor.fetchone()
+            if not s:
+                return None
+            return UserStatistics(s[0], s[1], s[2])
+
+    def increment_user_statistics_commands_used(self, discord_username: str) -> None:
+        Data._empty_cache(f"user_statistics_{discord_username}")
+        Data._empty_cache("user_statistics")
+
+        with self.postgres_connection() as db:
+            cursor = db.cursor()
+            cursor.execute(
+                """INSERT INTO user_statistics (discord_user_name, commands_used, thanks_given)
+               VALUES (%s, 1, 0)
+               ON CONFLICT (discord_user_name)
+               DO UPDATE SET commands_used = user_statistics.commands_used + 1;""",
+                (discord_username,),
+            )
+
+    def increment_user_statistics_thanks_given(self, discord_username: str) -> None:
+        Data._empty_cache(f"user_statistics_{discord_username}")
+        Data._empty_cache("user_statistics")
+
+        with self.postgres_connection() as db:
+            cursor = db.cursor()
+            cursor.execute(
+                """INSERT INTO user_statistics (discord_user_name, commands_used, thanks_given)
+               VALUES (%s, 1, 1)
+               ON CONFLICT (discord_user_name)
+               DO UPDATE SET thanks_given = user_statistics.thanks_given + 1;""",
+                (discord_username,),
+            )
 
     def read_auto_update_from_id(self, auto_update_id: int) -> Optional[AutoUpdate]:
         with self.postgres_connection() as db:
@@ -256,11 +318,13 @@ class Data(object):
         """ "Writes all logs to the database."""
         with self.postgres_connection() as db:
             cursor = db.cursor()
-            cursor.executemany("INSERT INTO logs VALUES (%s);",[(log,) for log in logs])
+            cursor.executemany(
+                "INSERT INTO logs VALUES (%s);", [(log,) for log in logs]
+            )
             Data._empty_cache("logs")
 
     def read_logs(self) -> list[str]:
-        """ Reads logs to the database."""
+        """Reads logs to the database."""
 
         if "logs" in Data._cache:
             return Data._cache["logs"]
@@ -273,7 +337,7 @@ class Data(object):
             return all_logs
 
     def add_triflair(self, flair_to_add) -> list[str]:
-        """ Yeets a triflair out of the database."""
+        """Yeets a triflair out of the database."""
         with self.postgres_connection() as db:
             cursor = db.cursor()
             # NOTE: For legacy reasons, triflairs are called "dualflairs" in postgres.
@@ -282,7 +346,7 @@ class Data(object):
             Data._empty_cache("triflair")
 
     def read_triflairs(self) -> list[str]:
-        """ Reads all the triflair from the database."""
+        """Reads all the triflair from the database."""
 
         if "triflair" in Data._cache:
             return Data._cache["triflair"]
@@ -295,7 +359,7 @@ class Data(object):
             return all_dualflairs
 
     def yeet_triflair(self, flair_to_remove) -> list[str]:
-        """ Yeets a triflair out of the database."""
+        """Yeets a triflair out of the database."""
         with self.postgres_connection() as db:
             cursor = db.cursor()
             cursor.execute(

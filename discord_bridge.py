@@ -187,7 +187,9 @@ class RLEsportsBot(discord.Client):
                 while not global_settings.queues["thread_creation"].empty():
                     message = global_settings.queues["thread_creation"].get()
                     global_settings.rleb_log_info(
-                        "[DISCORD]: Received thread creation alert '{0}'".format(message)
+                        "[DISCORD]: Received thread creation alert '{0}'".format(
+                            message
+                        )
                     )
                     thread_creation_message = await self.thread_creation_channel.send(
                         message
@@ -437,6 +439,7 @@ class RLEsportsBot(discord.Client):
 
     # Record that a user was responded to. Useful for responding "thanks".
     async def add_response(self, message):
+        Data.singleton().increment_user_statistics_commands_used(str(message.author))
         with responses_lock:
             self.responses[str(message.author)] = datetime.now()
 
@@ -499,7 +502,51 @@ class RLEsportsBot(discord.Client):
             if str(message.author) in self.responses:
                 thanks_responses = ["np", "no problem", "no worries", "you're welcome"]
                 await message.channel.send(random.choice(thanks_responses))
+                Data.singleton().increment_user_statistics_thanks_given(
+                    str(message.author)
+                )
                 del self.responses[str(message.author)]
+
+        elif discord_message.startswith("!ty") and is_staff(message.author):
+            if not global_settings.is_discord_mod(message.author):
+                return
+
+            tokens = discord_message.split()
+            if len(tokens) == 1:
+                user_statistics = [
+                    Data.singleton().read_user_statistics(str(message.author))
+                ]
+            elif len(tokens) == 2:
+                if tokens[1] == "help":
+                    await message.channel.send(
+                        f"Usage is `!ty`, `!ty all` or `!ty discord_username`"
+                    )
+                    return
+                if tokens[1] == "all":
+                    user_statistics = Data.singleton().read_all_user_statistics()
+                else:
+                    print("getting ")
+                    user_stat = Data.singleton().read_user_statistics(tokens[1])
+                    if not user_stat:
+                        await message.channel.send(
+                            f"{tokens[1]} has never used the bot!"
+                        )
+                        return
+                    user_statistics = [user_stat]
+            else:
+                await message.channel.send(
+                    f"Usage is `!ty`, `!ty all` or `!ty discord_username`"
+                )
+                return
+
+            msg_to_send = ""
+            for us in user_statistics:
+                thankfulness = round(us.thanks_given / us.commands_used * 100, 0)
+                msg_to_send += f"{us.discord_username} has used the bot {us.commands_used} times and was only thankful {thankfulness}% of the time\n"
+            if msg_to_send == "":
+                await message.channel.send("daz broken :/")
+            else:
+                await message.channel.send(msg_to_send)
 
         elif discord_message.startswith("!census") and is_staff(message.author):
 
@@ -978,7 +1025,9 @@ class RLEsportsBot(discord.Client):
             if not global_settings.is_discord_mod(message.author):
                 return
 
-            global_settings.rleb_log_info("[DISCORD]: Starting swiss bracket generation.")
+            global_settings.rleb_log_info(
+                "[DISCORD]: Starting swiss bracket generation."
+            )
             await message.channel.send("Starting swiss bracket lookup...")
             tokens = discord_message.split()
             url = ""
@@ -1056,7 +1105,9 @@ class RLEsportsBot(discord.Client):
             if not global_settings.is_discord_mod(message.author):
                 return
 
-            global_settings.rleb_log_info("[DISCORD]: Starting elim bracket generation.")
+            global_settings.rleb_log_info(
+                "[DISCORD]: Starting elim bracket generation."
+            )
             await message.channel.send("Starting elimination bracket lookup...")
             tokens = discord_message.split()
             try:
