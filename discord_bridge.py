@@ -1395,13 +1395,14 @@ class RLEsportsBot(discord.Client):
             days = 7
             try:
                 formatter = tokens[1]
-                days = int(tokens[2])
+                start = int(tokens[2])
+                end = int(tokens[3])
             except Exception:
                 await message.channel.send(
-                    "Couldn't understand that. Expected '!events [formatter] [# days]'. Example is '!events reddit 7' to get the next 7 days of events. Valid formatters are `reddit` and `sheets`."
+                    "Couldn't understand that. Expected '!events [formatter] [start] [end]'. Example is '!events reddit 1 8' to get 7 days of events starting 1 day in the future. Valid formatters are `reddit` and `sheets`."
                 )
                 return
-            await handle_calendar_lookup(message.channel, formatter, days)
+            await handle_calendar_lookup(message.channel, formatter, start, end)
             await self.add_response(message)
 
         elif discord_message.startswith("!remindme") and is_staff(message.author):

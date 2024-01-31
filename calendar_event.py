@@ -197,7 +197,8 @@ def reddit_formatted_calendar_events(calendar_events: list[CalendarEvent]) -> st
 async def handle_calendar_lookup(
     channel: discord.channel.TextChannel,
     formatter: str = "reddit",
-    days_in_advance: str = 7,
+    start: int = 0,
+    end: int = 7,
 ) -> None:
     """Retrieves calendar events, formats them, and then sends them to the discord channel with the supplied formatter."""
 
@@ -209,13 +210,14 @@ async def handle_calendar_lookup(
 
         service = build("calendar", "v3", credentials=credentials)
 
-        later = datetime.datetime.now() + datetime.timedelta(days=days_in_advance)
+        start_date = datetime.datetime.now() + datetime.timedelta(days=start)
+        end_date = datetime.datetime.now() + datetime.timedelta(days=end)
         upcoming_events = (
             service.events()
             .list(
                 calendarId=global_settings.GOOGLE_CALENDAR_ID,
-                timeMin=datetime.datetime.now().astimezone().isoformat(),
-                timeMax=later.astimezone().isoformat(),
+                timeMin=start_date.astimezone().isoformat(),
+                timeMax=end_date.astimezone().isoformat(),
                 orderBy="updated",
             )
             .execute()
@@ -251,7 +253,7 @@ async def handle_calendar_lookup(
         await stdout.print_to_channel(
             channel,
             formatted_text,
-            title="{0} calendar for next {1} days".format(formatter, days_in_advance),
+            title="Calendar",
             force_pastebin=True,
         )
     except Exception as e:
