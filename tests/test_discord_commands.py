@@ -339,19 +339,19 @@ class TestDiscordCommands(RLEBAsyncTestCase):
     @mock.patch("discord_bridge.handle_calendar_lookup")
     async def test_events(self, mock_handle_calendar_lookup):
         # Happy path: reddit
-        await self._send_message("!events reddit 4", from_staff_user=True)
-        mock_handle_calendar_lookup.assert_awaited_with(self.mock_channel, "reddit", 4)
+        await self._send_message("!events reddit 0 4", from_staff_user=True)
+        mock_handle_calendar_lookup.assert_awaited_with(self.mock_channel, "reddit", 0, 4)
         mock_handle_calendar_lookup.reset_mock()
 
         # Happy path: sheets
-        await self._send_message("!events sheets 4", from_staff_user=True)
-        mock_handle_calendar_lookup.assert_awaited_with(self.mock_channel, "sheets", 4)
+        await self._send_message("!events sheets 0 4", from_staff_user=True)
+        mock_handle_calendar_lookup.assert_awaited_with(self.mock_channel, "sheets", 0, 4)
         mock_handle_calendar_lookup.reset_mock()
 
         # Missing number of days
         await self._send_message("!events sheets", from_staff_user=True)
         self.mock_channel.send.assert_awaited_with(
-            "Couldn't understand that. Expected '!events [formatter] [# days]'. Example is '!events reddit 7' to get the next 7 days of events. Valid formatters are `reddit` and `sheets`."
+           "Couldn't understand that. Expected '!events [formatter] [start] [end]'. Example is '!events reddit 1 8' to get 7 days of events starting 1 day in the future. Valid formatters are `reddit` and `sheets`."
         )
         self.mock_channel.send.reset_mock()
         mock_handle_calendar_lookup.assert_not_awaited()
