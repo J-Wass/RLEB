@@ -67,9 +67,6 @@ class Data(object):
     def postgres_connection(self):
         """Returns the postgresSQL connection."""
 
-        if "connection" in Data._cache:
-            return Data._cache["connection"]
-
         connection = psycopg2.connect(
             dbname=os.environ.get("DB_NAME") or rleb_secrets.DB_NAME,
             host=os.environ.get("DB_HOST") or rleb_secrets.DB_HOST,
@@ -77,7 +74,6 @@ class Data(object):
             port=os.environ.get("DB_PORT") or rleb_secrets.DB_PORT,
             password=os.environ.get("DB_PASSWORD") or rleb_secrets.DB_PASSWORD,
         )
-        Data._cache["connection"] = connection
         return connection
 
     def read_all_user_statistics(self) -> list[UserStatistics]:
