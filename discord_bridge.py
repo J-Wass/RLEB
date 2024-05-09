@@ -707,7 +707,6 @@ class RLEsportsBot(discord.Client):
 
             tokens = discord_message.split()
 
-            flair = None
             try:
                 flair_to_add = tokens[2]
             except IndexError:
@@ -715,7 +714,7 @@ class RLEsportsBot(discord.Client):
                     "Couldn't understand that. Expected '!triflairs add :flair:'."
                 )
                 return
-            if not flair.startswith(":"):
+            if not flair_to_add or not flair_to_add.startswith(":"):
                 await message.channel.send(
                     "Couldn't understand that. Make sure you are passing a :flair_code: and not an emoji 😭. You may have to disable Discord Nitro or auto emoji."
                 )
