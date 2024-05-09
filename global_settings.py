@@ -298,7 +298,7 @@ enable_direct_channel_messages = (
 logging_enabled = True
 
 
-def _flush_memory_log():
+def flush_memory_log():
     """Write all logs from memory to db."""
     if RUNNING_MODE == "local":
         return
@@ -316,7 +316,7 @@ def _rleb_log(message, should_flush=False) -> None:
         return
     memory_log.append("{0} UTC {1}".format(datetime.utcnow(), message))
     if len(memory_log) > 100 or should_flush:
-        _flush_memory_log()
+        flush_memory_log()
 
 
 def rleb_log_info(message: str, should_flush: bool = False) -> None:

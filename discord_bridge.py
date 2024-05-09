@@ -653,9 +653,6 @@ class RLEsportsBot(discord.Client):
             # reset asyncio timeout
             global_settings.asyncio_timeout = 60 * 5
 
-        elif discord_message.startswith("!dualflairs") and is_staff(message.author):
-            if not global_settings.is_discord_mod(message.author):
-                return
 
         elif discord_message == "!triflairs list" and is_staff(message.author):
 
@@ -680,43 +677,27 @@ class RLEsportsBot(discord.Client):
                 return
 
             tokens = discord_message.split()
-            flair = None
+            flair_to_remove = None
             try:
-                flair = tokens[2]
+                flair_to_remove = tokens[2]
             except IndexError:
                 await message.channel.send(
                     "Couldn't understand that. Expected '!triflairs remove :flair:'."
                 )
                 return
-            await message.channel.send(
-                "Type '!confirm remove' to remove the {0} flair.".format(flair)
-            )
-            self.flair_to_remove = flair
-            self.remove_flair_time = datetime.now()
-            await self.add_response(message)
-
-        elif discord_message == "!confirm remove" and is_staff(message.author):
-
-            if not global_settings.is_discord_mod(message.author):
-                return
-
-            if (datetime.now() - self.remove_flair_time).total_seconds() > 120:
-                await message.channel.send(
-                    "Removal timed out. You must confirm within 2 minutes to remove flairs."
-                )
-                return
+            
             flairs = Data.singleton().read_triflairs()
             flair_list = list(map(lambda x: x[0], flairs))
-            if not (self.flair_to_remove in flair_list):
+            if not (flair_to_remove in flair_list):
                 await message.channel.send(
                     "Couldn't find {0}! Type '!triflairs list' to view all flairs.".format(
-                        self.flair_to_remove
+                        flair_to_remove
                     )
                 )
                 return
             else:
-                Data.singleton().yeet_triflair(self.flair_to_remove)
-                await message.channel.send("Removed {0}.".format(self.flair_to_remove))
+                Data.singleton().yeet_triflair(flair_to_remove)
+                await message.channel.send("Removed {0}.".format(flair_to_remove))
                 await self.add_response(message)
 
         elif discord_message.startswith("!triflairs add") and is_staff(message.author):
@@ -728,7 +709,7 @@ class RLEsportsBot(discord.Client):
 
             flair = None
             try:
-                flair = tokens[2]
+                flair_to_add = tokens[2]
             except IndexError:
                 await message.channel.send(
                     "Couldn't understand that. Expected '!triflairs add :flair:'."
@@ -739,35 +720,19 @@ class RLEsportsBot(discord.Client):
                     "Couldn't understand that. Make sure you are passing a :flair_code: and not an emoji 😭. You may have to disable Discord Nitro or auto emoji."
                 )
                 return
-            self.flair_to_add = flair
-            self.add_flair_time = datetime.now()
-            await message.channel.send(
-                "Type '!confirm add' to add the {0} flair.".format(flair)
-            )
-            await self.add_response(message)
-
-        elif discord_message == "!confirm add" and is_staff(message.author):
-
-            if not global_settings.is_discord_mod(message.author):
-                return
-
-            if (datetime.now() - self.add_flair_time).total_seconds() > 120:
-                await message.channel.send(
-                    "Addition timed out. You must confirm within 2 minutes to add flairs."
-                )
-                return
+            
             flairs = Data.singleton().read_triflairs()
             flair_list = list(map(lambda x: x[0], flairs))
-            if self.flair_to_add in flair_list:
+            if flair_to_add in flair_list:
                 await message.channel.send(
                     "{0} is already in the flair list! Type '!triflairs list' to view all flairs.".format(
-                        self.flair_to_add
+                        flair_to_add
                     )
                 )
                 return
             else:
-                Data.singleton().add_triflair(self.flair_to_add)
-                await message.channel.send("Added {0}.".format(self.flair_to_add))
+                Data.singleton().add_triflair(flair_to_add)
+                await message.channel.send("Added {0}.".format(flair_to_add))
                 await self.add_response(message)
 
         elif discord_message.startswith("!flush") and is_staff(message.author):
@@ -775,7 +740,7 @@ class RLEsportsBot(discord.Client):
             if not global_settings.is_discord_mod(message.author):
                 return
 
-            global_settings._flush_memory_log()
+            global_settings.flush_memory_log()
             await message.channel.send(":toilet:")
 
         elif discord_message.startswith("!weekly") and is_staff(message.author):
@@ -797,6 +762,14 @@ class RLEsportsBot(discord.Client):
                 await message.channel.send(t)
 
             await self.add_response(message)
+
+        elif discord_message.startswith("!sql") and is_staff(message.author):
+            if not global_settings.is_discord_mod(message.author):
+                return
+            
+            sql = " ".join(discord_message.split()[1:])
+            response = Data.singleton().yolo_query(sql)
+            await message.channel.send(f"```\n{response}\n```")
 
         elif discord_message.startswith("!logs") and is_staff(message.author):
 
@@ -902,6 +875,17 @@ class RLEsportsBot(discord.Client):
             await message.channel.send(
                 f"**Diesel Status:** {health} ({elapsed_time}ms response time)"
             )
+
+            try:
+                before = time.time() * 1000
+                db_table_count = Data.singleton().get_db_tables()
+                after = time.time() * 1000
+                elapsed_time = round(after - before)
+                await message.channel.send(
+                f"**DB Status:** {db_table_count} found () {elapsed_time}ms response time)"
+            )
+            except:
+                pass
 
             # Hardware specs.
             try:

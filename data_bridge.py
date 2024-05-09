@@ -75,6 +75,20 @@ class Data(object):
             password=os.environ.get("DB_PASSWORD") or rleb_secrets.DB_PASSWORD,
         )
         return connection
+    
+    def yolo_query(self, sql: str) -> str:
+        with self.postgres_connection() as db:
+            cursor = db.cursor()
+            cursor.execute(sql)
+            response = cursor.fetchall()
+            return "\n".join([r for r in response])
+    
+    def get_db_tables(self) -> int:
+        with self.postgres_connection() as db:
+            cursor = db.cursor()
+            cursor.execute("""SELECT count(*) FROM pg_catalog.pg_tables where tableowner='pi'""")
+            count: int = cursor.fetchone()[0]
+        return count
 
     def read_all_user_statistics(self) -> list[UserStatistics]:
         if "user_statistics" in Data._cache:
