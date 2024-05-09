@@ -881,7 +881,7 @@ class RLEsportsBot(discord.Client):
                 after = time.time() * 1000
                 elapsed_time = round(after - before)
                 await message.channel.send(
-                f"**DB Status:** {db_table_count} found () {elapsed_time}ms response time)"
+                f"**DB Status:** {db_table_count}  tables found ({elapsed_time}ms response time)"
             )
             except:
                 pass

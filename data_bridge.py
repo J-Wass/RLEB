@@ -81,7 +81,7 @@ class Data(object):
             cursor = db.cursor()
             cursor.execute(sql)
             response = cursor.fetchall()
-            return "\n".join([r for r in response])
+            return "\n".join([str(r) for r in response])
     
     def get_db_tables(self) -> int:
         with self.postgres_connection() as db:
