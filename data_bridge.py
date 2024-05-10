@@ -324,16 +324,16 @@ class Data(object):
             post_ids = list(map(lambda x: x[0], cursor.fetchall()))
             return post_ids
 
-    def write_to_logs(self, logs: list[str]) -> None:
+    def write_to_logs(self, logs: list[tuple[datetime, str]]) -> None:
         """ "Writes all logs to the database."""
         with self.postgres_connection() as db:
             cursor = db.cursor()
             cursor.executemany(
-                "INSERT INTO logs VALUES (%s);", [(log,) for log in logs]
+                "INSERT INTO logs VALUES (%s);", [(datetime_log[1], datetime_log[0]) for datetime_log in logs]
             )
             Data._empty_cache("logs")
 
-    def read_logs(self) -> list[str]:
+    def read_logs(self, count: int = 10) -> list[tuple[datetime, str]]:
         """Reads logs to the database."""
 
         if "logs" in Data._cache:
@@ -341,7 +341,7 @@ class Data(object):
 
         with self.postgres_connection() as db:
             cursor = db.cursor()
-            cursor.execute("SELECT * FROM logs ORDER BY log DESC;")
+            cursor.execute("SELECT log, log_time FROM logs ORDER BY log_time DESC limit %s;", count)
             all_logs = cursor.fetchall()
             Data._cache["logs"] = all_logs
             return all_logs

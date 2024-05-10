@@ -458,7 +458,7 @@ class RLEsportsBot(discord.Client):
         Args:
             message (discord.Message): Discord message being handled.
         """
-        # Don't response to messages from yourself, lol.
+        # Don't respond to messages from yourself, lol.
         if "RLesports" in str(message.author):
             return
 
@@ -791,9 +791,7 @@ class RLEsportsBot(discord.Client):
             if datasource == "memory":
                 logs = global_settings.memory_log[(-1 * count) :]
             elif datasource == "db":
-                db_logs = Data.singleton().read_logs()
-                db_logs_as_list = list(map(lambda x: x[0], db_logs))
-                logs = db_logs_as_list[(-1 * count) :]
+                logs = Data.singleton().read_logs(count)
             else:
                 await message.channel.send(
                     "The first argument should be either 'memory' or 'db'."
@@ -803,9 +801,8 @@ class RLEsportsBot(discord.Client):
                 if logs == None or len(logs) == 0:
                     await message.channel.send("No logs to show.")
                     return
-                await stdout.print_to_channel(
-                    message.channel, "\n".join(logs), title="logs"
-                )
+                msg = "\n".join([f"{log[0]} - {log[1]}" for log in logs])
+                await stdout.print_to_channel(message.channel, msg, title="logs")
             except discord.errors.HTTPException:
                 global_settings.rleb_log_error(traceback.format_exc())
                 await message.channel.send(
@@ -881,7 +878,7 @@ class RLEsportsBot(discord.Client):
                 after = time.time() * 1000
                 elapsed_time = round(after - before)
                 await message.channel.send(
-                f"**DB Status:** {db_table_count}  tables found ({elapsed_time}ms response time)"
+                f"**DB Status:** {db_table_count} tables found ({elapsed_time}ms response time)"
             )
             except:
                 pass

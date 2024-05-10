@@ -306,7 +306,8 @@ def flush_memory_log():
     memory_log.clear()
 
 
-memory_log = []
+# list of tuples (datetime, message)
+memory_log: list[tuple[datetime, str]] = []
 
 
 def _rleb_log(message, should_flush=False) -> None:
@@ -314,8 +315,8 @@ def _rleb_log(message, should_flush=False) -> None:
     print("{0} UTC {1}".format(datetime.utcnow(), message))
     if not logging_enabled:
         return
-    memory_log.append("{0} UTC {1}".format(datetime.utcnow(), message))
-    if len(memory_log) > 100 or should_flush:
+    memory_log.append((datetime.now(), message))
+    if len(memory_log) > 10 or should_flush:
         flush_memory_log()
 
 
