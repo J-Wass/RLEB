@@ -329,7 +329,7 @@ class Data(object):
         with self.postgres_connection() as db:
             cursor = db.cursor()
             cursor.executemany(
-                "INSERT INTO logs VALUES (%s);", [(datetime_log[1], datetime_log[0]) for datetime_log in logs]
+                "INSERT INTO logs (log_time, log) VALUES (%s, %s);", [(datetime_log[0], datetime_log[1]) for datetime_log in logs]
             )
             Data._empty_cache("logs")
 
