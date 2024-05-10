@@ -48,21 +48,21 @@ def start():
 
     # Initialize all threads.
     submissions_thread = Thread(target=read_new_submissions, name="Submissions thread")
-    submissions_thread.setDaemon(True)
+    submissions_thread.daemon = True
     subreddit_thread = Thread(target=monitor_subreddit, name="Subreddit thread")
-    subreddit_thread.setDaemon(True)
+    subreddit_thread.daemon = True
     health_thread = Thread(target=health_check.health_check, name="Health thread")
-    health_thread.setDaemon(True)
+    health_thread.daemon = True
     modmail_thread = Thread(target=monitor_modmail, name="ModMail thread")
-    modmail_thread.setDaemon(True)
+    modmail_thread.daemon = True
     modlog_thread = Thread(target=monitor_modlog, name="ModLog thread")
-    modlog_thread.setDaemon(True)
+    modlog_thread.daemon = True
     task_alert_thread = Thread(target=tasks.task_alert_check, name="Task alert thread")
-    task_alert_thread.setDaemon(True)
+    task_alert_thread.daemon = True
     auto_update_thread = Thread(
         target=autoupdater.auto_update, name="Auto update thread"
     )
-    auto_update_thread.setDaemon(True)
+    auto_update_thread.daemon = True
 
     # Stores all threads used to run the bot.
     threads = [

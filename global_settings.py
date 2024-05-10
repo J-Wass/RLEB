@@ -311,8 +311,8 @@ memory_log: list[tuple[datetime, str]] = []
 
 
 def _rleb_log(message, should_flush=False) -> None:
-    """Log a message to memory (thread safe). If `should_flush` is True or memory is too full, the logs will be sent to db."""
-    print("{0} UTC {1}".format(datetime.utcnow(), message))
+    """Log a message to memory. If `should_flush` is True or memory is too full, the logs will be sent to db."""
+    print(f"{datetime.now()} - {message}")
     if not logging_enabled:
         return
     memory_log.append((datetime.now(), message))
@@ -322,12 +322,12 @@ def _rleb_log(message, should_flush=False) -> None:
 
 def rleb_log_info(message: str, should_flush: bool = False) -> None:
     """Log an informative message. If `should_flush` is True or memory is too full, the logs will be sent to db."""
-    _rleb_log("INFO - {0}".format(message), should_flush=should_flush)
+    _rleb_log("INFO: {0}".format(message), should_flush=should_flush)
 
 
 def rleb_log_error(message: str) -> None:
     """Log an error message."""
-    _rleb_log("ERROR - {0}".format(message), should_flush=True)
+    _rleb_log("ERROR: {0}".format(message), should_flush=True)
 
 
 # DATES

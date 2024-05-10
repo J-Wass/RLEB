@@ -341,7 +341,7 @@ class Data(object):
 
         with self.postgres_connection() as db:
             cursor = db.cursor()
-            cursor.execute("SELECT log, log_time FROM logs ORDER BY log_time DESC limit %s;", count)
+            cursor.execute("SELECT log, log_time FROM logs ORDER BY log_time DESC limit %s;", (count,))
             all_logs = cursor.fetchall()
             Data._cache["logs"] = all_logs
             return all_logs
