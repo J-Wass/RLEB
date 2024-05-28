@@ -152,7 +152,7 @@ class Data(object):
         with self.postgres_connection() as db:
             cursor = db.cursor()
             cursor.execute(
-                """INSERT INTO aliases (long_name, short_name) VALUES (%s, %s);"""(
+                """INSERT INTO aliases (long_name, short_name) VALUES (%s, %s);""", (
                     long_name.lower(), short_name
                 ),
             )
