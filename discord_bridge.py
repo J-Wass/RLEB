@@ -653,7 +653,6 @@ class RLEsportsBot(discord.Client):
             # reset asyncio timeout
             global_settings.asyncio_timeout = 60 * 5
 
-
         elif discord_message == "!triflairs list" and is_staff(message.author):
 
             if not global_settings.is_discord_mod(message.author):
@@ -685,7 +684,7 @@ class RLEsportsBot(discord.Client):
                     "Couldn't understand that. Expected '!triflairs remove :flair:'."
                 )
                 return
-            
+
             flairs = Data.singleton().read_triflairs()
             flair_list = list(map(lambda x: x[0], flairs))
             if not (flair_to_remove in flair_list):
@@ -719,7 +718,7 @@ class RLEsportsBot(discord.Client):
                     "Couldn't understand that. Make sure you are passing a :flair_code: and not an emoji 😭. You may have to disable Discord Nitro or auto emoji."
                 )
                 return
-            
+
             flairs = Data.singleton().read_triflairs()
             flair_list = list(map(lambda x: x[0], flairs))
             if flair_to_add in flair_list:
@@ -765,7 +764,7 @@ class RLEsportsBot(discord.Client):
         elif discord_message.startswith("!sql") and is_staff(message.author):
             if not global_settings.is_discord_mod(message.author):
                 return
-            
+
             sql = " ".join(discord_message.split()[1:])
             response = Data.singleton().yolo_query(sql)
             await message.channel.send(f"```\n{response}\n```")
@@ -878,8 +877,8 @@ class RLEsportsBot(discord.Client):
                 after = time.time() * 1000
                 elapsed_time = round(after - before)
                 await message.channel.send(
-                f"**DB Status:** {db_table_count} tables found ({elapsed_time}ms response time)"
-            )
+                    f"**DB Status:** {db_table_count} tables found ({elapsed_time}ms response time)"
+                )
             except:
                 pass
 
@@ -998,6 +997,51 @@ class RLEsportsBot(discord.Client):
                 )
                 return
             seconds = await handle_team_lookup(url, message.channel)
+            await self.add_response(message)
+
+        elif discord_message.startswith("!alias") and is_staff(message.author):
+            if not global_settings.is_discord_mod(message.author):
+                return
+
+            global_settings.rleb_log_info("[DISCORD]: Starting alias")
+
+            tokens = discord_message.split()
+            url = ""
+            try:
+                long_name = tokens[1]
+                short_name = tokens[2]
+            except Exception:
+                if long_name == "list":
+                    short_name = None
+                else:
+                    await message.channel.send(
+                        "Couldn't understand that. Expected `!alias [long_name] [shortened_name]` or `!alias list` to see all existing aliases."
+                    )
+                    return
+
+            if long_name == "list":
+                long_to_short_name_map: dict[
+                    str, str
+                ] = Data.singleton().read_all_aliases()
+                if len(long_to_short_name_map) == 0:
+                    await message.channel.send(
+                        "No aliases found. `!alias [long_name] [shortened_name]` to add one."
+                    )
+                    await self.add_response(message)
+                    return
+
+                return_message = "Found the following aliases:"
+                for long, short in long_to_short_name_map.items():
+                    return_message += f"\n{long} -> {short}"
+                await message.channel.send(return_message)
+                await self.add_response(message)
+                return
+
+            # Handle !alias cloud9 c9
+            Data.singleton().add_alias(long_name, short_name)
+            await message.channel.send(
+                "Alias added. Use `!alias list` to see all existing aliases. "
+            )
             await self.add_response(message)
 
         elif discord_message.startswith("!swiss") and is_staff(message.author):

@@ -75,18 +75,20 @@ class Data(object):
             password=os.environ.get("DB_PASSWORD") or rleb_secrets.DB_PASSWORD,
         )
         return connection
-    
+
     def yolo_query(self, sql: str) -> str:
         with self.postgres_connection() as db:
             cursor = db.cursor()
             cursor.execute(sql)
             response = cursor.fetchall()
             return "\n".join([str(r) for r in response])
-    
+
     def get_db_tables(self) -> int:
         with self.postgres_connection() as db:
             cursor = db.cursor()
-            cursor.execute("""SELECT count(*) FROM pg_catalog.pg_tables where tableowner='pi'""")
+            cursor.execute(
+                """SELECT count(*) FROM pg_catalog.pg_tables where tableowner='pi'"""
+            )
             count: int = cursor.fetchone()[0]
         return count
 
@@ -144,6 +146,29 @@ class Data(object):
                DO UPDATE SET thanks_given = user_statistics.thanks_given + 1;""",
                 (discord_username,),
             )
+
+    def add_alias(self, long_name: str, short_name: str) -> None:
+        Data._empty_cache("aliases")
+        with self.postgres_connection() as db:
+            cursor = db.cursor()
+            cursor.execute(
+                """INSERT INTO aliases (long_name, short_name) VALUES (%s, %s);"""(
+                    long_name.lower(), short_name
+                ),
+            )
+
+    def read_all_aliases(self) -> dict[str, str]:
+        """Returns a mapping of long_name to short_name for each alias"""
+
+        if "aliases" in Data._cache:
+            return Data._cache["aliases"]
+        with self.postgres_connection() as db:
+            cursor = db.cursor()
+            cursor.execute("SELECT * FROM aliases;")
+            all_aliases = cursor.fetchall()
+            return_dict = {long: short for long, short in all_aliases}
+            Data._cache["aliases"] = return_dict
+            return return_dict
 
     def read_auto_update_from_id(self, auto_update_id: int) -> Optional[AutoUpdate]:
         with self.postgres_connection() as db:
@@ -329,7 +354,8 @@ class Data(object):
         with self.postgres_connection() as db:
             cursor = db.cursor()
             cursor.executemany(
-                "INSERT INTO logs (log_time, log) VALUES (%s, %s);", [(datetime_log[0], datetime_log[1]) for datetime_log in logs]
+                "INSERT INTO logs (log_time, log) VALUES (%s, %s);",
+                [(datetime_log[0], datetime_log[1]) for datetime_log in logs],
             )
             Data._empty_cache("logs")
 
@@ -341,7 +367,10 @@ class Data(object):
 
         with self.postgres_connection() as db:
             cursor = db.cursor()
-            cursor.execute("SELECT log, log_time FROM logs ORDER BY log_time DESC limit %s;", (count,))
+            cursor.execute(
+                "SELECT log, log_time FROM logs ORDER BY log_time DESC limit %s;",
+                (count,),
+            )
             all_logs = cursor.fetchall()
             Data._cache["logs"] = all_logs
             return all_logs
