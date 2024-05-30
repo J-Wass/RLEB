@@ -56,7 +56,7 @@ class RLEsportsBot(discord.Client):
         self.responses = {}
 
         # The subreddit of memes or images to flood into #bot-commands.
-        self.meme_subreddit = "maps"
+        self.meme_subreddit = "earthporn"
 
     async def on_ready(self):
         """Indicate bot has joined the discord."""

@@ -157,12 +157,12 @@ class Data(object):
                 ),
             )
 
-    def remove_alias(self, long_name) -> None:
+    def remove_alias(self, long_name: str) -> None:
         Data._empty_cache("aliases")
         with self.postgres_connection() as db:
             cursor = db.cursor()
             cursor.execute(
-                """DELETE from aliases WHERE longe_name = %s;""", (long_name),
+                """DELETE from aliases WHERE long_name = %s;""", (long_name),
             )
 
     def read_all_aliases(self) -> dict[str, str]:
