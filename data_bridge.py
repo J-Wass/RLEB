@@ -162,7 +162,7 @@ class Data(object):
         with self.postgres_connection() as db:
             cursor = db.cursor()
             cursor.execute(
-                """DELETE from aliases WHERE long_name = %s;""", (long_name),
+                """DELETE FROM aliases WHERE long_name = %s;""", (long_name),
             )
 
     def read_all_aliases(self) -> dict[str, str]:

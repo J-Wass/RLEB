@@ -155,7 +155,7 @@ async def get_swiss_markdown(liquipedia_url: str) -> Optional[str]:
         markdown = base64_to_string(response.content)
         aliases = Data.singleton().read_all_aliases()
         for long_name, short_name in aliases.items():
-            markdown = markdown.replace(long_name, short_name)
+            markdown = markdown.replace(long_name.replace("_", " "), short_name)
         return markdown
     except:
         return None

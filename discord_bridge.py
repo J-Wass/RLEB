@@ -1040,6 +1040,7 @@ class RLEsportsBot(discord.Client):
                         "Couldn't understand that. Expected `!alias add [long_name] [shortened_name]`, `!alias remove [long_name]` or `!alias list`."
                     )
                     return
+                global_settings.rleb_log_info(f"Removing alias: {long_name}")
                 Data.singleton().remove_alias(long_name)
                 await message.channel.send("Alias removed. Use `!alias list` to see all existing aliases.")
                 await self.add_response(message)
@@ -1054,6 +1055,7 @@ class RLEsportsBot(discord.Client):
                     )
                     return
 
+                global_settings.rleb_log_info(f"Adding alias: {long_name} -> {short_name}")
                 Data.singleton().add_alias(long_name, short_name)
                 await message.channel.send(
                     "Alias added. Use `!alias list` to see all existing aliases."
