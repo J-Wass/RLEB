@@ -1,6 +1,7 @@
 from typing import Optional
 import discord
 import requests
+from data_bridge import Data
 from liqui.liqui_utils import string_to_base64, base64_to_string
 
 import global_settings
@@ -152,6 +153,9 @@ async def get_swiss_markdown(liquipedia_url: str) -> Optional[str]:
             f"http://127.0.0.1:8080/swiss/{string_to_base64(liquipedia_url)}"
         )
         markdown = base64_to_string(response.content)
+        aliases = Data.singleton().read_all_aliases()
+        for long_name, short_name in aliases.items():
+            markdown = markdown.replace(long_name, short_name)
         return markdown
     except:
         return None

@@ -1008,24 +1008,20 @@ class RLEsportsBot(discord.Client):
             tokens = discord_message.split()
             url = ""
             try:
-                long_name = tokens[1]
-                short_name = tokens[2]
+                operation = tokens[1]
             except Exception:
-                if long_name == "list":
-                    short_name = None
-                else:
-                    await message.channel.send(
-                        "Couldn't understand that. Expected `!alias [long_name] [shortened_name]` or `!alias list` to see all existing aliases."
-                    )
-                    return
+                await message.channel.send(
+                    "Couldn't understand that. Expected `!alias add [long_name] [shortened_name]`, `!alias remove [long_name]` or `!alias list`."
+                )
+                return
 
-            if long_name == "list":
+            if operation == "list":
                 long_to_short_name_map: dict[
                     str, str
                 ] = Data.singleton().read_all_aliases()
                 if len(long_to_short_name_map) == 0:
                     await message.channel.send(
-                        "No aliases found. `!alias [long_name] [shortened_name]` to add one."
+                        "No aliases found. `!alias add [long_name] [shortened_name]` to add one."
                     )
                     await self.add_response(message)
                     return
@@ -1035,14 +1031,41 @@ class RLEsportsBot(discord.Client):
                     return_message += f"\n{long} -> {short}"
                 await message.channel.send(return_message)
                 await self.add_response(message)
-                return
 
-            # Handle !alias cloud9 c9
-            Data.singleton().add_alias(long_name, short_name)
-            await message.channel.send(
-                "Alias added. Use `!alias list` to see all existing aliases. "
-            )
-            await self.add_response(message)
+            elif operation == "remove":
+                try:
+                    long_name = tokens[2]
+                except Exception:
+                    await message.channel.send(
+                        "Couldn't understand that. Expected `!alias add [long_name] [shortened_name]`, `!alias remove [long_name]` or `!alias list`."
+                    )
+                    return
+                Data.singleton().remove_alias(long_name)
+                await message.channel.send("Alias removed. Use `!alias list` to see all existing aliases.")
+                await self.add_response(message)
+
+            elif operation == "add":
+                try:
+                    long_name = tokens[2]
+                    short_name = tokens[3]
+                except Exception:
+                    await message.channel.send(
+                        "Couldn't understand that. Expected `!alias add [long_name] [shortened_name]`, `!alias remove [long_name]` or `!alias list`."
+                    )
+                    return
+
+                Data.singleton().add_alias(long_name, short_name)
+                await message.channel.send(
+                    "Alias added. Use `!alias list` to see all existing aliases."
+                )
+                await self.add_response(message)
+
+            elif operation == "help":
+                await message.channel.send(
+                        "Usage: `!alias add [long_name] [shortened_name]`, `!alias remove [long_name]` or `!alias list`."
+                    )
+                return
+                await self.add_response(message)
 
         elif discord_message.startswith("!swiss") and is_staff(message.author):
             if not global_settings.is_discord_mod(message.author):

@@ -153,8 +153,16 @@ class Data(object):
             cursor = db.cursor()
             cursor.execute(
                 """INSERT INTO aliases (long_name, short_name) VALUES (%s, %s);""", (
-                    long_name.lower(), short_name
+                    long_name, short_name
                 ),
+            )
+
+    def remove_alias(self, long_name) -> None:
+        Data._empty_cache("aliases")
+        with self.postgres_connection() as db:
+            cursor = db.cursor()
+            cursor.execute(
+                """DELETE from aliases WHERE longe_name = %s;""", (long_name),
             )
 
     def read_all_aliases(self) -> dict[str, str]:
