@@ -283,9 +283,12 @@ def get_scheduled_posts(
                 log.description
             )  # description looks like 'scheduled for Tue, 31 Aug 2021 08:30 AM UTC'
 
+            description = description.replace("UTC", "+0000")
+
+            #uncomment once ready to test the mapping
             # We don't know the timezone, so just replace them all
-            for timezone_code, utc_offset in const_wasteland.timezone_offsets.items():
-                description = description.replace(timezone_code, utc_offset)
+            #for timezone_code, utc_offset in const_wasteland.timezone_offsets.items():
+            #    description = description.replace(timezone_code, utc_offset)
 
             scheduled_datetime = datetime.strptime(
                 description, "scheduled for %a, %d %b %Y %I:%M %p %z"
