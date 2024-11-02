@@ -10,7 +10,7 @@ import stdout
 
 def get_make_thread_markdown(url: str, template: str, day_number: int) -> str:
     response = requests.get(
-            f"http://127.0.0.1:8080/makethread/{string_to_base64(url)}/template/{string_to_base64(template)}/day/{day_number}"
+            f"http://diesel:8080/makethread/{string_to_base64(url)}/template/{string_to_base64(template)}/day/{day_number}"
         )
     return base64_to_string(response.content)
 
@@ -43,7 +43,7 @@ async def handle_broadcast_lookup(url: str, channel: discord.channel.TextChannel
 
     try:
         response = requests.get(
-            f"http://127.0.0.1:8080/broadcast/{string_to_base64(url)}"
+            f"http://diesel:8080/broadcast/{string_to_base64(url)}"
         )
         markdown = base64_to_string(response.content)
         await stdout.print_to_channel(channel, markdown, title="Broadcasts", force_pastebin=True)
@@ -63,7 +63,7 @@ async def handle_stream_lookup(url: str, channel: discord.channel.TextChannel) -
 
     try:
         response = requests.get(
-            f"http://127.0.0.1:8080/streams/{string_to_base64(url)}"
+            f"http://diesel:8080/streams/{string_to_base64(url)}"
         )
         markdown = base64_to_string(response.content)
         await stdout.print_to_channel(channel, markdown, title="Streams", force_pastebin=True)
@@ -84,7 +84,7 @@ async def handle_schedule_lookup(liquipedia_url: str, day_number: int, channel: 
 
     try:
         response = requests.get(
-        f"http://127.0.0.1:8080/schedule/{string_to_base64(liquipedia_url)}/day/{day_number}"
+        f"http://diesel:8080/schedule/{string_to_base64(liquipedia_url)}/day/{day_number}"
     )
         markdown = base64_to_string(response.content)
         await stdout.print_to_channel(channel, markdown, title="Streams", force_pastebin=True)
@@ -105,7 +105,7 @@ async def handle_coverage_lookup(url: str, channel: discord.channel.TextChannel)
 
     try:
         response = requests.get(
-            f"http://127.0.0.1:8080/coverage/{string_to_base64(url)}"
+            f"http://diesel:8080/coverage/{string_to_base64(url)}"
         )
         markdown = base64_to_string(response.content)
         await stdout.print_to_channel(channel, markdown, title="Coverage", force_pastebin=True)
@@ -118,7 +118,7 @@ async def handle_coverage_lookup(url: str, channel: discord.channel.TextChannel)
 async def healthcheck() -> str:
     try:
         return (
-            requests.get(f"http://127.0.0.1:8080/healthcheck")
+            requests.get(f"http://diesel:8080/healthcheck")
             .content.decode("utf-8")
             .strip()
         )
@@ -128,7 +128,7 @@ async def healthcheck() -> str:
 async def get_prizepool_markdown(liquipedia_url: str) -> Optional[str]:
     try:
         response = requests.get(
-            f"http://127.0.0.1:8080/prizepool/{string_to_base64(liquipedia_url)}"
+            f"http://diesel:8080/prizepool/{string_to_base64(liquipedia_url)}"
         )
         markdown = base64_to_string(response.content)
         return markdown
@@ -142,7 +142,7 @@ async def get_mvp_candidates(liquipedia_url: str, teams_allowed: int = 4) -> str
     )
 
     response = requests.get(
-        f"http://127.0.0.1:8080/mvp_candidates/{string_to_base64(liquipedia_url)}/teams_allowed/{teams_allowed}"
+        f"http://diesel:8080/mvp_candidates/{string_to_base64(liquipedia_url)}/teams_allowed/{teams_allowed}"
     )
     eligible_candidates = base64_to_string(response.content)
     return eligible_candidates
@@ -150,7 +150,7 @@ async def get_mvp_candidates(liquipedia_url: str, teams_allowed: int = 4) -> str
 async def get_swiss_markdown(liquipedia_url: str) -> Optional[str]:
     try:
         response = requests.get(
-            f"http://127.0.0.1:8080/swiss/{string_to_base64(liquipedia_url)}"
+            f"http://diesel:8080/swiss/{string_to_base64(liquipedia_url)}"
         )
         markdown = base64_to_string(response.content)
         aliases = Data.singleton().read_all_aliases()
@@ -169,7 +169,7 @@ async def get_bracket_markdown(liquipedia_url: str, day_number: int) -> Optional
     """
     try:
         response = requests.get(
-            f"http://127.0.0.1:8080/bracket/{string_to_base64(liquipedia_url)}/day/{day_number}"
+            f"http://diesel:8080/bracket/{string_to_base64(liquipedia_url)}/day/{day_number}"
         )
         markdown = base64_to_string(response.content)
         return markdown
@@ -179,7 +179,7 @@ async def get_bracket_markdown(liquipedia_url: str, day_number: int) -> Optional
 async def get_group_markdown(liquipedia_url: str) -> Optional[str]:
     try:
         response = requests.get(
-            f"http://127.0.0.1:8080/groups/{string_to_base64(liquipedia_url)}"
+            f"http://diesel:8080/groups/{string_to_base64(liquipedia_url)}"
         )
         markdown = base64_to_string(response.content)
         return markdown

@@ -41,7 +41,7 @@ async def handle_swiss_lookup(url, channel: discord.channel.TextChannel):
             global_settings.rleb_log_error(traceback.format_exc())
             return
 
-        html = BeautifulSoup(content, "lxml")
+        html = BeautifulSoup(content)
 
         # The indicator that each cell in the swiss table starts with.
         indicator = {
