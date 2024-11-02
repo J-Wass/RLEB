@@ -87,7 +87,7 @@ class Data(object):
         with self.postgres_connection() as db:
             cursor = db.cursor()
             cursor.execute(
-                """SELECT count(*) FROM pg_catalog.pg_tables where tableowner='pi'"""
+                """SELECT count(*) FROM pg_catalog.pg_tables where tableowner='pi' and schemaname='public';"""
             )
             count: int = cursor.fetchone()[0]
         return count

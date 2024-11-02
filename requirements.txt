@@ -10,10 +10,7 @@ update-checker==0.16
 urllib3==1.26.5
 websocket-client==0.56.0
 discord.py==1.7.3
-tornado==5.1.1
-postgres==3.0.0
-psycopg2-binary==2.8.6
-psycopg2-pool==1.1
+psycopg2-binary==2.9.6
 google==3.0.0
 google-api-core==1.24.1
 google-api-python-client==1.12.8
@@ -23,5 +20,4 @@ google-auth-oauthlib==0.4.2
 googleapis-common-protos==1.52.0
 pytz==2020.5
 beautifulsoup4==4.9.3
-lxml==4.9.1
-cchardet==2.1.7
+tornado==5.1.1
