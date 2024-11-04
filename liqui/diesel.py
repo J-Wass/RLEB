@@ -115,7 +115,7 @@ async def handle_coverage_lookup(url: str, channel: discord.channel.TextChannel)
         await channel.send(e)
 
 
-async def healthcheck() -> str:
+async def healthcheck() -> Optional[str]:
     try:
         return (
             requests.get(f"http://diesel:8080/healthcheck")
@@ -123,7 +123,8 @@ async def healthcheck() -> str:
             .strip()
         )
     except Exception as e:
-        return f"Diesel is not running properly: {e}"
+        global_settings.rleb_log_error(f"Failed to reach diesel heartbeat {e}")
+        return None
 
 async def get_prizepool_markdown(liquipedia_url: str) -> Optional[str]:
     try:

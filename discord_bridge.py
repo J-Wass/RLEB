@@ -865,11 +865,16 @@ class RLEsportsBot(discord.Client):
             # Diesel.
             before = time.time() * 1000
             health = await healthcheck()
-            after = time.time() * 1000
-            elapsed_time = round(after - before)
-            await message.channel.send(
-                f"**Diesel Status:** {health} ({elapsed_time}ms response time)"
-            )
+            if health:
+                after = time.time() * 1000
+                elapsed_time = round(after - before)
+                await message.channel.send(
+                    f"**Diesel Status:** {health} ({elapsed_time}ms response time)"
+                )
+            else:
+                await message.channel.send(
+                    f"**Diesel Status:** Diesel is not responding (check !logs)"
+                )
 
             try:
                 before = time.time() * 1000
@@ -1491,11 +1496,12 @@ class RLEsportsBot(discord.Client):
                 remindmes: list[Remindme] = Data.singleton().read_remindmes()
                 output = ""
                 for remindme in remindmes:
-                    seconds_left = remindme.trigger_timestamp - time.time()
-                    minutes_left = round(seconds_left / 60, 1)
+                    total_seconds_left = remindme.trigger_timestamp - time.time()
+                    minutes_left = int((total_seconds_left % 3600) / 60)
+                    hours_left = int(total_seconds_left / 3600)
                     msg = remindme.message
                     author = remindme.discord_username
-                    output += f"[id {remindme.remindme_id}] - `{msg}` for {author} in {minutes_left} minutes\n"
+                    output += f"[id {remindme.remindme_id}] - `{msg}` for `{author}` in T-`{hours_left} hours and {minutes_left} minutes`.\n"
                 if len(remindmes) == 0:
                     output = "No reminders are set. Use `!remindme [time] [msg]` to schedule one. Example times: `5h`, `80s`, `1d`, `2w`, `8m`.\n"
                 output += "Use `!remindme delete [id]` to cancel a reminder."
