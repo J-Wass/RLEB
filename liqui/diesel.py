@@ -118,7 +118,7 @@ async def handle_coverage_lookup(url: str, channel: discord.channel.TextChannel)
 async def healthcheck() -> Optional[str]:
     try:
         return (
-            requests.get(f"http://diesel:8080/healthcheck")
+            requests.get(f"http://localhost:8080/healthcheck")
             .content.decode("utf-8")
             .strip()
         )
