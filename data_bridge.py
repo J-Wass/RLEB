@@ -87,7 +87,7 @@ class Data(object):
         with self.postgres_connection() as db:
             cursor = db.cursor()
             cursor.execute(
-                """SELECT count(*) FROM pg_catalog.pg_tables where tableowner='pi' and schemaname='public';"""
+                """SELECT count(*) FROM public.pg_catalog.pg_tables where tableowner='pi' and schemaname='public';"""
             )
             count: int = cursor.fetchone()[0]
         return count
@@ -98,7 +98,7 @@ class Data(object):
 
         with self.postgres_connection() as db:
             cursor = db.cursor()
-            cursor.execute("""SELECT * FROM user_statistics""")
+            cursor.execute("""SELECT * FROM public.user_statistics""")
             statistics = []
             for s in list(cursor.fetchall()):
                 statistics.append(UserStatistics(s[0], s[1], s[2]))
@@ -111,7 +111,7 @@ class Data(object):
         with self.postgres_connection() as db:
             cursor = db.cursor()
             cursor.execute(
-                """SELECT * FROM user_statistics WHERE discord_user_name = %s""",
+                """SELECT * FROM public.user_statistics WHERE discord_user_name = %s""",
                 (discord_username,),
             )
             s = cursor.fetchone()
@@ -126,10 +126,10 @@ class Data(object):
         with self.postgres_connection() as db:
             cursor = db.cursor()
             cursor.execute(
-                """INSERT INTO user_statistics (discord_user_name, commands_used, thanks_given)
+                """INSERT INTO public.user_statistics (discord_user_name, commands_used, thanks_given)
                VALUES (%s, 1, 0)
                ON CONFLICT (discord_user_name)
-               DO UPDATE SET commands_used = user_statistics.commands_used + 1;""",
+               DO UPDATE SET public.commands_used = user_statistics.commands_used + 1;""",
                 (discord_username,),
             )
 
@@ -140,10 +140,10 @@ class Data(object):
         with self.postgres_connection() as db:
             cursor = db.cursor()
             cursor.execute(
-                """INSERT INTO user_statistics (discord_user_name, commands_used, thanks_given)
+                """INSERT INTO public.user_statistics (discord_user_name, commands_used, thanks_given)
                VALUES (%s, 1, 1)
                ON CONFLICT (discord_user_name)
-               DO UPDATE SET thanks_given = user_statistics.thanks_given + 1;""",
+               DO UPDATE SET public.thanks_given = user_statistics.thanks_given + 1;""",
                 (discord_username,),
             )
 
@@ -152,7 +152,7 @@ class Data(object):
         with self.postgres_connection() as db:
             cursor = db.cursor()
             cursor.execute(
-                """INSERT INTO aliases (long_name, short_name) VALUES (%s, %s);""", (
+                """INSERT INTO public.aliases (long_name, short_name) VALUES (%s, %s);""", (
                     long_name, short_name
                 ),
             )
@@ -162,7 +162,7 @@ class Data(object):
         with self.postgres_connection() as db:
             cursor = db.cursor()
             cursor.execute(
-                """DELETE FROM aliases WHERE long_name = %s;""", (long_name),
+                """DELETE FROM public.aliases WHERE long_name = %s;""", (long_name),
             )
 
     def read_all_aliases(self) -> dict[str, str]:
@@ -172,7 +172,7 @@ class Data(object):
             return Data._cache["aliases"]
         with self.postgres_connection() as db:
             cursor = db.cursor()
-            cursor.execute("SELECT * FROM aliases;")
+            cursor.execute("SELECT * FROM public.aliases;")
             all_aliases = cursor.fetchall()
             return_dict = {long: short for long, short in all_aliases}
             Data._cache["aliases"] = return_dict
@@ -182,7 +182,7 @@ class Data(object):
         with self.postgres_connection() as db:
             cursor = db.cursor()
             cursor.execute(
-                """SELECT * FROM auto_updates WHERE auto_update_id = %s""",
+                """SELECT * FROM public.auto_updates WHERE auto_update_id = %s""",
                 (auto_update_id,),
             )
             r = cursor.fetchone()
@@ -198,7 +198,7 @@ class Data(object):
         with self.postgres_connection() as db:
             cursor = db.cursor()
             cursor.execute(
-                """SELECT * FROM auto_updates WHERE reddit_thread_url = %s""",
+                """SELECT * FROM public.auto_updates WHERE reddit_thread_url = %s""",
                 (reddit_thread_url,),
             )
             r = cursor.fetchone()
@@ -211,7 +211,7 @@ class Data(object):
     def read_all_auto_updates(self) -> list[AutoUpdate]:
         with self.postgres_connection() as db:
             cursor = db.cursor()
-            cursor.execute("""SELECT * FROM auto_updates""")
+            cursor.execute("""SELECT * FROM public.auto_updates""")
             rows = cursor.fetchall()
 
             auto_updates: list[AutoUpdate] = []
@@ -225,7 +225,7 @@ class Data(object):
         with self.postgres_connection() as db:
             cursor = db.cursor()
             cursor.execute(
-                """DELETE FROM auto_updates WHERE auto_update_id = %s;""",
+                """DELETE FROM public.auto_updates WHERE auto_update_id = %s;""",
                 (auto_update.auto_update_id,),
             )
 
@@ -254,7 +254,7 @@ class Data(object):
         with self.postgres_connection() as db:
             cursor = db.cursor()
             cursor.execute(
-                """INSERT INTO auto_updates (reddit_thread_url, liquipedia_url, thread_type, thread_options, seconds_since_epoch, day_number) VALUES (%s, %s, %s, %s, %s, %s) RETURNING auto_update_id;""",
+                """INSERT INTO public.auto_updates (reddit_thread_url, liquipedia_url, thread_type, thread_options, seconds_since_epoch, day_number) VALUES (%s, %s, %s, %s, %s, %s) RETURNING auto_update_id;""",
                 (
                     reddit_thread_url,
                     liquipedia_url,
@@ -285,7 +285,7 @@ class Data(object):
         with self.postgres_connection() as db:
             cursor = db.cursor()
             cursor.execute(
-                """INSERT INTO remindme (discord_username, remindme_message, channel_id, trigger_timestamp) VALUES (%s, %s, %s, %s) RETURNING remindme_id;""",
+                """INSERT INTO public.remindme (discord_username, remindme_message, channel_id, trigger_timestamp) VALUES (%s, %s, %s, %s) RETURNING remindme_id;""",
                 (user, message, channel_id, target_timestamp),
             )
             remindme_id = cursor.fetchone()[0]
@@ -296,7 +296,7 @@ class Data(object):
         with self.postgres_connection() as db:
             cursor = db.cursor()
             cursor.execute(
-                """DELETE FROM remindme WHERE remindme_id = %s;""",
+                """DELETE FROM public.remindme WHERE remindme_id = %s;""",
                 (remindme_id,),
             )
 
@@ -304,7 +304,7 @@ class Data(object):
         """Returns all remindmes stored in the db."""
         with self.postgres_connection() as db:
             cursor = db.cursor()
-            cursor.execute("""SELECT * FROM remindme""")
+            cursor.execute("""SELECT * FROM public.remindme""")
             remindmes = []
             for r in list(cursor.fetchall()):
                 # Unpack the sql columns into the Remindme object.
@@ -317,7 +317,7 @@ class Data(object):
         with self.postgres_connection() as db:
             cursor = db.cursor()
             cursor.execute(
-                """INSERT INTO already_warned_scheduled_posts VALUES (%s, %s);""",
+                """INSERT INTO public.already_warned_scheduled_posts VALUES (%s, %s);""",
                 (log_id, seconds_since_epoch),
             )
 
@@ -328,7 +328,7 @@ class Data(object):
         with self.postgres_connection() as db:
             cursor = db.cursor()
             cursor.execute(
-                """SELECT id FROM already_warned_scheduled_posts WHERE seconds_since_epoch > %s;""",
+                """SELECT id FROM public.already_warned_scheduled_posts WHERE seconds_since_epoch > %s;""",
                 (min_seconds_since_epoch,),
             )
             post_ids = list(map(lambda x: x[0], cursor.fetchall()))
@@ -340,7 +340,7 @@ class Data(object):
         with self.postgres_connection() as db:
             cursor = db.cursor()
             cursor.execute(
-                """INSERT INTO already_confirmed_scheduled_posts VALUES (%s, %s);""",
+                """INSERT INTO public.already_confirmed_scheduled_posts VALUES (%s, %s);""",
                 (log_id, seconds_since_epoch),
             )
 
@@ -351,7 +351,7 @@ class Data(object):
         with self.postgres_connection() as db:
             cursor = db.cursor()
             cursor.execute(
-                """SELECT post_id FROM already_confirmed_scheduled_posts WHERE seconds_since_epoch > %s;""",
+                """SELECT post_id FROM public.already_confirmed_scheduled_posts WHERE seconds_since_epoch > %s;""",
                 (min_seconds_since_epoch,),
             )
             post_ids = list(map(lambda x: x[0], cursor.fetchall()))
@@ -362,7 +362,7 @@ class Data(object):
         with self.postgres_connection() as db:
             cursor = db.cursor()
             cursor.executemany(
-                "INSERT INTO logs (log_time, log) VALUES (%s, %s);",
+                "INSERT INTO public.logs (log_time, log) VALUES (%s, %s);",
                 [(datetime_log[0], datetime_log[1]) for datetime_log in logs],
             )
             Data._empty_cache("logs")
@@ -376,7 +376,7 @@ class Data(object):
         with self.postgres_connection() as db:
             cursor = db.cursor()
             cursor.execute(
-                "SELECT log, log_time FROM logs ORDER BY log_time DESC limit %s;",
+                "SELECT log, log_time FROM public.logs ORDER BY log_time DESC limit %s;",
                 (count,),
             )
             all_logs = cursor.fetchall()
@@ -388,7 +388,7 @@ class Data(object):
         with self.postgres_connection() as db:
             cursor = db.cursor()
             # NOTE: For legacy reasons, triflairs are called "dualflairs" in postgres.
-            cursor.execute("""INSERT INTO dualflairs VALUES (%s)""", (flair_to_add,))
+            cursor.execute("""INSERT INTO public.dualflairs VALUES (%s)""", (flair_to_add,))
 
             Data._empty_cache("triflair")
 
@@ -400,7 +400,7 @@ class Data(object):
 
         with self.postgres_connection() as db:
             cursor = db.cursor()
-            cursor.execute("SELECT * FROM dualflairs;")
+            cursor.execute("SELECT * FROM public.dualflairs;")
             all_dualflairs = cursor.fetchall()
             Data._cache["dualflairs"] = all_dualflairs
             return all_dualflairs
@@ -410,7 +410,7 @@ class Data(object):
         with self.postgres_connection() as db:
             cursor = db.cursor()
             cursor.execute(
-                "DELETE FROM dualflairs WHERE dualflair = %s", (flair_to_remove,)
+                "DELETE FROM public.dualflairs WHERE dualflair = %s", (flair_to_remove,)
             )
 
             Data._empty_cache("triflair")
