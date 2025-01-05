@@ -129,7 +129,7 @@ class Data(object):
                 """INSERT INTO public.user_statistics (discord_user_name, commands_used, thanks_given)
                VALUES (%s, 1, 0)
                ON CONFLICT (discord_user_name)
-               DO UPDATE SET public.commands_used = user_statistics.commands_used + 1;""",
+               DO UPDATE SET commands_used = user_statistics.commands_used + 1;""",
                 (discord_username,),
             )
 
@@ -143,7 +143,7 @@ class Data(object):
                 """INSERT INTO public.user_statistics (discord_user_name, commands_used, thanks_given)
                VALUES (%s, 1, 1)
                ON CONFLICT (discord_user_name)
-               DO UPDATE SET public.thanks_given = user_statistics.thanks_given + 1;""",
+               DO UPDATE SET thanks_given = user_statistics.thanks_given + 1;""",
                 (discord_username,),
             )
 
