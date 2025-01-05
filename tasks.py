@@ -267,7 +267,7 @@ class Event:
 def get_scheduled_posts(
     already_warned_scheduled_posts: list[int] = None, days_ago: int = 5
 ) -> list[Event]:
-    """ "Returns a list of scheduled posts from the sub starting `days_ago`, ignoring posts already in already_warned_scheduled_posts."""
+    """ Returns a list of scheduled posts from the sub starting `days_ago`, ignoring posts already in already_warned_scheduled_posts."""
     scheduled_posts = []
     for log in global_settings.sub.mod.log(action="create_scheduled_post", limit=20):
         if already_warned_scheduled_posts and log.id in already_warned_scheduled_posts:
@@ -283,13 +283,12 @@ def get_scheduled_posts(
                 log.description
             )  # description looks like 'scheduled for Tue, 31 Aug 2021 08:30 AM UTC'
 
-            description = description.replace("UTC", "+0000")
 
-            #uncomment once ready to test the mapping
-            # We don't know the timezone, so just replace them all
-            #for timezone_code, utc_offset in const_wasteland.timezone_offsets.items():
-            #    description = description.replace(timezone_code, utc_offset)
+            # Replace timezone with offset.
+            for timezone_code, utc_offset in const_wasteland.timezone_offsets.items():
+                description = description.replace(timezone_code, utc_offset)
 
+            # Turn into utc and add to list of scheduled posts.
             scheduled_datetime = datetime.strptime(
                 description, "scheduled for %a, %d %b %Y %I:%M %p %z"
             ).replace(tzinfo=pytz.UTC)
@@ -301,7 +300,7 @@ def get_scheduled_posts(
             # only send warnings of the caller provided a list to be filled out (already_warned_scheduled_posts)
             if already_warned_scheduled_posts is not None:
                 global_settings.queues["thread_creation"].put(
-                    f"Failed to parse scheduled post **{log.details}** {log.description}.\nMost likely reason is timezone wasn't made in UTC.\nUse `!logs` to debug further."
+                    f"Failed to parse scheduled post **{log.details}** {log.description}. Use `!logs db 10` to debug further."
                 )
                 already_warned_scheduled_posts.append(log.id)
                 Data.singleton().write_already_warned_scheduled_post(
