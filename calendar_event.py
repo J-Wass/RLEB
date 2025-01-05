@@ -38,16 +38,7 @@ Events prefixed with ⚽ will have an **Event Thread** posted by mods.  Anyone c
 # Sidebar Schedule
 
 If you are on the official **Reddit App**, you will find the schedule under the "**About**" tab. If you are browsing the **Desktop** version,  you can find the schedule on the sidebar of the [**new.reddit**](https://new.reddit.com/r/RocketLeagueEsports/) version of this subreddit. Alternatively you can use our [**Google Calendar**](https://www.reddit.com/r/RocketLeagueEsports/wiki/calendar) which is used to feed the schedule.
-
-# RLCS 2022-23 Wiki Pages
-
-▶ [**How it works**](https://www.reddit.com/r/RocketLeagueEsports/wiki/guide)
-
-▶ [**Broadcast Schedule**](https://www.reddit.com/r/RocketLeagueEsports/wiki/schedule)
-
-▶ [**Where to watch**](https://www.reddit.com/r/RocketLeagueEsports/wiki/watch)
-
-▶ [**Coverage**](https://www.reddit.com/r/RocketLeagueEsports/wiki/coverage)"""
+"""
 
 
 class CalendarEvent:
