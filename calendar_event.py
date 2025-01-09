@@ -42,10 +42,44 @@ If you are on the official **Reddit App**, you will find the schedule under the 
 
 
 class CalendarEvent:
-    def __init__(self, rawtext, start_timestamp, stream):
+    def __init__(self, rawtext: str, start_timestamp: str, stream: str, description: str):
         self.rawtext = rawtext
         self.start_timestamp = start_timestamp
         self.stream = stream
+        self.description = description
+
+        # Handle both markup and not-markup in calendar event title
+        if "[**" in self.rawtext:
+            self.title = self.rawtext.split("**")[1].replace("|", "-")
+            self.link = self.rawtext.split("(")[1].split(")")[0]
+        else:
+            self.title = self.rawtext
+            self.link = self.description
+
+        self.bracket_link = self.link + "#Results"
+
+        self.start_datetime = datetime.datetime.fromisoformat(
+            self.start_timestamp
+        )
+        self.utc_datetime = self.start_datetime.astimezone(
+            pytz.timezone("Etc/UTC")
+        )
+        self.et_datetime = self.start_datetime.astimezone(
+            pytz.timezone("America/New_York")
+        )
+        self.cet_datetime = self.start_datetime.astimezone(
+            pytz.timezone("Europe/Paris")
+        )
+        self.aet_datetime = self.start_datetime.astimezone(
+            pytz.timezone("Australia/Melbourne")
+        )
+
+        self.day_number = self.et_datetime.day
+        self.day_name = global_settings.DAYS[self.et_datetime.weekday()]
+        self.month_number = self.et_datetime.month
+        self.month_name = global_settings.MONTHS[
+            self.et_datetime.month - 1
+        ]
 
     def __repr__(self):
         return f" {self.title} {self.link} {self.bracket_link} {self.et_datetime} {self.cet_datetime} {self.aet_datetime} {self.day_name} {self.month_name} {self.day_number}"
@@ -61,36 +95,6 @@ def timestring(datetime, relative_datetime, offset_hours=0):
     if datetime.day != relative_datetime.day:
         return f"*{hour}:{minute}*"
     return f"{hour}:{minute}"
-
-
-def process_calendar_events(calendar_event: CalendarEvent) -> None:
-    """Builds the list of calendar event objects from the google calendar api response."""
-    calendar_event.title = calendar_event.rawtext.split("**")[1].replace("|", "-")
-    calendar_event.link = calendar_event.rawtext.split("(")[1].split(")")[0]
-    calendar_event.bracket_link = calendar_event.link + "#Results"
-
-    calendar_event.start_datetime = datetime.datetime.fromisoformat(
-        calendar_event.start_timestamp
-    )
-    calendar_event.utc_datetime = calendar_event.start_datetime.astimezone(
-        pytz.timezone("Etc/UTC")
-    )
-    calendar_event.et_datetime = calendar_event.start_datetime.astimezone(
-        pytz.timezone("America/New_York")
-    )
-    calendar_event.cet_datetime = calendar_event.start_datetime.astimezone(
-        pytz.timezone("Europe/Paris")
-    )
-    calendar_event.aet_datetime = calendar_event.start_datetime.astimezone(
-        pytz.timezone("Australia/Melbourne")
-    )
-
-    calendar_event.day_number = calendar_event.et_datetime.day
-    calendar_event.day_name = global_settings.DAYS[calendar_event.et_datetime.weekday()]
-    calendar_event.month_number = calendar_event.et_datetime.month
-    calendar_event.month_name = global_settings.MONTHS[
-        calendar_event.et_datetime.month - 1
-    ]
 
 
 def formatted_calendar_events(
@@ -235,8 +239,8 @@ async def handle_calendar_lookup(
                         rawtext
                     )
                 )
-            calendar_event = CalendarEvent(rawtext, start_timestamp, stream)
-            process_calendar_events(calendar_event)
+            description = event_item.get("description","https://www.reddit.com/r/RocketLeagueEsports")
+            calendar_event = CalendarEvent(rawtext, start_timestamp, stream, description)
             calendar_events.append(calendar_event)
 
         formatted_text = formatted_calendar_events(calendar_events, formatter)

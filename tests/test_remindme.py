@@ -29,7 +29,7 @@ class TestRemindme(RLEBTestCase):
         global_settings.remindme_timers[1] = None
         global_settings._trigger_remindme(reminder)
 
-        self.assertEquals(
+        self.assertEqual(
             global_settings.queues["alerts"].get(),
             ("**Reminder for <@567>:** message lol", 321),
         )
