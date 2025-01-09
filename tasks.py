@@ -155,27 +155,34 @@ def get_tasks() -> list[Task]:
 
     # Iterate each event, build a new task for each.
     for i in range(1, len(event_names), 2):
-        event_name = event_names[i]
-        event_creator = creators[i]
-        event_updater1 = updaters[i]
-        event_updater2 = updaters[
-            i + 1
-        ]  # updaters and date tab take up 2 spaces on spreadsheet
-        event_day = event_dates[i + 1]
-        event_date = event_dates[i]
-        event_schedule_time = event_times[i]
-        event_sticky = thread_options[i + 1]
-        new_task = Task(
-            event_name,
-            event_creator,
-            event_updater1,
-            event_updater2,
-            event_day,
-            event_date,
-            event_schedule_time,
-            event_sticky,
-        )
-        tasks.append(new_task)
+        try:
+            event_name = event_names[i]
+            event_creator = creators[i]
+            event_updater1 = updaters[i]
+            event_updater2 = updaters[
+                i + 1
+            ]  # updaters and date tab take up 2 spaces on spreadsheet
+            event_day = event_dates[i + 1]
+            event_date = event_dates[i]
+            event_schedule_time = event_times[i]
+            event_sticky = thread_options[i + 1]
+            new_task = Task(
+                event_name,
+                event_creator,
+                event_updater1,
+                event_updater2,
+                event_day,
+                event_date,
+                event_schedule_time,
+                event_sticky,
+            )
+            tasks.append(new_task)
+        except:
+            bad_task = event_names[i] if i >= len(event_names) else i
+            global_settings.queues["thread_creation"].put(
+                f"Weekly tasks were fetched, but bot was unable to read task `{event_names[i]}`. Was the creator or updater filled out?"
+            )
+            pass
 
     return tasks
 
@@ -278,7 +285,6 @@ def get_scheduled_posts(
             continue
 
         try:
-            # todo https://stackoverflow.com/questions/1703546/parsing-date-time-string-with-timezone-abbreviated-name-in-python
             description = (
                 log.description
             )  # description looks like 'scheduled for Tue, 31 Aug 2021 08:30 AM UTC'

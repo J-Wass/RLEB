@@ -2,7 +2,6 @@ import asyncio
 from datetime import datetime
 from queue import Queue
 from threading import Thread
-from tornado.platform.asyncio import AnyThreadEventLoopPolicy
 
 import discord_bridge
 from reddit_bridge import (
@@ -20,7 +19,7 @@ import autoupdater
 
 def start():
     # Allows discord bot to read from queues while running.
-    asyncio.set_event_loop_policy(AnyThreadEventLoopPolicy())
+    asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
 
     # Used for passing reddit submissions from reddit to discord.
     submissions_queue = Queue()
