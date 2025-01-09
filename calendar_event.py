@@ -54,7 +54,10 @@ class CalendarEvent:
             self.link = self.rawtext.split("(")[1].split(")")[0]
         else:
             self.title = self.rawtext
-            self.link = self.description
+            if "<a" in self.description:
+                self.link = self.description.split(">")[1].split("<")[0]
+            else:
+                self.link = self.description
 
         self.bracket_link = self.link + "#Results"
 
