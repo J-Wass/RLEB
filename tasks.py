@@ -297,7 +297,7 @@ def get_scheduled_posts(
             # Turn into utc and add to list of scheduled posts.
             scheduled_datetime = datetime.strptime(
                 description, "scheduled for %a, %d %b %Y %I:%M %p %z"
-            ).replace(tzinfo=pytz.UTC)
+            )
             scheduled_event = Event(
                 log.details, log.mod, "", scheduled_datetime.timestamp(), log.id
             )
