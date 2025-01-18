@@ -481,7 +481,7 @@ def task_alert_check():
                         global_settings.schedule_remindme(update_reminder)
 
                     message = random.choice(global_settings.success_emojis)
-                    message += f" Task is scheduled: **{task.event_name}** by {task.event_creator}.\nhttps://new.reddit.com/r/RocketLeagueEsports/about/scheduledposts"
+                    message += f" Task is scheduled: **{task.event_name}** by {task.event_creator}.\nhttps://sh.reddit.com/mod/RocketLeagueEsports/scheduledposts/"
                     global_settings.queues["thread_creation"].put(message)
                     already_confirmed_scheduled_posts.append(scheduled_post.id)
                     Data.singleton().write_already_warned_confirmed_post(
@@ -513,7 +513,7 @@ def task_alert_check():
             # Only warn about events that are 2 hours late or are due in 8 hours
             if (seconds_remaining < 60 * 60 * 8) and (seconds_remaining > -60 * 60 * 2):
                 message = f"WARNING: {unscheduled_task.event_name} was not scheduled correctly!\n\n"
-                message += f"Task is due in {math.floor(seconds_remaining / 3600)} hour(s) and {round((seconds_remaining / 60) % 60, 0)} minute(s).\n\nScheduled posts: https://new.reddit.com/r/RocketLeagueEsports/about/scheduledposts"
+                message += f"Task is due in {math.floor(seconds_remaining / 3600)} hour(s) and {round((seconds_remaining / 60) % 60, 0)} minute(s).\n\nScheduled posts: https://sh.reddit.com/mod/RocketLeagueEsports/scheduledposts/"
                 global_settings.rleb_log_info(
                     f"TASK CHECK: Thread is due in {seconds_remaining}s: {message}"
                 )
