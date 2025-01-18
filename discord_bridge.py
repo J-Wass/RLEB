@@ -1499,10 +1499,10 @@ class RLEsportsBot(discord.Client):
                     total_seconds_left = remindme.trigger_timestamp - time.time()
                     minutes_left = int((total_seconds_left % 3600) / 60)
                     hours_left = int(total_seconds_left / 3600)
-                    msg = remindme.message[:10] + "..."
+                    msg = remindme.message[:15] + "..."
                     author = remindme.discord_username
                     # * `[ID 502]` In T-3 hours and 12 minutes: `"test..."` for `voice123`
-                    output += f"* `[ID {remindme.remindme_id}]` In T-{hours_left} hours and {minutes_left} minutes: `\"{msg}\"` for `{author}``.\n"
+                    output += f"* `[ID {remindme.remindme_id}]` in {hours_left} hour(s) {minutes_left} minute(s): `{msg}` for {author}.\n"
                 if len(remindmes) == 0:
                     output = "No reminders are set. Use `!remindme [time] [msg]` to schedule one. Example times: `5h`, `80s`, `1d`, `2w`, `8m`.\n"
                 output += "Use `!remindme delete [id]` to cancel a reminder."
