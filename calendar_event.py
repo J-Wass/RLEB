@@ -55,7 +55,10 @@ class CalendarEvent:
         else:
             self.title = self.rawtext
             if "<a" in self.description:
-                self.link = self.description.split(">")[1].split("<")[0]
+                if "<span" in self.description:
+                    self.link = self.description.split("<span>")[1].split("</span>")[0]
+                else:
+                    self.link = self.description.split(">")[1].split("<")[0]
             else:
                 self.link = self.description
 

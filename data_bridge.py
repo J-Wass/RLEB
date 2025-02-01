@@ -44,7 +44,99 @@ class AutoUpdate:
     day_number: int  # represents first, second, third day (etc) of the tournament
 
 
-class Data(object):
+class DataStub(object):
+    _singleton = None
+    _cache = {}
+
+    def __init__(self):
+        raise RuntimeError("Call singleton() instead")
+
+    @classmethod
+    def singleton(cls):
+        if cls._singleton is None:
+            cls._singleton = cls.__new__(cls)
+        return cls._singleton
+
+    def yolo_query(self, sql: str) -> str:
+        return ""
+
+    def get_db_tables(self) -> int:
+        return 0
+
+    def read_all_user_statistics(self) -> list[UserStatistics]:
+        return []
+
+    def read_user_statistics(self, discord_username: str) -> Optional[UserStatistics]:
+        return None
+
+    def increment_user_statistics_commands_used(self, discord_username: str) -> None:
+        pass
+
+    def increment_user_statistics_thanks_given(self, discord_username: str) -> None:
+        pass
+
+    def add_alias(self, long_name: str, short_name: str) -> None:
+        pass
+
+    def remove_alias(self, long_name: str) -> None:
+        pass
+
+    def read_all_aliases(self) -> dict[str, str]:
+        return {}
+
+    def read_auto_update_from_id(self, auto_update_id: int) -> Optional[AutoUpdate]:
+        return None
+
+    def read_auto_update_from_reddit_thread(self, reddit_thread_url: str) -> Optional[AutoUpdate]:
+        return None
+
+    def read_all_auto_updates(self) -> list[AutoUpdate]:
+        return []
+
+    def delete_auto_update(self, auto_update: AutoUpdate) -> None:
+        pass
+
+    def write_auto_update(self, reddit_thread_url: str, liquipedia_url: str, tourney_system: str, thread_options: str, day_number: int) -> AutoUpdate:
+        return AutoUpdate(-1, reddit_thread_url, liquipedia_url, tourney_system, thread_options, int(time.time()), day_number)
+
+    def write_remindme(self, user: str, message: str, elapsed_time: int, channel_id: int) -> Remindme:
+        return Remindme(-1, user, message, int(time.time()) + elapsed_time, channel_id)
+
+    def delete_remindme(self, remindme_id: int) -> None:
+        pass
+
+    def read_remindmes(self) -> list[Remindme]:
+        return []
+
+    def write_already_warned_scheduled_post(self, log_id: int, seconds_since_epoch: int) -> None:
+        pass
+
+    def read_already_warned_scheduled_posts(self, min_seconds_since_epoch: int) -> list[int]:
+        return []
+
+    def write_already_warned_confirmed_post(self, log_id: int, seconds_since_epoch: int) -> None:
+        pass
+
+    def read_already_confirmed_scheduled_posts(self, min_seconds_since_epoch: int) -> list[int]:
+        return []
+
+    def write_to_logs(self, logs: list[tuple[datetime, str]]) -> None:
+        pass
+
+    def read_logs(self, count: int = 10) -> list[tuple[datetime, str]]:
+        return []
+
+    def add_triflair(self, flair_to_add) -> None:
+        pass
+
+    def read_triflairs(self) -> list[str]:
+        return []
+
+    def yeet_triflair(self, flair_to_remove) -> None:
+        pass
+
+
+class Data(DataStub):
     _singleton = None
 
     # Generic cache, mapping a string key to any object.
@@ -61,12 +153,11 @@ class Data(object):
     @classmethod
     def singleton(cls):
         if cls._singleton is None:
-            cls._singleton = cls.__new__(cls)
+            cls._singleton = cls.__new__(cls if not (os.environ.get("USE_STUBBED_DATA") or rleb_secrets.USE_STUBBED_DATA) else DataStub)
         return cls._singleton
 
     def postgres_connection(self):
         """Returns the postgresSQL connection."""
-
         connection = psycopg2.connect(
             dbname=os.environ.get("DB_NAME") or rleb_secrets.DB_NAME,
             host=os.environ.get("DB_HOST") or rleb_secrets.DB_HOST,
