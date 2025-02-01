@@ -41,6 +41,7 @@ jobs:
       DB_USER : 'fake_db_user'
       DB_PORT : '1'
       DB_PASSWORD : 'fake_db_password'
+      USE_STUBBED_DATA : False
 
       # Pastebin
       PASTEBIN_API_KEY : "fake_pastebin_api_key"
