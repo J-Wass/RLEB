@@ -28,7 +28,7 @@ DB_HOST = "database.base.com"
 DB_USER = "database_user"
 DB_PORT = "database_port"
 DB_PASSWORD = "database_password"
-USE_STUBBED_DATA = False
+DATA_MODE = 'real' # real or stubbed
 
 # Pastebin/Paste.ee
 PASTEBIN_API_KEY = "87a6wd8ad0ad0ad"

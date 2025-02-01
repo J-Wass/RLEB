@@ -153,7 +153,7 @@ class Data(DataStub):
     @classmethod
     def singleton(cls):
         if cls._singleton is None:
-            cls._singleton = cls.__new__(cls if not (os.environ.get("USE_STUBBED_DATA") or rleb_secrets.USE_STUBBED_DATA) else DataStub)
+            cls._singleton = cls.__new__(DataStub if (os.environ.get("DATA_MODE") == "stubbed" or rleb_secrets.DATA_MODE == "stubbed") else cls)
         return cls._singleton
 
     def postgres_connection(self):

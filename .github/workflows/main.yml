@@ -41,7 +41,7 @@ jobs:
       DB_USER : 'fake_db_user'
       DB_PORT : '1'
       DB_PASSWORD : 'fake_db_password'
-      USE_STUBBED_DATA : 0
+      
 
       # Pastebin
       PASTEBIN_API_KEY : "fake_pastebin_api_key"
@@ -49,6 +49,7 @@ jobs:
       PASTEBIN_USER_NAME : "fake_pastebin_username"
       PASTEBIN_USER_PASS : "fake_pastebin_password"
       PASTEEE_APP_KEY : "fake_pasteee_app_key"
+      DATA_MODE : 'real'
 
       # Google
       CALENDAR_ID : "fake_calendar_id"
