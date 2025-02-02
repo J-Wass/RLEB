@@ -71,17 +71,21 @@ def read_new_verfied_comments():
     while True:
         try:
             for comment in sub.stream.comments(skip_existing=True):
+                # check if it arrived in the last 2 mins.
                 submission_datetime = datetime.fromtimestamp(comment.created_utc)
                 if abs((datetime.now() - submission_datetime).total_seconds()) > 60 * 2:
                     continue
+                
+                for flair in sub.flair(comment.author):
+                    if global_settings.verified_needle in flair["flair_text"].strip().lower():
+                        global_settings.rleb_log_info(
+                            "[REDDIT]: Comment - {0}".format(comment)
+                        )
+                        global_settings.queues["verified_comments"].put(comment)
+                        global_settings.threads_heartbeats[
+                            "Verified Comments thread"
+                        ] = datetime.now()
 
-                global_settings.rleb_log_info(
-                    "[REDDIT]: Comment - {0}".format(comment)
-                )
-                global_settings.queues["verified_comments"].put(comment)
-                global_settings.threads_heartbeats[
-                    "Verified Comments thread"
-                ] = datetime.now()
         except AssertionError as e:
             if "429" in str(e):
                 time.sleep(60 * 11)
