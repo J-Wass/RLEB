@@ -51,6 +51,7 @@ asyncio_threads_heartbeats = {
     "modmail": datetime.now(),
     "direct_messages": datetime.now(),
     "thread_creation": datetime.now(),
+    "verified_comments": datetime.now()
 }
 
 # List of threads to check for heartbeat in health check.
@@ -198,6 +199,7 @@ discord_check_new_modmail_enabled = True
 discord_check_new_alerts_enabled = True
 discord_check_direct_messages_enabled = True
 discord_check_new_thread_creation_enabled = True
+discord_check_new_verified_comments_enabled = True
 
 TOKEN = os.environ.get("DISCORD_TOKEN") or rleb_secrets.DISCORD_TOKEN
 NEW_POSTS_CHANNEL_ID = int(
@@ -222,7 +224,7 @@ THREAD_CREATION_CHANNEL_ID = int(
     os.environ.get("THREAD_CREATION_CHANNEL_ID")
     or rleb_secrets.THREAD_CREATION_CHANNEL_ID
 )
-VERIFIED_COMMENTS = int(
+VERIFIED_COMMENTS_CHANNEL_ID = int(
     os.environ.get("VERIFIED_COMMENTS_CHANNEL_ID") or rleb_secrets.VERIFIED_COMMENTS_CHANNEL_ID
 )
 

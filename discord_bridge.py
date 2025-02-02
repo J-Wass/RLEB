@@ -72,6 +72,9 @@ class RLEsportsBot(discord.Client):
         self.roster_news_channel = self.get_channel(
             global_settings.ROSTER_NEWS_CHANNEL_ID
         )
+        self.verified_comments_channel = self.get_channel(
+            global_settings.VERIFIED_COMMENTS_CHANNEL_ID
+        )
         self.modlog_channel = self.get_channel(global_settings.MODLOG_CHANNEL_ID)
         self.thread_creation_channel = self.get_channel(
             global_settings.THREAD_CREATION_CHANNEL_ID
@@ -179,6 +182,55 @@ class RLEsportsBot(discord.Client):
                 global_settings.thread_crashes["asyncio"] += 1
                 global_settings.last_datetime_crashed["asyncio"] = datetime.now()
             await asyncio.sleep(global_settings.discord_async_interval_seconds)
+
+    async def check_new_verified_comments(self):
+        """Check verified comments queue to post in 'new posts' discord channel."""
+        while True:
+            try:
+                while not global_settings.queues["verified_comments"].empty():
+                    verified_comments = global_settings.queues["verified_comments"].get()
+                    global_settings.rleb_log_info(
+                        "[DISCORD]: Received comment id {0}: {1}, {2}".format(
+                            verified_comments, verified_comments.body, verified_comments.author.name
+                        )
+                    )
+                    embed = discord.Embed(
+                        title=verified_comments.body,
+                        url="https://www.reddit.com{0}".format(verified_comments.permalink),
+                        color=random.choice(global_settings.colors),
+                    )
+                    embed.set_author(name=verified_comments.author.name)
+
+                    # if not verified_comments.link_flair_text:
+                    #     continue
+
+                    await self.verified_comments_channel.send(embed=embed)
+                global_settings.asyncio_threads_heartbeats[
+                    "verified_comments"
+                ] = datetime.now()
+                if not global_settings.discord_check_new_verified_comments_enabled:
+                    break
+            except Exception as e:
+                if global_settings.thread_crashes["asyncio"] > 5:
+                    await self.bot_command_channel.send(
+                        "ALERT: Asyncio thread has crashed more than 5 times."
+                    )
+                    developer = discord.utils.get(
+                        self.get_all_members(),
+                        name=global_settings.developer_name,
+                        discriminator=global_settings.developer_discriminator,
+                    )
+                    await self.bot_command_channel.send(
+                        "^ " + developer.mention + " fyi"
+                    )
+                    break
+                global_settings.rleb_log_error(
+                    "[DISCORD]: Verified comments asyncio thread failed - {0}".format(e)
+                )
+                global_settings.rleb_log_error(traceback.format_exc())
+                global_settings.thread_crashes["asyncio"] += 1
+                global_settings.last_datetime_crashed["asyncio"] = datetime.now()
+            await asyncio.sleep(global_settings.discord_async_interval_seconds)        
 
     async def check_new_thread_creation(self):
         """Checks thread_creation queue to send warnings into #thread-creation."""
@@ -1632,6 +1684,7 @@ def start() -> None:
     client.loop.create_task(client.check_new_alerts())
     client.loop.create_task(client.check_new_direct_messages())
     client.loop.create_task(client.check_new_thread_creation())
+    client.loop.create_task(client.check_new_verified_comments())
 
     # Start listening to discord commands.
     client.run(global_settings.TOKEN)

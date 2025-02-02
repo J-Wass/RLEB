@@ -6,6 +6,7 @@ from threading import Thread
 import discord_bridge
 from reddit_bridge import (
     read_new_submissions,
+    read_new_verfied_comments,
     monitor_subreddit,
     monitor_modmail,
     monitor_modlog,
@@ -23,6 +24,8 @@ def start():
 
     # Used for passing reddit submissions from reddit to discord.
     submissions_queue = Queue()
+    # Used for passing verified comments on reddit to discord
+    verified_comments = Queue()
     # Used for passing modmail from reddit to discord.
     modmail_queue = Queue()
     # Used for passing modlogs from reddit to discord.
@@ -44,6 +47,7 @@ def start():
     global_settings.queues["direct_messages"] = direct_message_queue
     global_settings.queues["thread_creation"] = thread_creation_queue
     global_settings.queues["auto_update"] = auto_update_queue
+    global_settings.queues["verified_comments"] = verified_comments
 
     # Initialize all threads.
     submissions_thread = Thread(target=read_new_submissions, name="Submissions thread")
@@ -62,6 +66,8 @@ def start():
         target=autoupdater.auto_update, name="Auto update thread"
     )
     auto_update_thread.daemon = True
+    verified_comments_thread = Thread(target=read_new_verfied_comments, name="Verified Comments thread")
+    verified_comments_thread.daemon = True
 
     # Stores all threads used to run the bot.
     threads = [
@@ -72,6 +78,7 @@ def start():
         task_alert_thread,
         modlog_thread,
         auto_update_thread,
+        verified_comments_thread
     ]
 
     # Setup each thread's heartbeat for future health checks.
@@ -97,6 +104,9 @@ def start():
 
         rleb_log_info("Starting subreddit thread.")
         subreddit_thread.start()
+
+        rleb_log_info("Starting verified comments thread.")
+        verified_comments_thread.start()
 
     if global_settings.health_enabled:
         rleb_log_info("Starting health thread.")

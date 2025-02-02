@@ -70,9 +70,18 @@ def read_new_submissions():
 def read_new_verfied_comments():
     while True:
         try:
-            # Need webhook for comments
-            # Need to check if comment is from verified user
-            # Need to send to verified comments queue
+            for comment in sub.stream.comments(skip_existing=True):
+                submission_datetime = datetime.fromtimestamp(comment.created_utc)
+                if abs((datetime.now() - submission_datetime).total_seconds()) > 60 * 2:
+                    continue
+
+                global_settings.rleb_log_info(
+                    "[REDDIT]: Comment - {0}".format(comment)
+                )
+                global_settings.queues["verified_comments"].put(comment)
+                global_settings.threads_heartbeats[
+                    "Verified Comments thread"
+                ] = datetime.now()
         except AssertionError as e:
             if "429" in str(e):
                 time.sleep(60 * 11)
