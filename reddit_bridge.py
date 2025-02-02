@@ -66,6 +66,35 @@ def read_new_submissions():
             break
         time.sleep(global_settings.thread_restart_interval_seconds)
 
+# Create stream to add new comments to verified comments queue
+def read_new_verfied_comments():
+    while True:
+        try:
+            # Need webhook for comments
+            # Need to check if comment is from verified user
+            # Need to send to verified comments queue
+        except AssertionError as e:
+            if "429" in str(e):
+                time.sleep(60 * 11)
+                global_settings.rleb_log_error(
+                    f"[REDDIT]: read_new_verified_comments() -> {str(e)}"
+                )
+        except prawcore.exceptions.ServerError as e:
+            pass  # Reddit server yorked, try again
+        except prawcore.exceptions.RequestException as e:
+            time.sleep(60)  # bimeout berror, just wait awhile and try again
+        except Exception as e:
+            if global_settings.thread_crashes["thread"] > 5:
+                break
+            global_settings.rleb_log_error(
+                "[REDDIT]: Monitoring new verified comments failed - {0}".format(e)
+            )
+            global_settings.rleb_log_error(traceback.format_exc())
+            global_settings.thread_crashes["thread"] += 1
+            global_settings.last_datetime_crashed["thread"] = datetime.now()
+        if not global_settings.read_new_verified_comments_enabled:
+            break
+        time.sleep(global_settings.thread_restart_interval_seconds)
 
 # Monitor inbox for PMs
 def monitor_subreddit():

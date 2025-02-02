@@ -148,6 +148,7 @@ r = praw.Reddit(
 sub = r.subreddit(target_sub)
 moderators = sub.moderator()
 read_new_submissions_enabled = True
+read_new_verified_comments_enabled = True
 monitor_subreddit_enabled = True
 monitor_modmail_enabled = True
 monitor_modlog_enabled = True
@@ -220,6 +221,9 @@ MODLOG_CHANNEL_ID = int(
 THREAD_CREATION_CHANNEL_ID = int(
     os.environ.get("THREAD_CREATION_CHANNEL_ID")
     or rleb_secrets.THREAD_CREATION_CHANNEL_ID
+)
+VERIFIED_COMMENTS = int(
+    os.environ.get("VERIFIED_COMMENTS_CHANNEL_ID") or rleb_secrets.VERIFIED_COMMENTS_CHANNEL_ID
 )
 
 # reroute testing pings to bot_commands
