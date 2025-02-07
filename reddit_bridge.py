@@ -77,6 +77,8 @@ def read_new_verfied_comments():
                     continue
                 
                 for flair in sub.flair(comment.author):
+                    if (not flair) or ("flair_text" not in flair) or (not flair["flair_text"]):
+                        continue
                     if global_settings.verified_needle in flair["flair_text"].strip().lower():
                         global_settings.rleb_log_info(
                             "[REDDIT]: Comment - {0}".format(comment)
