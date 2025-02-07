@@ -28,6 +28,7 @@ class TestDiscord(RLEBAsyncTestCase):
 
         self.discord_client = discord_bridge.RLEsportsBot()
         self.discord_client.new_post_channel = mock.AsyncMock()
+        self.discord_client.verified_comments_channel = mock.AsyncMock()
         self.discord_client.roster_news_channel = mock.AsyncMock()
         self.discord_client.modmail_channel = mock.AsyncMock()
         self.discord_client.modlog_channel = mock.AsyncMock()
@@ -48,9 +49,12 @@ class TestDiscord(RLEBAsyncTestCase):
         # Used for passing modmail from reddit to discord.
         modmail_queue = Queue()
         # Used for passing alerts from reddit to discord.
-        alert_queue = Queue()
+        alert_queue = Queue()        
+        # Used for passing alerts from reddit to discord.
+        verified_comments_queue = Queue()
 
         global_settings.queues["submissions"] = submissions_queue
+        global_settings.queues["verified_comments"] = verified_comments_queue
         global_settings.queues["modmail"] = modmail_queue
         global_settings.queues["alerts"] = alert_queue
         global_settings.queues["modlog"] = Queue()
@@ -81,6 +85,31 @@ class TestDiscord(RLEBAsyncTestCase):
 
         await self.discord_client.check_new_submissions()
         self.discord_client.new_post_channel.send.assert_awaited_once_with(
+            embed=self.mock_embedded_object
+        )
+        self.discord_client.roster_news_channel.assert_not_awaited()
+
+    async def test_reads_new_verified_coments(self):
+        # Build a mock embed.
+        self.mock_embed = patch("discord.Embed").start()
+        self.addCleanup(self.mock_embed)
+
+        self.mock_embedded_object = mock.Mock(autospec=discord.Embed)
+        self.mock_embed.return_value = self.mock_embedded_object
+
+        # Build a mock reddit submission.
+        mock_submission = mock.Mock()
+        mock_submission.body = "test comment from verified user"
+        mock_submission.permalink = "/r/permalink"
+        mock_submission.author.name = "author"
+
+        # Add the submission to the queue.
+        global_settings.queues["verified_comments"].put(mock_submission)
+
+        global_settings.discord_check_new_verified_comments_enabled = False
+
+        await self.discord_client.check_new_verified_comments()
+        self.discord_client.verified_comments_channel.send.assert_awaited_once_with(
             embed=self.mock_embedded_object
         )
         self.discord_client.roster_news_channel.assert_not_awaited()

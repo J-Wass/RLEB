@@ -51,6 +51,7 @@ asyncio_threads_heartbeats = {
     "modmail": datetime.now(),
     "direct_messages": datetime.now(),
     "thread_creation": datetime.now(),
+    "verified_comments": datetime.now()
 }
 
 # List of threads to check for heartbeat in health check.
@@ -148,6 +149,7 @@ r = praw.Reddit(
 sub = r.subreddit(target_sub)
 moderators = sub.moderator()
 read_new_submissions_enabled = True
+read_new_verified_comments_enabled = True
 monitor_subreddit_enabled = True
 monitor_modmail_enabled = True
 monitor_modlog_enabled = True
@@ -197,6 +199,7 @@ discord_check_new_modmail_enabled = True
 discord_check_new_alerts_enabled = True
 discord_check_direct_messages_enabled = True
 discord_check_new_thread_creation_enabled = True
+discord_check_new_verified_comments_enabled = True
 
 TOKEN = os.environ.get("DISCORD_TOKEN") or rleb_secrets.DISCORD_TOKEN
 NEW_POSTS_CHANNEL_ID = int(
@@ -221,6 +224,11 @@ THREAD_CREATION_CHANNEL_ID = int(
     os.environ.get("THREAD_CREATION_CHANNEL_ID")
     or rleb_secrets.THREAD_CREATION_CHANNEL_ID
 )
+VERIFIED_COMMENTS_CHANNEL_ID = int(
+    os.environ.get("VERIFIED_COMMENTS_CHANNEL_ID") or rleb_secrets.VERIFIED_COMMENTS_CHANNEL_ID
+)
+
+verified_needle = "verified" if RUNNING_MODE == "production" else "podcast"
 
 # reroute testing pings to bot_commands
 if RUNNING_MODE == "local":

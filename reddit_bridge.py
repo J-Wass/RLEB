@@ -66,6 +66,48 @@ def read_new_submissions():
             break
         time.sleep(global_settings.thread_restart_interval_seconds)
 
+# Create stream to add new comments to verified comments queue
+def read_new_verfied_comments():
+    while True:
+        try:
+            for comment in sub.stream.comments(skip_existing=True):
+                # check if it arrived in the last 2 mins.
+                submission_datetime = datetime.fromtimestamp(comment.created_utc)
+                if abs((datetime.now() - submission_datetime).total_seconds()) > 60 * 2:
+                    continue
+                
+                for flair in sub.flair(comment.author):
+                    if global_settings.verified_needle in flair["flair_text"].strip().lower():
+                        global_settings.rleb_log_info(
+                            "[REDDIT]: Comment - {0}".format(comment)
+                        )
+                        global_settings.queues["verified_comments"].put(comment)
+                        global_settings.threads_heartbeats[
+                            "Verified Comments thread"
+                        ] = datetime.now()
+
+        except AssertionError as e:
+            if "429" in str(e):
+                time.sleep(60 * 11)
+                global_settings.rleb_log_error(
+                    f"[REDDIT]: read_new_verified_comments() -> {str(e)}"
+                )
+        except prawcore.exceptions.ServerError as e:
+            pass  # Reddit server yorked, try again
+        except prawcore.exceptions.RequestException as e:
+            time.sleep(60)  # bimeout berror, just wait awhile and try again
+        except Exception as e:
+            if global_settings.thread_crashes["thread"] > 5:
+                break
+            global_settings.rleb_log_error(
+                "[REDDIT]: Monitoring new verified comments failed - {0}".format(e)
+            )
+            global_settings.rleb_log_error(traceback.format_exc())
+            global_settings.thread_crashes["thread"] += 1
+            global_settings.last_datetime_crashed["thread"] = datetime.now()
+        if not global_settings.read_new_verified_comments_enabled:
+            break
+        time.sleep(global_settings.thread_restart_interval_seconds)
 
 # Monitor inbox for PMs
 def monitor_subreddit():
