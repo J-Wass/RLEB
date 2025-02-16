@@ -5,6 +5,7 @@ import traceback
 
 import pytz
 
+from data_bridge import Data
 import global_settings
 import stdout
 from liqui import liqui_utils
@@ -181,6 +182,10 @@ async def handle_bracket_lookup(url: str, channel: discord.channel.TextChannel, 
 
             final_markdown += f"\n{match_row}"
 
+
+        aliases = Data.singleton().read_all_aliases()
+        for long_name, short_name in aliases.items():
+            final_markdown = final_markdown.replace(long_name.replace("_", " "), short_name.replace("_", " "))
         await stdout.print_to_channel(
             channel, final_markdown, title="Elimination Bracket", force_pastebin=True
         )
