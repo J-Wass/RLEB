@@ -225,6 +225,7 @@ def monitor_modmail():
                         "Your comment was removed from /r/RocketLeagueEsports",
                         "Your comment from RocketLeagueEsports was removed",
                         "Your submission was removed from /r/RocketLeagueEsports",
+                        "Your post from RocketLeagueEsports was removed",
                     }
                     and not item.parent_id
                 ):
