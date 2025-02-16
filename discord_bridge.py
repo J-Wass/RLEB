@@ -17,7 +17,7 @@ from data_bridge import AutoUpdate, Data, Remindme
 from global_settings import sub, user_names_to_ids
 from liqui.team_lookup import handle_team_lookup
 from liqui.group_lookup import handle_group_lookup
-from census import handle_flair_census
+from census import handle_flair_census, handle_verified_flair_list
 from calendar_event import handle_calendar_lookup
 from tasks import handle_task_lookup, get_scheduled_posts, get_weekly_events
 from liqui.swiss_lookup import handle_swiss_lookup
@@ -625,6 +625,18 @@ class RLEsportsBot(discord.Client):
             except Exception:
                 divider = ","
             await handle_flair_census(sub, amount, message.channel, divider)
+            await self.add_response(message)
+
+        elif discord_message == "!verified" and is_staff(message.author):
+
+            if not global_settings.is_discord_mod(message.author):
+                return
+
+            global_settings.rleb_log_info("[DISCORD]: Starting verified flair list creation.")
+            await message.channel.send(
+                "Retrieving all verified flairs, this may take a minute..."
+            )
+            await handle_verified_flair_list(sub, message.channel)
             await self.add_response(message)
 
         elif discord_message.startswith("!migrate") and is_staff(message.author):
