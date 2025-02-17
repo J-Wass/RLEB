@@ -1,9 +1,12 @@
+import os
 import unittest.mock as mock
 from unittest import IsolatedAsyncioTestCase
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import praw
 import requests
+
+from data_bridge import DataStub, Data, Remindme
 
 from ..common import common_utils
 
@@ -16,15 +19,18 @@ class RLEBAsyncTestCase(IsolatedAsyncioTestCase):
 
         # Patch praw and postgreSQL.
         self.mock_reddit = patch("praw.Reddit").start()
-        self.mock_db = patch("psycopg2.connect").start()
+        self.data_stub = AsyncMock(spec=Data)
+        self.mock_data = patch("data_bridge.Data.singleton", return_value=self.data_stub).start()
+
         self.addCleanup(self.mock_reddit.stop)
-        self.addCleanup(self.mock_db)
+        self.addCleanup(self.mock_data.stop)
 
         # Stubs.
-        self.stub_psycopg2()
+        self.stub_db()
         self.stub_praw()
+        self.stub_network()
 
-        # Network Proxy.
+    def stub_network(self):
         self.network_map = common_utils.common_proxies
         self.forced_status_code = 200
 
@@ -50,14 +56,16 @@ class RLEBAsyncTestCase(IsolatedAsyncioTestCase):
         self.addCleanup(self.mock_requests_get)
         self.addCleanup(self.mock_requests_post)
 
-    def stub_psycopg2(self):
-        mock_cursor = mock.Mock()
-        mock_cursor.execute.return_value = ""
-        mock_cursor.fetchall.return_value = [(":NRG:",), (":G2:",), (":C9:",)]
-        mock_cursor.fetchone.return_value = [1]
+    def stub_db(self):
+        self.data_stub.read_triflairs.return_value = [(":NRG:",), (":G2:",), (":C9:",)]
+        self.data_stub.write_remindme.return_value = Remindme(1, "tester#123", "message lol", 123, 321)
+        # mock_cursor = mock.Mock()
+        # mock_cursor.execute.return_value = ""
+        # mock_cursor.fetchall.return_value = [(":NRG:",), (":G2:",), (":C9:",)]
+        # mock_cursor.fetchone.return_value = [1]
 
-        self.mock_db.return_value.__enter__.return_value.cursor.return_value = mock_cursor
-        self.mock_db.return_value.cursor.return_value = mock_cursor
+        # self.mock_db.return_value.__enter__.return_value.cursor.return_value = mock_cursor
+        # self.mock_db.return_value.cursor.return_value = mock_cursor
 
     def stub_praw(self):
         mock_moderator = mock.Mock(auto_spec=praw.models.Redditor)

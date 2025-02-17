@@ -228,7 +228,7 @@ VERIFIED_COMMENTS_CHANNEL_ID = int(
     os.environ.get("VERIFIED_COMMENTS_CHANNEL_ID") or rleb_secrets.VERIFIED_COMMENTS_CHANNEL_ID
 )
 
-verified_needle = "verified" if RUNNING_MODE == "production" else "podcast"
+verified_needle = "verified"
 
 # reroute testing pings to bot_commands
 if RUNNING_MODE == "local":

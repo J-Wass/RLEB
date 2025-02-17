@@ -89,7 +89,7 @@ async def send_tasks(
         message += t.pretty_print()
     # Discord messages must be less than 2000 to avoid rejection.
     if len(message) > 1990:
-        message = await stdout.create_paste(message, title=f"{u}'s tasks")
+        message = await stdout.create_paste(message, title=f"{user}'s tasks")
     try:
 
         await discord_user.send(message)
