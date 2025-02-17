@@ -15,7 +15,7 @@ class RLEBAsyncTestCase(IsolatedAsyncioTestCase):
     """RLEB Test Case."""
 
     async def asyncSetUp(self):
-        super().setUp()
+        await super().asyncSetUp()
 
         # Patch praw and postgreSQL.
         self.mock_reddit = patch("praw.Reddit").start()
@@ -59,13 +59,6 @@ class RLEBAsyncTestCase(IsolatedAsyncioTestCase):
     def stub_db(self):
         self.data_stub.read_triflairs.return_value = [(":NRG:",), (":G2:",), (":C9:",)]
         self.data_stub.write_remindme.return_value = Remindme(1, "tester#123", "message lol", 123, 321)
-        # mock_cursor = mock.Mock()
-        # mock_cursor.execute.return_value = ""
-        # mock_cursor.fetchall.return_value = [(":NRG:",), (":G2:",), (":C9:",)]
-        # mock_cursor.fetchone.return_value = [1]
-
-        # self.mock_db.return_value.__enter__.return_value.cursor.return_value = mock_cursor
-        # self.mock_db.return_value.cursor.return_value = mock_cursor
 
     def stub_praw(self):
         mock_moderator = mock.Mock(auto_spec=praw.models.Redditor)
