@@ -125,7 +125,7 @@ def sheets_formatted_calendar_events(calendar_events: list[CalendarEvent]) -> st
     # 1 - Date & Day of the Week
     # 2 - Schedule Time & Update Time
     for event in sorted(calendar_events, key=lambda e: e.utc_datetime):
-        lines[0] += event.title + ",,"
+        lines[0] += event.title.strip() + ",,"
         lines[1] += (
             event.utc_datetime.strftime("%x")
             + ","
@@ -148,7 +148,7 @@ def reddit_formatted_calendar_events(calendar_events: list[CalendarEvent]) -> st
     """Returns a reddit markdown post featuring all events in calendar_events."""
 
     reddit_submission = ABOUT_SECTION
-    day_buckets = {}
+    day_buckets: dict[int, list[CalendarEvent]] = {}
 
     # Group all events that occur on a similar day into the same bucket
     for calendar_event in calendar_events:
@@ -170,7 +170,7 @@ def reddit_formatted_calendar_events(calendar_events: list[CalendarEvent]) -> st
         event_list = events
         event_list.sort(key=lambda x: x.utc_datetime)
         for event in event_list:
-            tr = TABLE_ROW.replace("{title}", event.title)
+            tr = TABLE_ROW.replace("{title}", event.title.strip())
             tr = tr.replace("{link}", event.link)
             tr = tr.replace("{BRACKET}", event.bracket_link)
             tr = tr.replace("{ET}", timestring(event.et_datetime, event.et_datetime))

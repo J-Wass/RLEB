@@ -137,6 +137,7 @@ class DataStub(object):
 
 
 class Data(DataStub):
+    """Bridge between RLEB and postgres DB"""
     _singleton = None
 
     # Generic cache, mapping a string key to any object.
