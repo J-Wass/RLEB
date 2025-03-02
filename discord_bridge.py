@@ -162,22 +162,10 @@ class RLEsportsBot(discord.Client):
                 if not global_settings.discord_check_new_submission_enabled:
                     break
             except Exception as e:
-                if global_settings.thread_crashes["asyncio"] > 5:
-                    await self.bot_command_channel.send(
-                        "ALERT: Asyncio thread has crashed more than 5 times."
-                    )
-                    developer = discord.utils.get(
-                        self.get_all_members(),
-                        name=global_settings.developer_name,
-                        discriminator=global_settings.developer_discriminator,
-                    )
-                    await self.bot_command_channel.send(
-                        "^ " + developer.mention + " fyi"
-                    )
-                    break
                 global_settings.rleb_log_error(
                     "[DISCORD]: Submissions asyncio thread failed - {0}".format(e)
                 )
+                global_settings.queues["alerts"].put(("New Submissions asyncio thread died", global_settings.BOT_COMMANDS_CHANNEL_ID))
                 global_settings.rleb_log_error(traceback.format_exc())
                 global_settings.thread_crashes["asyncio"] += 1
                 global_settings.last_datetime_crashed["asyncio"] = datetime.now()
@@ -194,6 +182,12 @@ class RLEsportsBot(discord.Client):
                             verified_comments, verified_comments.body, verified_comments.author.name
                         )
                     )
+
+                    # ensure we stay under the 256 limit for title length
+                    text = verified_comments.body if verified_comments.body else ""
+                    text = text[:250]
+                    if len(text) == 250:
+                        text += "..."
                     embed = discord.Embed(
                         title=verified_comments.body,
                         url="https://www.reddit.com{0}".format(verified_comments.permalink),
@@ -201,8 +195,6 @@ class RLEsportsBot(discord.Client):
                     )
                     embed.set_author(name=verified_comments.author.name)
 
-                    # if not verified_comments.link_flair_text:
-                    #     continue
 
                     await self.verified_comments_channel.send(embed=embed)
                 global_settings.asyncio_threads_heartbeats[
@@ -211,22 +203,10 @@ class RLEsportsBot(discord.Client):
                 if not global_settings.discord_check_new_verified_comments_enabled:
                     break
             except Exception as e:
-                if global_settings.thread_crashes["asyncio"] > 5:
-                    await self.bot_command_channel.send(
-                        "ALERT: Asyncio thread has crashed more than 5 times."
-                    )
-                    developer = discord.utils.get(
-                        self.get_all_members(),
-                        name=global_settings.developer_name,
-                        discriminator=global_settings.developer_discriminator,
-                    )
-                    await self.bot_command_channel.send(
-                        "^ " + developer.mention + " fyi"
-                    )
-                    break
                 global_settings.rleb_log_error(
                     "[DISCORD]: Verified comments asyncio thread failed - {0}".format(e)
                 )
+                global_settings.queues["alerts"].put(("Verified Comments asyncio thread died", global_settings.BOT_COMMANDS_CHANNEL_ID))
                 global_settings.rleb_log_error(traceback.format_exc())
                 global_settings.thread_crashes["asyncio"] += 1
                 global_settings.last_datetime_crashed["asyncio"] = datetime.now()
@@ -254,22 +234,10 @@ class RLEsportsBot(discord.Client):
                 if not global_settings.discord_check_new_thread_creation_enabled:
                     break
             except Exception as e:
-                if global_settings.thread_crashes["asyncio"] > 5:
-                    await self.bot_command_channel.send(
-                        "ALERT: Asyncio thread has crashed more than 5 times."
-                    )
-                    developer = discord.utils.get(
-                        self.get_all_members(),
-                        name=global_settings.developer_name,
-                        discriminator=global_settings.developer_discriminator,
-                    )
-                    await self.bot_command_channel.send(
-                        "^ " + developer.mention + " fyi"
-                    )
-                    break
                 global_settings.rleb_log_error(
-                    "[DISCORD]: Alert asyncio thread failed - {0}".format(e)
+                    "[DISCORD]: New Threads asyncio thread failed - {0}".format(e)
                 )
+                global_settings.queues["alerts"].put(("Thread Creation asyncio thread died", global_settings.BOT_COMMANDS_CHANNEL_ID))
                 global_settings.rleb_log_error(traceback.format_exc())
                 global_settings.thread_crashes["asyncio"] += 1
                 global_settings.last_datetime_crashed["asyncio"] = datetime.now()
@@ -316,22 +284,10 @@ class RLEsportsBot(discord.Client):
                 if not global_settings.discord_check_direct_messages_enabled:
                     break
             except Exception as e:
-                if global_settings.thread_crashes["asyncio"] > 5:
-                    await self.bot_command_channel.send(
-                        "ALERT: Asyncio thread has crashed more than 5 times."
-                    )
-                    developer = discord.utils.get(
-                        self.get_all_members(),
-                        name=global_settings.developer_name,
-                        discriminator=global_settings.developer_discriminator,
-                    )
-                    await self.bot_command_channel.send(
-                        "^ " + developer.mention + " fyi"
-                    )
-                    break
                 global_settings.rleb_log_error(
-                    "[DISCORD]: Alert asyncio thread failed - {0}".format(e)
+                    "[DISCORD]: DM asyncio thread failed - {0}".format(e)
                 )
+                global_settings.queues["alerts"].put(("DM asyncio thread died", global_settings.BOT_COMMANDS_CHANNEL_ID))
                 global_settings.rleb_log_error(traceback.format_exc())
                 global_settings.thread_crashes["asyncio"] += 1
                 global_settings.last_datetime_crashed["asyncio"] = datetime.now()
@@ -361,22 +317,10 @@ class RLEsportsBot(discord.Client):
                 if not global_settings.discord_check_new_alerts_enabled:
                     break
             except Exception as e:
-                if global_settings.thread_crashes["asyncio"] > 5:
-                    await self.bot_command_channel.send(
-                        "ALERT: Asyncio thread has crashed more than 5 times."
-                    )
-                    developer = discord.utils.get(
-                        self.get_all_members(),
-                        name=global_settings.developer_name,
-                        discriminator=global_settings.developer_discriminator,
-                    )
-                    await self.bot_command_channel.send(
-                        "^ " + developer.mention + " fyi"
-                    )
-                    break
                 global_settings.rleb_log_error(
                     "[DISCORD]: Alert asyncio thread failed - {0}".format(e)
                 )
+                global_settings.queues["alerts"].put(("Alerts asyncio thread died", global_settings.BOT_COMMANDS_CHANNEL_ID))
                 global_settings.rleb_log_error(traceback.format_exc())
                 global_settings.thread_crashes["asyncio"] += 1
                 global_settings.last_datetime_crashed["asyncio"] = datetime.now()
@@ -468,25 +412,14 @@ class RLEsportsBot(discord.Client):
                 if not global_settings.discord_check_new_modmail_enabled:
                     break
             except Exception as e:
-                if global_settings.thread_crashes["asyncio"] > 5:
-                    await self.bot_command_channel.send(
-                        "ALERT: Asyncio thread has crashed more than 5 times."
-                    )
-                    developer = discord.utils.get(
-                        self.get_all_members(),
-                        name=global_settings.developer_name,
-                        discriminator=global_settings.developer_discriminator,
-                    )
-                    await self.bot_command_channel.send(
-                        "^ " + developer.mention + " fyi"
-                    )
-                    break
                 global_settings.rleb_log_error(
                     "[DISCORD]: Modfeed asyncio thread failed - {0}".format(e)
                 )
+                global_settings.queues["alerts"].put(("Modfeed asyncio thread died", global_settings.BOT_COMMANDS_CHANNEL_ID))
                 global_settings.rleb_log_error(traceback.format_exc())
                 global_settings.thread_crashes["asyncio"] += 1
                 global_settings.last_datetime_crashed["asyncio"] = datetime.now()
+                
             await asyncio.sleep(global_settings.discord_async_interval_seconds)
 
     # Record that a user was responded to. Useful for responding "thanks".
@@ -1397,7 +1330,7 @@ class RLEsportsBot(discord.Client):
                 day_number = tokens[4]
             except Exception:
                 await message.channel.send(
-                    "Couldn't understand that. Expected `!makethread [liquipedia-url] [tourney_system] [options] [day]`. Example command is `!makethread www.google.com groups BracketRd1,Streams 1`. Valid tourney_systems are groups, swiss, and bracket. Valid options are bracketrd1, prizepool, streams and/or none. To use more than 1 option, list together separated by commas with no space such as: bracketrd1,prizepool,stream."
+                    "Couldn't understand that. Expected `!makethread [liquipedia-url] [tourney_system] [options] [day]`. Example command is `!makethread www.google.com groups BracketRd1,Streams 1`. Valid tourney_systems are basic, groups, swiss, and bracket. Valid options are bracketrd1, prizepool, streams and/or none. To use more than 1 option, list together separated by commas with no space such as: bracketrd1,prizepool,stream."
                 )
                 return
 
