@@ -24,6 +24,7 @@ multiflair_request_keys = [
     "multiflairrequest",
 ]
 
+
 # Create stream to add new posts to submissions queue
 def read_new_submissions():
     """Stream subreddit submissions into the submissions queue."""
@@ -40,9 +41,9 @@ def read_new_submissions():
                     "[REDDIT]: Submission - {0}".format(submission)
                 )
                 global_settings.queues["submissions"].put(submission)
-                global_settings.threads_heartbeats[
-                    "Submissions thread"
-                ] = datetime.now()
+                global_settings.threads_heartbeats["Submissions thread"] = (
+                    datetime.now()
+                )
         except AssertionError as e:
             if "429" in str(e):
                 time.sleep(60 * 11)
@@ -66,6 +67,7 @@ def read_new_submissions():
             break
         time.sleep(global_settings.thread_restart_interval_seconds)
 
+
 # Create stream to add new comments to verified comments queue
 def read_new_verfied_comments():
     while True:
@@ -75,11 +77,18 @@ def read_new_verfied_comments():
                 submission_datetime = datetime.fromtimestamp(comment.created_utc)
                 if abs((datetime.now() - submission_datetime).total_seconds()) > 60 * 2:
                     continue
-                
+
                 for flair in sub.flair(comment.author):
-                    if (not flair) or ("flair_text" not in flair) or (not flair["flair_text"]):
+                    if (
+                        (not flair)
+                        or ("flair_text" not in flair)
+                        or (not flair["flair_text"])
+                    ):
                         continue
-                    if global_settings.verified_needle in flair["flair_text"].strip().lower():
+                    if (
+                        global_settings.verified_needle
+                        in flair["flair_text"].strip().lower()
+                    ):
                         global_settings.rleb_log_info(
                             "[REDDIT]: Comment - {0}".format(comment)
                         )
@@ -110,6 +119,7 @@ def read_new_verfied_comments():
         if not global_settings.read_new_verified_comments_enabled:
             break
         time.sleep(global_settings.thread_restart_interval_seconds)
+
 
 # Monitor inbox for PMs
 def monitor_subreddit():

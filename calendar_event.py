@@ -42,7 +42,9 @@ If you are on the official **Reddit App**, you will find the schedule under the 
 
 
 class CalendarEvent:
-    def __init__(self, rawtext: str, start_timestamp: str, stream: str, description: str):
+    def __init__(
+        self, rawtext: str, start_timestamp: str, stream: str, description: str
+    ):
         self.rawtext = rawtext
         self.start_timestamp = start_timestamp
         self.stream = stream
@@ -64,12 +66,8 @@ class CalendarEvent:
 
         self.bracket_link = self.link + "#Results"
 
-        self.start_datetime = datetime.datetime.fromisoformat(
-            self.start_timestamp
-        )
-        self.utc_datetime = self.start_datetime.astimezone(
-            pytz.timezone("Etc/UTC")
-        )
+        self.start_datetime = datetime.datetime.fromisoformat(self.start_timestamp)
+        self.utc_datetime = self.start_datetime.astimezone(pytz.timezone("Etc/UTC"))
         self.et_datetime = self.start_datetime.astimezone(
             pytz.timezone("America/New_York")
         )
@@ -83,9 +81,7 @@ class CalendarEvent:
         self.day_number = self.et_datetime.day
         self.day_name = global_settings.DAYS[self.et_datetime.weekday()]
         self.month_number = self.et_datetime.month
-        self.month_name = global_settings.MONTHS[
-            self.et_datetime.month - 1
-        ]
+        self.month_name = global_settings.MONTHS[self.et_datetime.month - 1]
 
     def __repr__(self):
         return f" {self.title} {self.link} {self.bracket_link} {self.et_datetime} {self.cet_datetime} {self.aet_datetime} {self.day_name} {self.month_name} {self.day_number}"
@@ -245,8 +241,12 @@ async def handle_calendar_lookup(
                         rawtext
                     )
                 )
-            description = event_item.get("description","https://www.reddit.com/r/RocketLeagueEsports")
-            calendar_event = CalendarEvent(rawtext, start_timestamp, stream, description)
+            description = event_item.get(
+                "description", "https://www.reddit.com/r/RocketLeagueEsports"
+            )
+            calendar_event = CalendarEvent(
+                rawtext, start_timestamp, stream, description
+            )
             calendar_events.append(calendar_event)
 
         formatted_text = formatted_calendar_events(calendar_events, formatter)

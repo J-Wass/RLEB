@@ -87,7 +87,9 @@ class DataStub(object):
     def read_auto_update_from_id(self, auto_update_id: int) -> Optional[AutoUpdate]:
         return None
 
-    def read_auto_update_from_reddit_thread(self, reddit_thread_url: str) -> Optional[AutoUpdate]:
+    def read_auto_update_from_reddit_thread(
+        self, reddit_thread_url: str
+    ) -> Optional[AutoUpdate]:
         return None
 
     def read_all_auto_updates(self) -> list[AutoUpdate]:
@@ -96,10 +98,27 @@ class DataStub(object):
     def delete_auto_update(self, auto_update: AutoUpdate) -> None:
         pass
 
-    def write_auto_update(self, reddit_thread_url: str, liquipedia_url: str, tourney_system: str, thread_options: str, day_number: int) -> AutoUpdate:
-        return AutoUpdate(-1, reddit_thread_url, liquipedia_url, tourney_system, thread_options, int(time.time()), day_number)
+    def write_auto_update(
+        self,
+        reddit_thread_url: str,
+        liquipedia_url: str,
+        tourney_system: str,
+        thread_options: str,
+        day_number: int,
+    ) -> AutoUpdate:
+        return AutoUpdate(
+            -1,
+            reddit_thread_url,
+            liquipedia_url,
+            tourney_system,
+            thread_options,
+            int(time.time()),
+            day_number,
+        )
 
-    def write_remindme(self, user: str, message: str, elapsed_time: int, channel_id: int) -> Remindme:
+    def write_remindme(
+        self, user: str, message: str, elapsed_time: int, channel_id: int
+    ) -> Remindme:
         return Remindme(-1, user, message, int(time.time()) + elapsed_time, channel_id)
 
     def delete_remindme(self, remindme_id: int) -> None:
@@ -108,16 +127,24 @@ class DataStub(object):
     def read_remindmes(self) -> list[Remindme]:
         return []
 
-    def write_already_warned_scheduled_post(self, log_id: int, seconds_since_epoch: int) -> None:
+    def write_already_warned_scheduled_post(
+        self, log_id: int, seconds_since_epoch: int
+    ) -> None:
         pass
 
-    def read_already_warned_scheduled_posts(self, min_seconds_since_epoch: int) -> list[int]:
+    def read_already_warned_scheduled_posts(
+        self, min_seconds_since_epoch: int
+    ) -> list[int]:
         return []
 
-    def write_already_warned_confirmed_post(self, log_id: int, seconds_since_epoch: int) -> None:
+    def write_already_warned_confirmed_post(
+        self, log_id: int, seconds_since_epoch: int
+    ) -> None:
         pass
 
-    def read_already_confirmed_scheduled_posts(self, min_seconds_since_epoch: int) -> list[int]:
+    def read_already_confirmed_scheduled_posts(
+        self, min_seconds_since_epoch: int
+    ) -> list[int]:
         return []
 
     def write_to_logs(self, logs: list[tuple[datetime, str]]) -> None:
@@ -138,6 +165,7 @@ class DataStub(object):
 
 class Data(DataStub):
     """Bridge between RLEB and postgres DB"""
+
     _singleton = None
 
     # Generic cache, mapping a string key to any object.
@@ -154,7 +182,14 @@ class Data(DataStub):
     @classmethod
     def singleton(cls):
         if cls._singleton is None:
-            cls._singleton = cls.__new__(cls if (os.environ.get("DATA_MODE") == "real" or rleb_secrets.DATA_MODE == "real") else DataStub)
+            cls._singleton = cls.__new__(
+                cls
+                if (
+                    os.environ.get("DATA_MODE") == "real"
+                    or rleb_secrets.DATA_MODE == "real"
+                )
+                else DataStub
+            )
         return cls._singleton
 
     def postgres_connection(self):
@@ -244,9 +279,8 @@ class Data(DataStub):
         with self.postgres_connection() as db:
             cursor = db.cursor()
             cursor.execute(
-                """INSERT INTO public.aliases (long_name, short_name) VALUES (%s, %s);""", (
-                    long_name, short_name
-                ),
+                """INSERT INTO public.aliases (long_name, short_name) VALUES (%s, %s);""",
+                (long_name, short_name),
             )
 
     def remove_alias(self, long_name: str) -> None:
@@ -254,7 +288,8 @@ class Data(DataStub):
         with self.postgres_connection() as db:
             cursor = db.cursor()
             cursor.execute(
-                """DELETE FROM public.aliases WHERE long_name = %s;""", (long_name),
+                """DELETE FROM public.aliases WHERE long_name = %s;""",
+                (long_name),
             )
 
     def read_all_aliases(self) -> dict[str, str]:
@@ -480,7 +515,9 @@ class Data(DataStub):
         with self.postgres_connection() as db:
             cursor = db.cursor()
             # NOTE: For legacy reasons, triflairs are called "dualflairs" in postgres.
-            cursor.execute("""INSERT INTO public.dualflairs VALUES (%s)""", (flair_to_add,))
+            cursor.execute(
+                """INSERT INTO public.dualflairs VALUES (%s)""", (flair_to_add,)
+            )
 
             Data._empty_cache("triflair")
 

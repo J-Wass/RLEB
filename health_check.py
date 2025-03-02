@@ -17,7 +17,7 @@ def health_check():
             if global_settings.thread_crashes["thread"] >= 5:
                 global_settings.thread_health_check_enabled = False
                 global_settings.health_enabled = False
-                rleb_log_error("HEALTH: More than 5 thread crashes.")
+                rleb_log_error("[HEALTH]: More than 5 thread crashes.")
                 global_settings.queues["alerts"].put(
                     (
                         "More than 5 thread crashes detected. Consider using `!restart`.",
@@ -27,7 +27,7 @@ def health_check():
             if global_settings.thread_crashes["asyncio"] >= 5:
                 global_settings.thread_health_check_enabled = False
                 global_settings.health_enabled = False
-                rleb_log_error("HEALTH: More than 5 asyncio crashes.")
+                rleb_log_error("[HEALTH]: More than 5 asyncio crashes.")
                 global_settings.queues["alerts"].put(
                     (
                         "More than 5 asyncio crashes detected. Consider using `!restart`.",

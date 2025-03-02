@@ -48,8 +48,7 @@ async def handle_flair_census(
 
 
 async def handle_verified_flair_list(
-    sub: praw.reddit.models.Subreddit,
-    channel: discord.TextChannel
+    sub: praw.reddit.models.Subreddit, channel: discord.TextChannel
 ) -> None:
     """Creates a list of all verified users and prints to channel.
 

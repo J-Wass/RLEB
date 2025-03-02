@@ -51,7 +51,7 @@ asyncio_threads_heartbeats = {
     "modmail": datetime.now(),
     "direct_messages": datetime.now(),
     "thread_creation": datetime.now(),
-    "verified_comments": datetime.now()
+    "verified_comments": datetime.now(),
 }
 
 # List of threads to check for heartbeat in health check.
@@ -225,7 +225,8 @@ THREAD_CREATION_CHANNEL_ID = int(
     or rleb_secrets.THREAD_CREATION_CHANNEL_ID
 )
 VERIFIED_COMMENTS_CHANNEL_ID = int(
-    os.environ.get("VERIFIED_COMMENTS_CHANNEL_ID") or rleb_secrets.VERIFIED_COMMENTS_CHANNEL_ID
+    os.environ.get("VERIFIED_COMMENTS_CHANNEL_ID")
+    or rleb_secrets.VERIFIED_COMMENTS_CHANNEL_ID
 )
 
 verified_needle = "verified"

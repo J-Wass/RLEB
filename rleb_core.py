@@ -66,7 +66,9 @@ def start():
         target=autoupdater.auto_update, name="Auto update thread"
     )
     auto_update_thread.daemon = True
-    verified_comments_thread = Thread(target=read_new_verfied_comments, name="Verified Comments thread")
+    verified_comments_thread = Thread(
+        target=read_new_verfied_comments, name="Verified Comments thread"
+    )
     verified_comments_thread.daemon = True
 
     # Stores all threads used to run the bot.
@@ -78,7 +80,7 @@ def start():
         task_alert_thread,
         modlog_thread,
         auto_update_thread,
-        verified_comments_thread
+        verified_comments_thread,
     ]
 
     # Setup each thread's heartbeat for future health checks.

@@ -156,16 +156,21 @@ class RLEsportsBot(discord.Client):
                         await self.roster_news_channel.send(embed=embed)
 
                     await self.new_post_channel.send(embed=embed)
-                global_settings.asyncio_threads_heartbeats[
-                    "submissions"
-                ] = datetime.now()
+                global_settings.asyncio_threads_heartbeats["submissions"] = (
+                    datetime.now()
+                )
                 if not global_settings.discord_check_new_submission_enabled:
                     break
             except Exception as e:
                 global_settings.rleb_log_error(
                     "[DISCORD]: Submissions asyncio thread failed - {0}".format(e)
                 )
-                global_settings.queues["alerts"].put(("New Submissions asyncio thread died", global_settings.BOT_COMMANDS_CHANNEL_ID))
+                global_settings.queues["alerts"].put(
+                    (
+                        "New Submissions asyncio thread died",
+                        global_settings.BOT_COMMANDS_CHANNEL_ID,
+                    )
+                )
                 global_settings.rleb_log_error(traceback.format_exc())
                 global_settings.thread_crashes["asyncio"] += 1
                 global_settings.last_datetime_crashed["asyncio"] = datetime.now()
@@ -176,10 +181,14 @@ class RLEsportsBot(discord.Client):
         while True:
             try:
                 while not global_settings.queues["verified_comments"].empty():
-                    verified_comments = global_settings.queues["verified_comments"].get()
+                    verified_comments = global_settings.queues[
+                        "verified_comments"
+                    ].get()
                     global_settings.rleb_log_info(
                         "[DISCORD]: Received comment id {0}: {1}, {2}".format(
-                            verified_comments, verified_comments.body, verified_comments.author.name
+                            verified_comments,
+                            verified_comments.body,
+                            verified_comments.author.name,
                         )
                     )
 
@@ -190,27 +199,33 @@ class RLEsportsBot(discord.Client):
                         text += "..."
                     embed = discord.Embed(
                         title=verified_comments.body,
-                        url="https://www.reddit.com{0}".format(verified_comments.permalink),
+                        url="https://www.reddit.com{0}".format(
+                            verified_comments.permalink
+                        ),
                         color=random.choice(global_settings.colors),
                     )
                     embed.set_author(name=verified_comments.author.name)
 
-
                     await self.verified_comments_channel.send(embed=embed)
-                global_settings.asyncio_threads_heartbeats[
-                    "verified_comments"
-                ] = datetime.now()
+                global_settings.asyncio_threads_heartbeats["verified_comments"] = (
+                    datetime.now()
+                )
                 if not global_settings.discord_check_new_verified_comments_enabled:
                     break
             except Exception as e:
                 global_settings.rleb_log_error(
                     "[DISCORD]: Verified comments asyncio thread failed - {0}".format(e)
                 )
-                global_settings.queues["alerts"].put(("Verified Comments asyncio thread died", global_settings.BOT_COMMANDS_CHANNEL_ID))
+                global_settings.queues["alerts"].put(
+                    (
+                        "Verified Comments asyncio thread died",
+                        global_settings.BOT_COMMANDS_CHANNEL_ID,
+                    )
+                )
                 global_settings.rleb_log_error(traceback.format_exc())
                 global_settings.thread_crashes["asyncio"] += 1
                 global_settings.last_datetime_crashed["asyncio"] = datetime.now()
-            await asyncio.sleep(global_settings.discord_async_interval_seconds)        
+            await asyncio.sleep(global_settings.discord_async_interval_seconds)
 
     async def check_new_thread_creation(self):
         """Checks thread_creation queue to send warnings into #thread-creation."""
@@ -228,16 +243,21 @@ class RLEsportsBot(discord.Client):
                     )
                     await thread_creation_message.edit(suppress=True)
 
-                global_settings.asyncio_threads_heartbeats[
-                    "thread_creation"
-                ] = datetime.now()
+                global_settings.asyncio_threads_heartbeats["thread_creation"] = (
+                    datetime.now()
+                )
                 if not global_settings.discord_check_new_thread_creation_enabled:
                     break
             except Exception as e:
                 global_settings.rleb_log_error(
                     "[DISCORD]: New Threads asyncio thread failed - {0}".format(e)
                 )
-                global_settings.queues["alerts"].put(("Thread Creation asyncio thread died", global_settings.BOT_COMMANDS_CHANNEL_ID))
+                global_settings.queues["alerts"].put(
+                    (
+                        "Thread Creation asyncio thread died",
+                        global_settings.BOT_COMMANDS_CHANNEL_ID,
+                    )
+                )
                 global_settings.rleb_log_error(traceback.format_exc())
                 global_settings.thread_crashes["asyncio"] += 1
                 global_settings.last_datetime_crashed["asyncio"] = datetime.now()
@@ -278,16 +298,18 @@ class RLEsportsBot(discord.Client):
                         DM = await discord_user.send(message)
                         await DM.edit(suppress=True)
 
-                global_settings.asyncio_threads_heartbeats[
-                    "direct_messages"
-                ] = datetime.now()
+                global_settings.asyncio_threads_heartbeats["direct_messages"] = (
+                    datetime.now()
+                )
                 if not global_settings.discord_check_direct_messages_enabled:
                     break
             except Exception as e:
                 global_settings.rleb_log_error(
                     "[DISCORD]: DM asyncio thread failed - {0}".format(e)
                 )
-                global_settings.queues["alerts"].put(("DM asyncio thread died", global_settings.BOT_COMMANDS_CHANNEL_ID))
+                global_settings.queues["alerts"].put(
+                    ("DM asyncio thread died", global_settings.BOT_COMMANDS_CHANNEL_ID)
+                )
                 global_settings.rleb_log_error(traceback.format_exc())
                 global_settings.thread_crashes["asyncio"] += 1
                 global_settings.last_datetime_crashed["asyncio"] = datetime.now()
@@ -320,7 +342,12 @@ class RLEsportsBot(discord.Client):
                 global_settings.rleb_log_error(
                     "[DISCORD]: Alert asyncio thread failed - {0}".format(e)
                 )
-                global_settings.queues["alerts"].put(("Alerts asyncio thread died", global_settings.BOT_COMMANDS_CHANNEL_ID))
+                global_settings.queues["alerts"].put(
+                    (
+                        "Alerts asyncio thread died",
+                        global_settings.BOT_COMMANDS_CHANNEL_ID,
+                    )
+                )
                 global_settings.rleb_log_error(traceback.format_exc())
                 global_settings.thread_crashes["asyncio"] += 1
                 global_settings.last_datetime_crashed["asyncio"] = datetime.now()
@@ -415,11 +442,16 @@ class RLEsportsBot(discord.Client):
                 global_settings.rleb_log_error(
                     "[DISCORD]: Modfeed asyncio thread failed - {0}".format(e)
                 )
-                global_settings.queues["alerts"].put(("Modfeed asyncio thread died", global_settings.BOT_COMMANDS_CHANNEL_ID))
+                global_settings.queues["alerts"].put(
+                    (
+                        "Modfeed asyncio thread died",
+                        global_settings.BOT_COMMANDS_CHANNEL_ID,
+                    )
+                )
                 global_settings.rleb_log_error(traceback.format_exc())
                 global_settings.thread_crashes["asyncio"] += 1
                 global_settings.last_datetime_crashed["asyncio"] = datetime.now()
-                
+
             await asyncio.sleep(global_settings.discord_async_interval_seconds)
 
     # Record that a user was responded to. Useful for responding "thanks".
@@ -565,7 +597,9 @@ class RLEsportsBot(discord.Client):
             if not global_settings.is_discord_mod(message.author):
                 return
 
-            global_settings.rleb_log_info("[DISCORD]: Starting verified flair list creation.")
+            global_settings.rleb_log_info(
+                "[DISCORD]: Starting verified flair list creation."
+            )
             await message.channel.send(
                 "Retrieving all verified flairs, this may take a minute..."
             )
@@ -1018,9 +1052,9 @@ class RLEsportsBot(discord.Client):
                 return
 
             if operation == "list":
-                long_to_short_name_map: dict[
-                    str, str
-                ] = Data.singleton().read_all_aliases()
+                long_to_short_name_map: dict[str, str] = (
+                    Data.singleton().read_all_aliases()
+                )
                 if len(long_to_short_name_map) == 0:
                     await message.channel.send(
                         "No aliases found. `!alias add [long_name] [shortened_name]` to add one."
@@ -1044,7 +1078,9 @@ class RLEsportsBot(discord.Client):
                     return
                 global_settings.rleb_log_info(f"Removing alias: {long_name}")
                 Data.singleton().remove_alias(long_name)
-                await message.channel.send("Alias removed. Use `!alias list` to see all existing aliases.")
+                await message.channel.send(
+                    "Alias removed. Use `!alias list` to see all existing aliases."
+                )
                 await self.add_response(message)
 
             elif operation == "add":
@@ -1057,7 +1093,9 @@ class RLEsportsBot(discord.Client):
                     )
                     return
 
-                global_settings.rleb_log_info(f"Adding alias: {long_name} -> {short_name}")
+                global_settings.rleb_log_info(
+                    f"Adding alias: {long_name} -> {short_name}"
+                )
                 Data.singleton().add_alias(long_name, short_name)
                 await message.channel.send(
                     "Alias added. Use `!alias list` to see all existing aliases."
@@ -1066,8 +1104,8 @@ class RLEsportsBot(discord.Client):
 
             elif operation == "help":
                 await message.channel.send(
-                        "Usage: `!alias add [long_name] [shortened_name]`, `!alias remove [long_name]` or `!alias list`."
-                    )
+                    "Usage: `!alias add [long_name] [shortened_name]`, `!alias remove [long_name]` or `!alias list`."
+                )
                 return
                 await self.add_response(message)
 
@@ -1245,9 +1283,9 @@ class RLEsportsBot(discord.Client):
                 # !autoupdate list
                 if tokens[1] == "list":
                     global_settings.rleb_log_info("[DISCORD]: Listing autoupdate")
-                    auto_updates: list[
-                        AutoUpdate
-                    ] = Data.singleton().read_all_auto_updates()
+                    auto_updates: list[AutoUpdate] = (
+                        Data.singleton().read_all_auto_updates()
+                    )
                     if len(auto_updates) == 0:
                         await message.channel.send(
                             "No auto updates are set. Use `!autoupdate [reddit-url] [liquipedia-url] [tourney_system] [options] [day]` to start one. `!autoupdate help` for more.\n"

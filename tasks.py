@@ -274,7 +274,7 @@ class Event:
 def get_scheduled_posts(
     already_warned_scheduled_posts: list[int] = None, days_ago: int = 5
 ) -> list[Event]:
-    """ Returns a list of scheduled posts from the sub starting `days_ago`, ignoring posts already in already_warned_scheduled_posts."""
+    """Returns a list of scheduled posts from the sub starting `days_ago`, ignoring posts already in already_warned_scheduled_posts."""
     scheduled_posts = []
     for log in global_settings.sub.mod.log(action="create_scheduled_post", limit=20):
         if already_warned_scheduled_posts and log.id in already_warned_scheduled_posts:
@@ -288,7 +288,6 @@ def get_scheduled_posts(
             description = (
                 log.description
             )  # description looks like 'scheduled for Tue, 31 Aug 2021 08:30 AM UTC'
-
 
             # Replace timezone with offset.
             for timezone_code, utc_offset in const_wasteland.timezone_offsets.items():
