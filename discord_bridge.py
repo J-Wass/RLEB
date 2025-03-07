@@ -198,7 +198,7 @@ class RLEsportsBot(discord.Client):
                     if len(text) == 250:
                         text += "..."
                     embed = discord.Embed(
-                        title=verified_comments.body,
+                        title=text,
                         url="https://www.reddit.com{0}".format(
                             verified_comments.permalink
                         ),
