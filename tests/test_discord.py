@@ -49,7 +49,7 @@ class TestDiscord(RLEBAsyncTestCase):
         # Used for passing modmail from reddit to discord.
         modmail_queue = Queue()
         # Used for passing alerts from reddit to discord.
-        alert_queue = Queue()        
+        alert_queue = Queue()
         # Used for passing alerts from reddit to discord.
         verified_comments_queue = Queue()
 

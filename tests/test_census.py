@@ -46,7 +46,7 @@ class TestFlairCensus(RLEBAsyncTestCase):
 
     async def test_handle_verified_flair_list(self):
         mock_sub = mock.Mock(spec=praw.models.Subreddit)
-        
+
         mock_user_1 = mock.Mock()
         mock_user_1.name = "Memory"
 
@@ -75,9 +75,9 @@ class TestFlairCensus(RLEBAsyncTestCase):
         await census.handle_verified_flair_list(mock_sub, mock_channel)
 
         mock_channel.send.assert_awaited_once_with(
-            "There are 3 verified users on the subreddit.\nMemory\nPaarth\n2piece\n", embed=None
+            "There are 3 verified users on the subreddit.\nMemory\nPaarth\n2piece\n",
+            embed=None,
         )
-
 
 
 if __name__ == "__main__":

@@ -19,7 +19,7 @@ ABOUT_SECTION = """
 
  You can post anything here that might not have been allowed as its own post. Whether that's quick questions, recently/frequently/over discussed content or "light" content that you don't deem worthy of its own thread.
 
- The table below features upcoming streams of S-Tier, A-Tier and the bigger B-Tier events including their streamed qualifiers[.](https://reddit-stream.com/comments/b6vu2e/) For a full list of all upcoming RLEsports events check [**Liquipedia**](https://liquipedia.net/rocketleague/Main_Page)."""
+ The table below features upcoming streams of S-Tier, A-Tier and the bigger B-Tier events including their streamed qualifiers[.](https://reddit-stream.com/comments/b6vu2e/) For a full list of all upcoming RLEsports events check [**Liquipedia**](https://liquipedia.net/rocketleague/Main_Page) or [**blast.tv**](https://blast.tv/rl/tournaments)."""
 
 # todo: use pytz to get the timezone abbreviations (EST vs EDT, AEST vs AEDT) dynamically
 TABLE_HEADER = """
