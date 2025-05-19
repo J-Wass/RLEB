@@ -123,11 +123,17 @@ class TestDiscord(RLEBAsyncTestCase):
         self.mock_embed.return_value = self.mock_embedded_object
 
         # Build a mock reddit modmail.
+        mock_author = mock.Mock()
+        mock_author.name = "author"
+
+        mock_message = mock.Mock()
+        mock_message.body_markdown = "modmail body"
+
         mock_modmail = mock.Mock()
         mock_modmail.id = "title"
         mock_modmail.subject = "modmail subject"
-        mock_modmail.body = "modmail body"
-        mock_modmail.author.name = "author"
+        mock_modmail.messages = [mock_message]
+        mock_modmail.authors = [mock_author]
         mock_modmail.parent_id = None
 
         # Add the modmail to the queue.

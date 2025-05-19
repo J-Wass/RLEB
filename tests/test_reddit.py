@@ -8,10 +8,11 @@ import unittest
 import unittest.mock as mock
 from unittest.mock import patch
 from tests.common.rleb_test_case import RLEBTestCase
+from praw.models import ModmailConversation
 
 from queue import Queue
 import praw
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class TestReddit(RLEBTestCase):
@@ -85,60 +86,57 @@ class TestReddit(RLEBTestCase):
         global_settings.monitor_modmail_enabled = False
         global_settings.modmail_polling_interval_seconds = 0
 
-        mock_modmail_item = mock.Mock()
+        mock_modmail_item = mock.Mock(spec=ModmailConversation)
         mock_modmail_item.id = "123"
+        mock_modmail_item.last_updated = datetime.now(timezone.utc).isoformat()
+        mock_modmail_item.messages = [1, 2]
+        mock_modmail_item.subject = "modmail subject line"
 
-        def mock_modmail_stream(args=[]):
-            """Mock method for sub.stream.submissions()."""
-            return [mock_modmail_item]
+        with patch(
+            "global_settings.sub.modmail.conversations",
+            return_value=[mock_modmail_item],
+        ):
+            # Assert that the new modmail is in the modmail queue after the method.
+            self.assertEqual(global_settings.queues["modmail"].qsize(), 0)
+            reddit_bridge.monitor_modmail()
+            self.assertEqual(global_settings.queues["modmail"].qsize(), 1)
 
-        # Mock the modmail stream to be an array of 1.
-        modmail_stream = patch.object(
-            reddit_bridge.sub.mod, "unread", new=mock_modmail_stream
-        ).start()
-        self.addCleanup(modmail_stream)
-
-        # Assert that the new modmail is in the modmail queue after the method.
-        self.assertEqual(global_settings.queues["modmail"].qsize(), 0)
-        reddit_bridge.monitor_modmail()
-        self.assertEqual(global_settings.queues["modmail"].qsize(), 1)
-
-        modmail_from_queue = global_settings.queues["modmail"].get()
-        self.assertEqual(modmail_from_queue, mock_modmail_item)
+            modmail_from_queue = global_settings.queues["modmail"].get()
+            self.assertEqual(modmail_from_queue, mock_modmail_item)
 
     def test_monitor_modmail_for_multiflair(self):
         global_settings.monitor_modmail_enabled = False
         global_settings.modmail_polling_interval_seconds = 0
 
-        mock_user = mock.Mock()
-        mock_modmail_item = mock.Mock()
-        mock_modmail_item.id = "123"
-        mock_modmail_item.subject = "triflair"
-        mock_modmail_item.body = ":NRG: :G2:"
-        mock_modmail_item.author = mock_user
-
         mock_sub_flair = mock.MagicMock()
         global_settings.sub.flair = mock_sub_flair
 
-        def mock_modmail_stream(args=[]):
-            """Mock method for sub.stream.submissions()."""
-            return [mock_modmail_item]
+        mock_modmail_item = mock.Mock(spec=ModmailConversation)
+        mock_modmail_item.id = "123"
+        mock_modmail_item.last_updated = datetime.now(timezone.utc).isoformat()
 
-        # Mock the modmail stream to be an array of 1.
-        modmail_stream = patch.object(
-            reddit_bridge.sub.mod, "unread", new=mock_modmail_stream
-        ).start()
-        self.addCleanup(modmail_stream)
+        message = mock.Mock()
+        message.body_markdown = ":NRG: :G2:"
+        mock_modmail_item.messages = [message]
+        mock_modmail_item.subject = "triflair"
 
-        # Assert that the new modmail isn't in the queue since it is filtered.
-        self.assertEqual(global_settings.queues["modmail"].qsize(), 0)
+        mock_user = mock.Mock()
+        mock_modmail_item.authors = [mock_user]
 
-        reddit_bridge.monitor_modmail()
-        self.assertEqual(global_settings.queues["modmail"].qsize(), 0)
+        with patch(
+            "global_settings.sub.modmail.conversations",
+            return_value=[mock_modmail_item],
+        ):
 
-        mock_sub_flair.set.assert_called_once_with(
-            mock_user, text=":NRG: :G2:", css_class=""
-        )
+            # Assert that the new modmail isn't in the queue since it is filtered.
+            self.assertEqual(global_settings.queues["modmail"].qsize(), 0)
+
+            reddit_bridge.monitor_modmail()
+            self.assertEqual(global_settings.queues["modmail"].qsize(), 0)
+
+            mock_sub_flair.set.assert_called_once_with(
+                mock_user, text=":NRG: :G2:", css_class=""
+            )
 
     def test_monitor_modmail_for_removal_reason(self):
         global_settings.monitor_modmail_enabled = False

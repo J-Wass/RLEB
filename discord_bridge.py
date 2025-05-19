@@ -399,32 +399,32 @@ class RLEsportsBot(discord.Client):
 
                 # Mod Mail
                 while not global_settings.queues["modmail"].empty():
-                    item = global_settings.queues["modmail"].get()
+                    conversation = global_settings.queues["modmail"].get()
                     global_settings.rleb_log_info(
                         "[DISCORD]: Received modmail id {0}: {1}".format(
-                            item.id, item.body
+                            conversation.id, conversation.messages[-1].body_markdown
                         )
                     )
                     embed = None
 
                     # On-going conversation.
-                    if item.parent_id:
+                    if len(conversation.messages) > 1:
                         embed = discord.Embed(
-                            title="Commented on '{0}'".format(item.subject),
+                            title="Commented on '{0}'".format(conversation.subject),
                             url="https://mod.reddit.com/mail/all",
                             color=random.choice(global_settings.colors),
                         )
-                        embed.set_author(name=item.author.name)
+                        embed.set_author(name=conversation.authors[0].name)
                     # New modmail
                     else:
                         embed = discord.Embed(
-                            title="Created: '{0}'".format(item.subject),
+                            title="Created: '{0}'".format(conversation.subject),
                             url="https://mod.reddit.com/mail/all",
                             color=random.choice(global_settings.colors),
                         )
-                        embed.set_author(name=item.author.name)
+                        embed.set_author(name=conversation.authors[0].name)
 
-                    embed.description = f"{item.body}\n--------------------------------------------------------"
+                    embed.description = f"{conversation.messages[-1].body_markdown}\n--------------------------------------------------------"
 
                     # Send everything.
                     try:
@@ -432,7 +432,7 @@ class RLEsportsBot(discord.Client):
                     except discord.errors.HTTPException as e:
                         # Message has invalid formatting. Just send basic msg.
                         await self.modmail_channel.send(
-                            f"**{item.subject}** by {item.author.name}"
+                            f"**{conversation.subject}** by {conversation.authors[0].name}"
                         )
 
                 global_settings.asyncio_threads_heartbeats["modmail"] = datetime.now()
@@ -1652,6 +1652,9 @@ class RLEsportsBot(discord.Client):
         elif discord_message.startswith("!echo"):
             message_without_command = "> {0}".format(
                 discord_message.replace("!echo", "")
+            )
+            global_settings.rleb_log_info(
+                f"[DISCORD] Echoing {message_without_command}"
             )
             await message.channel.send(message_without_command)
             await self.add_response(message)

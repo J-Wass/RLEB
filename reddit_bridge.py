@@ -2,11 +2,12 @@ import time
 import prawcore
 import praw
 import traceback
-from datetime import datetime
+from datetime import datetime, timezone
 
 from triflairs import handle_flair_request
 import global_settings
 from global_settings import sub, r, rleb_log_info
+from praw.models import ModmailConversation
 
 # keys that trigger multiflair request, from modmail or u/RLMatchThreads's inbox. The keys should be lowercase and stripped of whitespace.
 multiflair_request_keys = [
@@ -215,16 +216,56 @@ def monitor_modlog():
 # Monitor moderator feeds.
 def monitor_modmail():
     """Listen to new ModMail."""
+    already_printed_convos: set[str] = set()
+    already_printed_convos_ordered: list[str] = []
     while True:
         try:
-            for item in sub.mod.unread():
-                item.mark_read()
-                global_settings.rleb_log_info("[REDDIT]: Modmail - {0}".format(item.id))
+            for conversation in sub.modmail.conversations(state="new"):
+                if not conversation or not isinstance(
+                    conversation, ModmailConversation
+                ):
+                    continue
+
+                # only find modmails from 2m ago
+                last_updated = datetime.fromisoformat(conversation.last_updated)
+                if (
+                    abs((datetime.now(timezone.utc) - last_updated).total_seconds())
+                    > 60 * 2
+                ):
+                    continue
+
+                dedupe_id = f"{conversation.id}:{len(conversation.messages)}"
+                if dedupe_id in already_printed_convos:
+                    continue
+                already_printed_convos.add(dedupe_id)
+                already_printed_convos_ordered.append(dedupe_id)
+
+                # if above 100, dump the first 50 to not have the set grow unbounded
+                if len(already_printed_convos_ordered) >= 100:
+                    for convo_to_delete in already_printed_convos_ordered[:50]:
+                        already_printed_convos.remove(convo_to_delete)
+                    already_printed_convos_ordered = already_printed_convos_ordered[50:]
+                    global_settings.rleb_log_info(
+                        "[REDDIT]: Modmail - Clearing modmail convo cache"
+                    )
+
+                # mark as read
+                full_convo = sub.modmail(conversation.id)
+                full_convo.read()
+                conversation.read()
+
+                global_settings.rleb_log_info(
+                    "[REDDIT]: Modmail - {0}".format(dedupe_id)
+                )
 
                 # Handle multiflairs from subreddit.
-                subject = item.subject
+                subject = conversation.subject
                 if subject.lower().replace(" ", "") in multiflair_request_keys:
-                    handle_flair_request(sub, item.author, item.body)
+                    handle_flair_request(
+                        sub,
+                        conversation.authors[0],
+                        conversation.messages[-1].body_markdown,
+                    )
                     continue
 
                 # Filter modmail from removal reasons.
@@ -237,12 +278,12 @@ def monitor_modmail():
                         "Your submission was removed from /r/RocketLeagueEsports",
                         "Your post from RocketLeagueEsports was removed",
                     }
-                    and not item.parent_id
+                    and len(conversation.messages) == 1
                 ):
                     continue
 
                 # Send modmail to discord.
-                global_settings.queues["modmail"].put(item)
+                global_settings.queues["modmail"].put(conversation)
                 global_settings.threads_heartbeats["ModMail thread"] = datetime.now()
             time.sleep(global_settings.modmail_polling_interval_seconds)
         except AssertionError as e:  # rate limit
