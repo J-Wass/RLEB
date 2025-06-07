@@ -40,6 +40,15 @@ def bracket_names(round):
 
     return output
 
+async def handle_bracket_lookup_date(url: str, channel: discord.channel.TextChannel, date_number: int) -> None:
+    """Handle bracket lookup message.
+
+    Args:
+        channel (discord.channel.TextChannel): Channel the lookup is being used in.
+        url (str): Liquipedia URL string to look for elimination brackets.
+        date_number (int): The day of the month to generate a bracket for.
+    """
+
 
 async def handle_bracket_lookup(url: str, channel: discord.channel.TextChannel, day_number: int) -> None:
     """Handle bracket lookup message.

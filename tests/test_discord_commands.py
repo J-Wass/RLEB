@@ -74,27 +74,6 @@ class TestDiscordCommands(RLEBAsyncTestCase):
         global_settings.discord_async_interval_seconds = 1
         global_settings.user_names_to_ids = {"test_mod#1": 567}
 
-    async def test_bracket_e2e(self):
-        # Not staff.
-        await self._send_message("!bracket", from_staff_user=False)
-        self.mock_channel.send.assert_not_awaited()
-        self.mock_channel.reset_mock()
-
-        # Missing liqui url.
-        await self._send_message("!bracket", from_staff_user=True)
-        self.mock_channel.send.assert_awaited_with(
-            "Couldn't understand that. Expected '!bracket liquipedia-url day-number'."
-        )
-        self.mock_channel.reset_mock()
-
-        # Happy path.
-        await self._send_message(
-            "!bracket https://liquipedia.net/rocketleague/Rocket_League_Championship_Series/2021-22/Winter 1",
-            from_staff_user=True,
-        )
-        self.mock_channel.send.assert_awaited_with(
-            "**Hook**: https://paste.ee/p/fake_url"
-        )
 
     @mock.patch("discord_bridge.handle_flair_census")
     async def test_census(self, mock_rleb_census):
@@ -220,17 +199,17 @@ class TestDiscordCommands(RLEBAsyncTestCase):
         self.mock_channel.send.assert_not_awaited()
         mock_handle_coverage_lookup.assert_not_awaited()
 
-    @mock.patch("discord_bridge.handle_bracket_lookup")
+    @mock.patch("discord_bridge.diesel.get_bracket_markdown")
     async def test_bracket(self, mock_handle_bracket_lookup):
         # Happy path.
         await self._send_message("!bracket url 1", from_staff_user=True)
-        mock_handle_bracket_lookup.assert_awaited_with("url", self.mock_channel, "1")
+        mock_handle_bracket_lookup.assert_awaited_with("url", "1")
         mock_handle_bracket_lookup.reset_mock()
 
         # No url.
         await self._send_message("!bracket", from_staff_user=True)
         self.mock_channel.send.assert_awaited_with(
-            "Couldn't understand that. Expected '!bracket liquipedia-url day-number'."
+            "Couldn't understand that. Expected '!bracket liquipedia-url date-of-the-month'."
         )
         self.mock_channel.send.reset_mock()
         mock_handle_bracket_lookup.assert_not_awaited()

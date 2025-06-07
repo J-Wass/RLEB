@@ -66,6 +66,9 @@ async def print_to_channel(
         force_pastebin (bool): Forces the stdout to occur on pastebin, instead of directly in discord.
         use_hook (bool): Whether the `content` should be printed with a catchphrase hook in the beginning.
     """
+    if content is None:
+        await channel.send("Something went wrong :(", embed=None)
+        return
     if (
         len(content) < 250
         and global_settings.enable_direct_channel_messages

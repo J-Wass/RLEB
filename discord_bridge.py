@@ -12,6 +12,7 @@ import math
 
 import health_check
 import global_settings
+from liqui import diesel
 import stdout
 from data_bridge import AutoUpdate, Data, Remindme
 from global_settings import sub, user_names_to_ids
@@ -1200,13 +1201,14 @@ class RLEsportsBot(discord.Client):
             tokens = discord_message.split()
             try:
                 url = tokens[1]
-                day_number = tokens[2]
+                date_number = tokens[2]
             except Exception:
                 await message.channel.send(
-                    "Couldn't understand that. Expected '!bracket liquipedia-url day-number'."
+                    "Couldn't understand that. Expected '!bracket liquipedia-url date-of-the-month'."
                 )
                 return
-            await handle_bracket_lookup(url, message.channel, day_number)
+            bracket_markdown = await diesel.get_bracket_markdown(url, date_number)
+            await stdout.print_to_channel(message.channel, bracket_markdown, title="Bracket")
             await self.add_response(message)
 
         elif discord_message.startswith("!autoupdate") and is_staff(message.author):
@@ -1365,10 +1367,10 @@ class RLEsportsBot(discord.Client):
                 url = tokens[1]
                 tourney_system = tokens[2]
                 options = tokens[3]
-                day_number = tokens[4]
+                date_number = tokens[4]
             except Exception:
                 await message.channel.send(
-                    "Couldn't understand that. Expected `!makethread [liquipedia-url] [tourney_system] [options] [day]`. Example command is `!makethread www.google.com groups BracketRd1,Streams 1`. Valid tourney_systems are basic, groups, swiss, and bracket. Valid options are bracketrd1, prizepool, streams and/or none. To use more than 1 option, list together separated by commas with no space such as: bracketrd1,prizepool,stream."
+                    "Couldn't understand that. Expected `!makethread [liquipedia-url] [tourney_system] [options] [date]`. Example command is `!makethread www.google.com groups BracketRd1,Streams 1`. Valid tourney_systems are basic, groups, swiss, and bracket. Valid options are bracketrd1, prizepool, streams and/or none. To use more than 1 option, list together separated by commas with no space such as: bracketrd1,prizepool,stream."
                 )
                 return
 
@@ -1378,7 +1380,8 @@ class RLEsportsBot(discord.Client):
                 template = tourney_system
             else:
                 template = f"{tourney_system}-{stringified_options}"
-            await handle_makethread_lookup(url, template, day_number, message.channel)
+            markdown = diesel.get_make_thread_markdown_date(url, template, date_number)
+            await stdout.print_to_channel(message.channel, markdown, title="Thread Markdown")
             await self.add_response(message)
 
         elif discord_message.startswith("!groups") and is_staff(message.author):
@@ -1411,13 +1414,13 @@ class RLEsportsBot(discord.Client):
             url = ""
             try:
                 url = tokens[1]
-                day_number = tokens[2]
+                date_number = tokens[2]
             except Exception:
                 await message.channel.send(
-                    "Couldn't understand that. Expected `!schedule liquipedia-url [day #]`.\nExample: `!schedule https://liquipedia.net/rocketleague/Rocket_League_Championship_Series/2022-23/Fall/North_America/Cup 2` will get you the schedule for day 2 of the NA cup."
+                    "Couldn't understand that. Expected `!schedule liquipedia-url [date of the month]`.\nExample: `!schedule https://liquipedia.net/rocketleague/Rocket_League_Championship_Series/2022-23/Fall/North_America/Cup 12` will get you the schedule for events on the 12th of the current month."
                 )
                 return
-            await handle_schedule_lookup(url, day_number, message.channel)
+            await diesel.handle_schedule_lookup_date(url, date_number, message.channel)
             await self.add_response(message)
 
         elif discord_message.startswith("!prizepool") and is_staff(message.author):
