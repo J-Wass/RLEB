@@ -840,32 +840,19 @@ class RLEsportsBot(discord.Client):
                     "Couldn't send logs over! (tip: there's a limit to the number of characters that can be sent. Make sure you aren't requesting too many logs. Use '!logs [db/memory] [n]', where n is a small number to avoid the character limit.)"
                 )
             await self.add_response(message)
-        elif discord_message.startswith("!shutdown") and is_staff(message.author):
-            if not global_settings.is_discord_mod(message.author):
-                return
-
-            await message.channel.send("Later nerds.")
-            global_settings.rleb_log_info("Shutting down.", should_flush=True)
-
-            # Absolutely shrek the running process.
-            if global_settings.RUNNING_ENVIRONMENT == "windows":
-                os.kill(os.getpid(), signal.SIGTERM)
-            else:
-                os.popen("pkill -9 -f diesel")
-                os.popen("pkill -9 -f rleb_core.py")
 
         elif discord_message.startswith("!deploy") and is_staff(message.author):
             if not global_settings.is_discord_mod(message.author):
                 return
 
-            await message.channel.send("brb")
+            await message.channel.send("Deploying, will be back in around 60s")
             global_settings.rleb_log_info("Deploying.", should_flush=True)
+            await asyncio.sleep(1.0)
 
             if global_settings.RUNNING_ENVIRONMENT == "windows":
                 os.kill(os.getpid(), signal.SIGTERM)  # just shutdown on win
             else:
-                current_path = str(pathlib.Path(__file__).parent.resolve())
-                os.popen(f"{current_path}/deploy.sh")
+                os.popen("/app/deploy.sh")
 
         elif discord_message.startswith("!restart") and is_staff(message.author):
             if not global_settings.is_discord_mod(message.author):
@@ -874,10 +861,10 @@ class RLEsportsBot(discord.Client):
             await message.channel.send("See ya in a few minutes <3")
             global_settings.rleb_log_info("Restarting.", should_flush=True)
 
-            if global_settings.RUNNING_ENVIRONMENT == "windows":
-                os.kill(os.getpid(), signal.SIGTERM)  # just shutdown on win
-            else:
-                os.popen("sudo reboot now")
+            # Give Discord a moment to send the message & flush logs
+            await asyncio.sleep(1.0)
+
+            os.kill(os.getpid(), signal.SIGTERM)
 
         elif discord_message == "!status" and is_staff(message.author):
 
@@ -921,16 +908,12 @@ class RLEsportsBot(discord.Client):
 
             # Hardware specs.
             try:
-                cpu_temp = round(
-                    int(
-                        os.popen("cat /sys/class/thermal/thermal_zone*/temp")
-                        .read()
-                        .strip()
-                    )
-                    / 1000,
-                    1,
-                )
-                await message.channel.send(f"**CPU Temp:** {cpu_temp} C")
+                soctemp = pathlib.Path("/etc/armbianmonitor/datasources/soctemp")
+                if soctemp.exists():
+                    val = int(soctemp.read_text().strip())
+                    if isinstance(val, int):
+                        cpu_temp = round(val / 1000.0, 1)
+                        await message.channel.send(f"**CPU Temp:** {cpu_temp} C")
             except:
                 pass
 
@@ -1208,7 +1191,9 @@ class RLEsportsBot(discord.Client):
                 )
                 return
             bracket_markdown = await diesel.get_bracket_markdown(url, date_number)
-            await stdout.print_to_channel(message.channel, bracket_markdown, title="Bracket")
+            await stdout.print_to_channel(
+                message.channel, bracket_markdown, title="Bracket"
+            )
             await self.add_response(message)
 
         elif discord_message.startswith("!autoupdate") and is_staff(message.author):
@@ -1381,7 +1366,9 @@ class RLEsportsBot(discord.Client):
             else:
                 template = f"{tourney_system}-{stringified_options}"
             markdown = diesel.get_make_thread_markdown_date(url, template, date_number)
-            await stdout.print_to_channel(message.channel, markdown, title="Thread Markdown")
+            await stdout.print_to_channel(
+                message.channel, markdown, title="Thread Markdown"
+            )
             await self.add_response(message)
 
         elif discord_message.startswith("!groups") and is_staff(message.author):
