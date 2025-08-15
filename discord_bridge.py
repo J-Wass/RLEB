@@ -864,7 +864,14 @@ class RLEsportsBot(discord.Client):
             # Give Discord a moment to send the message & flush logs
             await asyncio.sleep(1.0)
 
-            os.kill(os.getpid(), signal.SIGTERM)
+            try:
+                # Close Discord connection cleanly so sockets/files are released
+                await self.bot.close()
+            except Exception:
+                pass
+
+            # Last resort: terminate the process so Docker will restart the container
+            os._exit(0)   # hard exit, no atexit handlers
 
         elif discord_message == "!status" and is_staff(message.author):
 
