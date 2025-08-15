@@ -858,7 +858,7 @@ class RLEsportsBot(discord.Client):
             if not global_settings.is_discord_mod(message.author):
                 return
 
-            await message.channel.send("See ya in a few minutes <3")
+            await message.channel.send("brb")
             global_settings.rleb_log_info("Restarting.", should_flush=True)
 
             # Give Discord a moment to send the message & flush logs

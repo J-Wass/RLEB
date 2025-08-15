@@ -266,6 +266,8 @@ def monitor_modmail():
                         conversation.authors[0],
                         conversation.messages[-1].body_markdown,
                     )
+                    if getattr(full_convo, "state", None) != "archived":
+                        full_convo.archive()
                     continue
 
                 # Filter modmail from removal reasons.
