@@ -915,7 +915,7 @@ class RLEsportsBot(discord.Client):
 
             # Hardware specs.
             try:
-                soctemp = pathlib.Path("/etc/armbianmonitor/datasources/soctemp")
+                soctemp = pathlib.Path("/armbian/soctemp")
                 if soctemp.exists():
                     val = int(soctemp.read_text().strip())
                     if isinstance(val, int):
