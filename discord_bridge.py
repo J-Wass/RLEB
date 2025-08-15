@@ -845,14 +845,16 @@ class RLEsportsBot(discord.Client):
             if not global_settings.is_discord_mod(message.author):
                 return
 
-            await message.channel.send("Deploying, will be back in around 60s")
+            await message.channel.send("Deploying…")
             global_settings.rleb_log_info("Deploying.", should_flush=True)
-            await asyncio.sleep(1.0)
+            await asyncio.sleep(0.5)
 
-            if global_settings.RUNNING_ENVIRONMENT == "windows":
-                os.kill(os.getpid(), signal.SIGTERM)  # just shutdown on win
-            else:
-                os.popen("/app/deploy.sh")
+            flag = pathlib.Path("/app/data/deploy.flag")
+            try:
+                flag.write_text(f"ts={time.time()}\n")
+            except Exception as e:
+                await message.channel.send(f"Deploy trigger failed: {e}")
+                return
 
         elif discord_message.startswith("!restart") and is_staff(message.author):
             if not global_settings.is_discord_mod(message.author):
