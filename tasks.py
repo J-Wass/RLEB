@@ -134,14 +134,19 @@ def get_tasks() -> list[Task]:
     sheet = service.spreadsheets()
 
     # Shnag the range from 5-11, which includes event time and updaters/creators
-    sheet_json = (
-        sheet.values()
-        .get(
-            spreadsheetId=global_settings.SHEETS_ID,
-            range=global_settings.weekly_schedule_sheets_range,
+    try:
+        sheet_json = (
+            sheet.values()
+            .get(
+                spreadsheetId=global_settings.SHEETS_ID,
+                range=global_settings.weekly_schedule_sheets_range,
+            )
+            .execute()
         )
-        .execute()
-    )
+    except Exception as e:
+        global_settings.rleb_log_error(f"Failed to fetch current week in sheet {e}.")
+        return []
+
     values = sheet_json["values"]
 
     # Break sheet_json into useful lists.
