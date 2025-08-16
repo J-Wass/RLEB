@@ -845,7 +845,7 @@ class RLEsportsBot(discord.Client):
             if not global_settings.is_discord_mod(message.author):
                 return
 
-            await message.channel.send("Deploying… see ya in ~100 seconds")
+            await message.channel.send("Deploying… see ya in 210 seconds")
             global_settings.rleb_log_info("Deploying.", should_flush=True)
             await asyncio.sleep(0.5)
 
