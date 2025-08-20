@@ -42,5 +42,8 @@ CALENDAR_ID = "awd876wa8aawdwa6d098@group.calendar.google.com"
 GOOGLE_CREDENTIALS_JSON = "long, stringified json representing your google creds"
 SHEETS_ID = "ASDD87aSd8797adad43"
 
+# LLM stuff
+ANTHROPIC_API_KEY = "skibidi"
+
 # Indicator for Running Mode (either production or local)
 RUNNING_MODE = "local"

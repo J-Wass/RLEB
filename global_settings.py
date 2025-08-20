@@ -368,3 +368,5 @@ PASTEBIN_USER_PASS = (
     os.environ.get("PASTEBIN_USER_PASS") or rleb_secrets.PASTEBIN_USER_PASS
 )
 PASTEEE_APP_KEY = os.environ.get("PASTEEE_APP_KEY") or rleb_secrets.PASTEEE_APP_KEY
+
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY") or getattr(rleb_secrets, "ANTHROPIC_API_KEY", None)

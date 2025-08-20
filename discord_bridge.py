@@ -1658,6 +1658,26 @@ class RLEsportsBot(discord.Client):
             await message.channel.send(message_without_command)
             await self.add_response(message)
 
+        # !chat command handler
+        if discord_message.startswith("!chat"):
+            tokens = discord_message.split()
+            if len(tokens) == 1 or (len(tokens) == 2 and tokens[1].lower() == "help"):
+                await message.channel.send(
+                    "Usage: !chat [message]\nExample: !chat What is the capital of France?"
+                )
+                return
+            user_message = " ".join(tokens[1:])
+            if not user_message:
+                await message.channel.send("Please provide a message to send to RLEB.")
+                return
+            try:
+                import chat
+                response = await chat.ask_claude(user_message)
+                await message.channel.send(response)
+            except Exception as e:
+                await message.channel.send(f"Error: {e}")
+            return
+
 
 def start() -> None:
     """Spawns the various discord asyncio threads."""

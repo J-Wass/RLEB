@@ -199,6 +199,55 @@ class TestDiscordCommands(RLEBAsyncTestCase):
         self.mock_channel.send.assert_not_awaited()
         mock_handle_coverage_lookup.assert_not_awaited()
 
+    @mock.patch("chat.ask_claude")
+    async def test_chat(self, mock_ask_claude):
+        # Happy path - basic usage
+        mock_ask_claude.return_value = "The capital of France is Paris."
+        await self._send_message("!chat What is the capital of France?")
+        mock_ask_claude.assert_awaited_once_with("What is the capital of France?")
+        self.mock_channel.send.assert_awaited_with("The capital of France is Paris.")
+        mock_ask_claude.reset_mock()
+        self.mock_channel.reset_mock()
+
+        # Help command
+        await self._send_message("!chat help")
+        self.mock_channel.send.assert_awaited_with(
+            "Usage: !chat [message]\nExample: !chat What is the capital of France?"
+        )
+        mock_ask_claude.assert_not_awaited()
+        self.mock_channel.reset_mock()
+
+        # Help command with different case
+        await self._send_message("!chat HELP")
+        self.mock_channel.send.assert_awaited_with(
+            "Usage: !chat [message]\nExample: !chat What is the capital of France?"
+        )
+        mock_ask_claude.assert_not_awaited()
+        self.mock_channel.reset_mock()
+
+        # Empty message (should show help)
+        await self._send_message("!chat")
+        self.mock_channel.send.assert_awaited_with(
+            "Usage: !chat [message]\nExample: !chat What is the capital of France?"
+        )
+        mock_ask_claude.assert_not_awaited()
+        self.mock_channel.reset_mock()
+
+        # Message with spaces
+        mock_ask_claude.return_value = "I can help you with that question."
+        await self._send_message("!chat How do I learn Python programming?")
+        mock_ask_claude.assert_awaited_once_with("How do I learn Python programming?")
+        self.mock_channel.send.assert_awaited_with("I can help you with that question.")
+        mock_ask_claude.reset_mock()
+        self.mock_channel.reset_mock()
+
+        # API error handling
+        mock_ask_claude.side_effect = Exception("API rate limit exceeded")
+        await self._send_message("!chat What is the weather like?")
+        self.mock_channel.send.assert_awaited_with("Error: API rate limit exceeded")
+        mock_ask_claude.reset_mock()
+        self.mock_channel.reset_mock()
+
     @mock.patch("discord_bridge.diesel.get_bracket_markdown")
     async def test_bracket(self, mock_handle_bracket_lookup):
         # Happy path.
