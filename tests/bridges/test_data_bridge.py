@@ -90,8 +90,24 @@ class TestDataStub(unittest.TestCase):
 
 
 class TestData(unittest.TestCase):
+    def setUp(self):
+        # Patch rleb_secrets for all tests to avoid AttributeError in CI
+        # In CI, rleb_secrets is a dict, not a module, so accessing .DATA_MODE fails
+        self.secrets_patcher = patch("data_bridge.rleb_secrets")
+        self.mock_secrets = self.secrets_patcher.start()
+        self.mock_secrets.DATA_MODE = "real"
+        self.mock_secrets.DB_NAME = "test_db"
+        self.mock_secrets.DB_HOST = "test_host"
+        self.mock_secrets.DB_USER = "test_user"
+        self.mock_secrets.DB_PORT = "5432"
+        self.mock_secrets.DB_PASSWORD = "test_pass"
+
+    def tearDown(self):
+        self.secrets_patcher.stop()
+
     @patch.dict(os.environ, {"DATA_MODE": "stubbed"})
     def test_singleton_returns_data_stub_when_stubbed(self):
+        self.mock_secrets.DATA_MODE = "stubbed"
         Data._singleton = None
         instance = Data.singleton()
         self.assertIsInstance(instance, DataStub)
@@ -102,6 +118,7 @@ class TestData(unittest.TestCase):
 
     @patch.dict(os.environ, {"DATA_MODE": "real"})
     def test_singleton_returns_data_when_real(self):
+        self.mock_secrets.DATA_MODE = "real"
         Data._singleton = None
         instance = Data.singleton()
         self.assertIsInstance(instance, Data)
