@@ -121,12 +121,27 @@ class TestData(unittest.TestCase):
         )
 
     @patch("data_bridge.psycopg2.connect")
+    @patch("data_bridge.rleb_secrets")
     @patch.dict(os.environ, {"DATA_MODE": "real"}, clear=True)
-    def test_postgres_connection_uses_secrets(self, mock_connect):
+    def test_postgres_connection_uses_secrets(self, mock_secrets, mock_connect):
+        # Mock the rleb_secrets module attributes
+        mock_secrets.DB_NAME = "secrets_db"
+        mock_secrets.DB_HOST = "secrets_host"
+        mock_secrets.DB_USER = "secrets_user"
+        mock_secrets.DB_PORT = "5433"
+        mock_secrets.DB_PASSWORD = "secrets_pass"
+
         Data._singleton = None
         data = Data.singleton()
         data.postgres_connection()
-        mock_connect.assert_called_once()
+
+        mock_connect.assert_called_once_with(
+            dbname="secrets_db",
+            host="secrets_host",
+            user="secrets_user",
+            port="5433",
+            password="secrets_pass"
+        )
 
     @patch("data_bridge.psycopg2.connect")
     @patch.dict(os.environ, {"DATA_MODE": "real"})
