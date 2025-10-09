@@ -184,7 +184,7 @@ thread_restart_interval_seconds = 30
 
 # MODQUEUE MONITORING
 MODQUEUE_ALERT_THRESHOLD = 8  # number of items in modqueue before alerting
-MODQUEUE_CHECK_INTERVAL = 10*60  # seconds between modqueue checks (10 minutes)
+MODQUEUE_CHECK_INTERVAL = 60  # seconds between modqueue checks (1 minute)
 MODQUEUE_ALERT_COOLDOWN = 2*60*60  # seconds before re-alerting (2 hours)
 
 # GOOGLE
