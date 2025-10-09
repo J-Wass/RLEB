@@ -184,8 +184,8 @@ thread_restart_interval_seconds = 30
 
 # MODQUEUE MONITORING
 MODQUEUE_ALERT_THRESHOLD = 15  # number of items in modqueue before alerting
-MODQUEUE_CHECK_INTERVAL = 600  # seconds between modqueue checks (10 minutes)
-MODQUEUE_ALERT_COOLDOWN = 43200  # seconds before re-alerting (12 hours)
+MODQUEUE_CHECK_INTERVAL = 10*60  # seconds between modqueue checks (10 minutes)
+MODQUEUE_ALERT_COOLDOWN = 2*60*60  # seconds before re-alerting (2 hours)
 
 # GOOGLE
 GOOGLE_CALENDAR_ID = os.environ.get("CALENDAR_ID") or rleb_secrets.CALENDAR_ID
