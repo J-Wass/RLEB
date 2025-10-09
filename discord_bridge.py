@@ -468,6 +468,7 @@ class RLEsportsBot(discord.Client):
 
     async def check_modqueue_length(self):
         """Check modqueue length every 10 minutes and alert if too long."""
+        global_settings.asyncio_threads_heartbeats["modqueue"] = datetime.now()
         await asyncio.sleep(10)
         while True:
             try:
