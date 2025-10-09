@@ -52,6 +52,7 @@ asyncio_threads_heartbeats = {
     "direct_messages": datetime.now(),
     "thread_creation": datetime.now(),
     "verified_comments": datetime.now(),
+    "modqueue": datetime.now(),
 }
 
 # List of threads to check for heartbeat in health check.
@@ -175,11 +176,16 @@ def is_mod(username):
     return username in list(map(lambda x: x.name, moderators))
 
 
-flair_pattern = "\:\w+\:"
+flair_pattern = r"\:\w+\:"
 number_of_allowed_flairs = 3  # the number of allowed user flairs on the sub
 
 modmail_polling_interval_seconds = 10
 thread_restart_interval_seconds = 30
+
+# MODQUEUE MONITORING
+MODQUEUE_ALERT_THRESHOLD = 15  # number of items in modqueue before alerting
+MODQUEUE_CHECK_INTERVAL = 600  # seconds between modqueue checks (10 minutes)
+MODQUEUE_ALERT_COOLDOWN = 43200  # seconds before re-alerting (12 hours)
 
 # GOOGLE
 GOOGLE_CALENDAR_ID = os.environ.get("CALENDAR_ID") or rleb_secrets.CALENDAR_ID
@@ -228,6 +234,9 @@ VERIFIED_COMMENTS_CHANNEL_ID = int(
     os.environ.get("VERIFIED_COMMENTS_CHANNEL_ID")
     or rleb_secrets.VERIFIED_COMMENTS_CHANNEL_ID
 )
+MODERATION_CHANNEL_ID = int(
+    os.environ.get("MODERATION_CHANNEL_ID") or rleb_secrets.MODERATION_CHANNEL_ID
+)
 
 verified_needle = "verified"
 
@@ -238,6 +247,9 @@ if RUNNING_MODE == "local":
     MODMAIL_CHANNEL_ID = BOT_COMMANDS_CHANNEL_ID
     NEW_POSTS_CHANNEL_ID = BOT_COMMANDS_CHANNEL_ID
     MODLOG_CHANNEL_ID = BOT_COMMANDS_CHANNEL_ID
+    MODERATION_CHANNEL_ID = BOT_COMMANDS_CHANNEL_ID
+    ROSTER_NEWS_CHANNEL_ID = BOT_COMMANDS_CHANNEL_ID
+
 
 colors = [
     0x2644CE,

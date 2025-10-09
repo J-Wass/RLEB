@@ -59,6 +59,9 @@ class RLEsportsBot(discord.Client):
         # The subreddit of memes or images to flood into #bot-commands.
         self.meme_subreddit = "earthporn"
 
+        # The last time the modqueue alert was sent (for 12-hour cooldown)
+        self.last_modqueue_alert_time = None
+
     async def on_ready(self):
         """Indicate bot has joined the discord."""
         global_settings.rleb_log_info("[DISCORD]: Logged on as {0}".format(self.user))
@@ -80,6 +83,8 @@ class RLEsportsBot(discord.Client):
         self.thread_creation_channel = self.get_channel(
             global_settings.THREAD_CREATION_CHANNEL_ID
         )
+        self.moderation_channel = self.get_channel(global_settings.MODERATION_CHANNEL_ID)
+
 
         # Create a mapping of discord usernames to discord ids for future use.
         for m in self.new_post_channel.members:
@@ -134,6 +139,7 @@ class RLEsportsBot(discord.Client):
 
     async def check_new_submissions(self):
         """Check submissions queue to post in 'new posts' discord channel."""
+        await asyncio.sleep(10)
         while True:
             try:
                 while not global_settings.queues["submissions"].empty():
@@ -179,6 +185,7 @@ class RLEsportsBot(discord.Client):
 
     async def check_new_verified_comments(self):
         """Check verified comments queue to post in 'new posts' discord channel."""
+        await asyncio.sleep(10)
         while True:
             try:
                 while not global_settings.queues["verified_comments"].empty():
@@ -230,6 +237,7 @@ class RLEsportsBot(discord.Client):
 
     async def check_new_thread_creation(self):
         """Checks thread_creation queue to send warnings into #thread-creation."""
+        await asyncio.sleep(10)
         while True:
             try:
                 while not global_settings.queues["thread_creation"].empty():
@@ -266,6 +274,7 @@ class RLEsportsBot(discord.Client):
 
     async def check_new_direct_messages(self):
         """Checks direct_messages queue to send DMs to discord users."""
+        await asyncio.sleep(10)
         while True:
             try:
                 while not global_settings.queues["direct_messages"].empty():
@@ -318,6 +327,7 @@ class RLEsportsBot(discord.Client):
 
     async def check_new_alerts(self):
         """Check alerts queue to post in 'bot commands' discord channel."""
+        await asyncio.sleep(10)
         while True:
             try:
                 while not global_settings.queues["alerts"].empty():
@@ -356,6 +366,7 @@ class RLEsportsBot(discord.Client):
 
     async def check_new_modfeed(self):
         """Check modmail/modlog queue to post in discord."""
+        await asyncio.sleep(10)
         while True:
             try:
                 # Mod Log
@@ -454,6 +465,58 @@ class RLEsportsBot(discord.Client):
                 global_settings.last_datetime_crashed["asyncio"] = datetime.now()
 
             await asyncio.sleep(global_settings.discord_async_interval_seconds)
+
+    async def check_modqueue_length(self):
+        """Check modqueue length every 10 minutes and alert if too long."""
+        await asyncio.sleep(10)
+        while True:
+            try:
+                # Count items in modqueue
+                modqueue_count = 0
+                for item in global_settings.sub.mod.modqueue(limit=None):
+                    modqueue_count += 1
+
+                global_settings.rleb_log_info(
+                    f"[DISCORD]: Modqueue check - {modqueue_count} items in queue"
+                )
+
+                # Check if we should alert
+                should_alert = False
+                if modqueue_count >= global_settings.MODQUEUE_ALERT_THRESHOLD:
+                    if self.last_modqueue_alert_time is None:
+                        # Never alerted before
+                        should_alert = True
+                    else:
+                        # Check if cooldown period has passed
+                        time_since_last_alert = (datetime.now() - self.last_modqueue_alert_time).total_seconds()
+                        if time_since_last_alert >= global_settings.MODQUEUE_ALERT_COOLDOWN:
+                            should_alert = True
+
+                if should_alert:
+                    alert_message = f"@here ⚠️ **Modqueue Alert**: The modqueue is getting large! ({modqueue_count} items waiting in queue). Please review!"
+                    await self.moderation_channel.send(alert_message)
+                    self.last_modqueue_alert_time = datetime.now()
+                    global_settings.rleb_log_info(
+                        f"[DISCORD]: Modqueue alert sent - {modqueue_count} items"
+                    )
+
+                global_settings.asyncio_threads_heartbeats["modqueue"] = datetime.now()
+
+            except Exception as e:
+                global_settings.rleb_log_error(
+                    "[DISCORD]: Modqueue check asyncio thread failed - {0}".format(e)
+                )
+                global_settings.queues["alerts"].put(
+                    (
+                        "Modqueue check asyncio thread died",
+                        global_settings.BOT_COMMANDS_CHANNEL_ID,
+                    )
+                )
+                global_settings.rleb_log_error(traceback.format_exc())
+                global_settings.thread_crashes["asyncio"] += 1
+                global_settings.last_datetime_crashed["asyncio"] = datetime.now()
+
+            await asyncio.sleep(global_settings.MODQUEUE_CHECK_INTERVAL)
 
     # Record that a user was responded to. Useful for responding "thanks".
     async def add_response(self, message):
@@ -1690,6 +1753,7 @@ def start() -> None:
     client.loop.create_task(client.check_new_direct_messages())
     client.loop.create_task(client.check_new_thread_creation())
     client.loop.create_task(client.check_new_verified_comments())
+    client.loop.create_task(client.check_modqueue_length())
 
     # Start listening to discord commands.
     client.run(global_settings.TOKEN)
