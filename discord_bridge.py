@@ -474,7 +474,7 @@ class RLEsportsBot(discord.Client):
             try:
                 # Count items in modqueue
                 modqueue_count = 0
-                for item in global_settings.sub.mod.modqueue(limit=None):
+                for _ in global_settings.sub.mod.modqueue(limit=None):
                     modqueue_count += 1
 
                 global_settings.rleb_log_info(
@@ -494,7 +494,7 @@ class RLEsportsBot(discord.Client):
                             should_alert = True
 
                 if should_alert:
-                    alert_message = f"⚠️ **Modqueue Alert**: The modqueue is getting large! ({modqueue_count} items waiting in queue). Please review!"
+                    alert_message = f"⚠️ **Modqueue Alert**: The modqueue is getting large! ({modqueue_count} items waiting in queue). Please review https://www.reddit.com/mod/queue"
                     await self.moderation_channel.send(alert_message)
                     self.last_modqueue_alert_time = datetime.now()
                     global_settings.rleb_log_info(
