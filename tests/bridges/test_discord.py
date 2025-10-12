@@ -20,6 +20,18 @@ class TestDiscord(RLEBAsyncTestCase):
     async def asyncSetUp(self):
         await super().asyncSetUp()
 
+        # Mock asyncio.sleep to speed up tests (discord_bridge has 10-second startup delays for some tasks while the bot connects to discord)
+        self.original_sleep = __import__('asyncio').sleep
+        async def mock_sleep(delay):
+            if delay >= 1:  # Mock long sleeps (startup delays)
+                await self.original_sleep(0.001)  # Near-instant
+            else:
+                await self.original_sleep(delay)  # Keep short sleeps as-is
+
+        self.sleep_patcher = patch('asyncio.sleep', new=mock_sleep)
+        self.sleep_patcher.start()
+        self.addCleanup(self.sleep_patcher.stop)
+
         # Import discord_bridge after setUp is done so that rleb_settings loads with mocks/patches.
         global global_settings
         global discord_bridge
@@ -61,7 +73,8 @@ class TestDiscord(RLEBAsyncTestCase):
 
         global_settings.colors = [0x2644CE]
 
-        global_settings.discord_async_interval_seconds = 1
+        # Speed up tests by reducing sleep times
+        global_settings.discord_async_interval_seconds = 0.01
 
     async def test_reads_new_submissions(self):
         # Build a mock embed.

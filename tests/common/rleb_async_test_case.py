@@ -33,21 +33,24 @@ class RLEBAsyncTestCase(IsolatedAsyncioTestCase):
     def stub_network(self):
         self.network_map = common_utils.common_proxies
         self.forced_status_code = 200
+        # Cache file contents to avoid repeated I/O
+        self._file_cache = {}
 
         def mock_request(url=None, headers=None, data=None, json=None, args=[]):
             if url is None:
                 return
 
-            local_file_proxy = self.network_map[url]
+            local_file_proxy = self.network_map.get(url)
 
             if local_file_proxy:
-                print(f"RLEB PROXY: Redirecting {url} to {local_file_proxy}")
-                with open(local_file_proxy, encoding="utf8") as f:
-                    return common_utils.MockRequest(
-                        f.read(), status_code=self.forced_status_code
-                    )
-            else:
-                print(f"RLEB PROXY: Did not proxy {url}, it will hit production.")
+                # Use cache if available
+                if local_file_proxy not in self._file_cache:
+                    with open(local_file_proxy, encoding="utf8") as f:
+                        self._file_cache[local_file_proxy] = f.read()
+
+                return common_utils.MockRequest(
+                    self._file_cache[local_file_proxy], status_code=self.forced_status_code
+                )
 
         self.mock_requests_get = patch.object(requests, "get", new=mock_request).start()
         self.mock_requests_post = patch.object(
