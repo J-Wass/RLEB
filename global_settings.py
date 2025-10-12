@@ -183,7 +183,7 @@ modmail_polling_interval_seconds = 10
 thread_restart_interval_seconds = 30
 
 # MODQUEUE MONITORING
-MODQUEUE_ALERT_THRESHOLD = 5  # number of items in modqueue before alerting
+MODQUEUE_ALERT_THRESHOLD = 6  # number of items in modqueue before alerting
 MODQUEUE_CHECK_INTERVAL = 60  # seconds between modqueue checks (1 minute)
 MODQUEUE_ALERT_COOLDOWN = 2*60*60  # seconds before re-alerting (2 hours)
 

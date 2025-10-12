@@ -57,10 +57,13 @@ class RLEsportsBot(discord.Client):
         self.responses = {}
 
         # The subreddit of memes or images to flood into #bot-commands.
-        self.meme_subreddit = "earthporn"
+        self.meme_subreddit = "cozyplaces"
 
         # The last time the modqueue alert was sent (for 12-hour cooldown)
         self.last_modqueue_alert_time = None
+
+        # Track if we've sent the congrats message for empty modqueue
+        self.modqueue_congrats_sent = False
 
     async def on_ready(self):
         """Indicate bot has joined the discord."""
@@ -497,8 +500,20 @@ class RLEsportsBot(discord.Client):
                     alert_message = f"⚠️ **Modqueue Alert**: The modqueue is getting large! ({modqueue_count} items waiting in queue). Please review https://www.reddit.com/mod/queue"
                     await self.moderation_channel.send(alert_message)
                     self.last_modqueue_alert_time = datetime.now()
+                    # Reset congrats flag so we can congratulate when it gets cleared
+                    self.modqueue_congrats_sent = False
                     global_settings.rleb_log_info(
                         f"[DISCORD]: Modqueue alert sent - {modqueue_count} items"
+                    )
+
+                # Send congrats message when queue returns to 0
+                if modqueue_count == 0 and not self.modqueue_congrats_sent:
+                    emoji = random.choice(global_settings.success_emojis)
+                    congrats_message = f"{emoji}{emoji}{emoji} The modqueue has been cleared!"
+                    await self.moderation_channel.send(congrats_message)
+                    self.modqueue_congrats_sent = True
+                    global_settings.rleb_log_info(
+                        "[DISCORD]: Modqueue congrats message sent - queue is empty"
                     )
 
                 global_settings.asyncio_threads_heartbeats["modqueue"] = datetime.now()
