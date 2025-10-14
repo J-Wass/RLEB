@@ -65,6 +65,17 @@ class RLEsportsBot(discord.Client):
         # Track if we've sent the congrats message for empty modqueue
         self.modqueue_congrats_sent = False
 
+    async def setup_hook(self):
+        """Setup hook to create background tasks."""
+        # Create asynchronous discord tasks.
+        self.loop.create_task(self.check_new_submissions())
+        self.loop.create_task(self.check_new_modfeed())
+        self.loop.create_task(self.check_new_alerts())
+        self.loop.create_task(self.check_new_direct_messages())
+        self.loop.create_task(self.check_new_thread_creation())
+        self.loop.create_task(self.check_new_verified_comments())
+        self.loop.create_task(self.check_modqueue_length())
+
     async def on_ready(self):
         """Indicate bot has joined the discord."""
         global_settings.rleb_log_info("[DISCORD]: Logged on as {0}".format(self.user))
@@ -408,7 +419,7 @@ class RLEsportsBot(discord.Client):
                     # Send everything.
                     try:
                         await self.modlog_channel.send(embed=embed)
-                    except discord.errors.HTTPException as e:
+                    except discord.HTTPException as e:
                         # Message has invalid formatting. Just send basic msg.
                         await self.modlog_channel.send(item.description)
 
@@ -444,7 +455,7 @@ class RLEsportsBot(discord.Client):
                     # Send everything.
                     try:
                         await self.modmail_channel.send(embed=embed)
-                    except discord.errors.HTTPException as e:
+                    except discord.HTTPException as e:
                         # Message has invalid formatting. Just send basic msg.
                         await self.modmail_channel.send(
                             f"**{conversation.subject}** by {conversation.authors[0].name}"
@@ -913,7 +924,7 @@ class RLEsportsBot(discord.Client):
                     return
                 msg = "\n".join([f"{log[0]} - {log[1]}" for log in logs])
                 await stdout.print_to_channel(message.channel, msg, title="logs")
-            except discord.errors.HTTPException:
+            except discord.HTTPException:
                 global_settings.rleb_log_error(traceback.format_exc())
                 await message.channel.send(
                     "Couldn't send logs over! (tip: there's a limit to the number of characters that can be sent. Make sure you aren't requesting too many logs. Use '!logs [db/memory] [n]', where n is a small number to avoid the character limit.)"
@@ -1762,14 +1773,6 @@ def start() -> None:
     """Spawns the various discord asyncio threads."""
     client = RLEsportsBot()
 
-    # Create asyncronoush discord tasks.
-    client.loop.create_task(client.check_new_submissions())
-    client.loop.create_task(client.check_new_modfeed())
-    client.loop.create_task(client.check_new_alerts())
-    client.loop.create_task(client.check_new_direct_messages())
-    client.loop.create_task(client.check_new_thread_creation())
-    client.loop.create_task(client.check_new_verified_comments())
-    client.loop.create_task(client.check_modqueue_length())
-
     # Start listening to discord commands.
+    # Background tasks are created in setup_hook.
     client.run(global_settings.TOKEN)
