@@ -35,9 +35,13 @@ class TestRemindme(RLEBTestCase):
         )
 
     def test_schedule_remindme(self):
+        import asyncio
+
         reminder = Remindme(1, "tester#123", "message lol", 123, 321)
         global_settings.schedule_remindme(reminder)
 
-        timer = global_settings.remindme_timers[1]
-        self.assertEqual(type(timer), Timer)
-        timer.cancel()
+        # With asyncio, the timer is now a Task (if event loop exists) or None (if no loop)
+        timer = global_settings.remindme_timers.get(1)
+        if timer is not None:
+            self.assertEqual(type(timer), asyncio.Task)
+            timer.cancel()

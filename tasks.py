@@ -1,7 +1,7 @@
 from datetime import datetime
 import json
 import random
-import threading
+import asyncio
 import time
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
@@ -123,7 +123,7 @@ async def broadcast_tasks(
         await send_tasks(u, tasks, client, channel)
 
 
-def get_tasks() -> list[Task]:
+def get_tasks(warning_callback=None) -> list[Task]:
     """Gets all tasks from the Spreadsheet tab named "Current Week"."""
     SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
     credential_info = json.loads(global_settings.GOOGLE_CREDENTIALS_JSON)
@@ -183,10 +183,10 @@ def get_tasks() -> list[Task]:
             )
             tasks.append(new_task)
         except:
-            bad_task = event_names[i] if i >= len(event_names) else i
-            global_settings.queues["thread_creation"].put(
-                f"Weekly tasks were fetched, but bot was unable to read task `{event_names[i]}`. Was the creator or updater filled out?"
-            )
+            if warning_callback:
+                warning_callback(
+                    f"Weekly tasks were fetched, but bot was unable to read task `{event_names[i]}`. Was the creator or updater filled out?"
+                )
             pass
 
     return tasks
@@ -351,7 +351,8 @@ def get_weekly_events() -> list[Event]:
     return weekly_events
 
 
-def task_alert_check():
+async def task_alert_check(thread_creation_channel, client):
+    """Check for missing scheduled posts and send alerts."""
 
     # List of scheduled post ids that weren't misformatted and already warned.
     one_week_ago_seconds_since_epoch = datetime.now().timestamp() - 7 * 86400
@@ -375,8 +376,10 @@ def task_alert_check():
     # Every 10 cycles of loop, use the counter to enable enhanced logging.
     counter = 0
 
+    await asyncio.sleep(global_settings.task_alerts_startup_latency)
+
     while True:
-        global_settings.threads_heartbeats["Task alert thread"] = datetime.now()
+        global_settings.asyncio_threads_heartbeats["task_alerts"] = datetime.now()
 
         use_enhanced_logging = counter % 10 == 0
         if use_enhanced_logging:
@@ -393,36 +396,29 @@ def task_alert_check():
             last_emptied_already_late_posts = datetime.now().timestamp()
             already_warned_late_posts = []
 
-        # Use threading events here to make sure we don't hang on fetching posts.
-        new_scheduled_posts = None
-        tasks = None
-        get_weekly_events_ready = threading.Event()
-        get_scheduled_posts_ready = threading.Event()
-
-        def get_weekly_events_wrapper():
-            global get_weekly_events_result
-            get_weekly_events_result = get_weekly_events()
-            get_weekly_events_ready.set()
-
-        def get_scheduled_posts_wrapper():
-            global get_scheduled_posts_result
-            get_scheduled_posts_result = get_scheduled_posts(
-                already_warned_scheduled_posts
+        # Fetch both weekly events and scheduled posts concurrently with timeout
+        try:
+            tasks, new_scheduled_posts = await asyncio.wait_for(
+                asyncio.gather(
+                    asyncio.to_thread(get_weekly_events),
+                    asyncio.to_thread(get_scheduled_posts, already_warned_scheduled_posts),
+                    return_exceptions=True
+                ),
+                timeout=20.0
             )
-            get_scheduled_posts_ready.set()
 
-        weekly_events_thread = threading.Thread(target=get_weekly_events_wrapper)
-        weekly_events_thread.start()
-        scheduled_posts_thread = threading.Thread(target=get_scheduled_posts_wrapper)
-        scheduled_posts_thread.start()
-        get_weekly_events_ready.wait(20)
-        get_scheduled_posts_ready.wait(20)
+            # Check if either task raised an exception
+            if isinstance(tasks, Exception):
+                global_settings.rleb_log_error(f"TASK CHECK: Error fetching weekly events: {tasks}")
+                tasks = None
+            if isinstance(new_scheduled_posts, Exception):
+                global_settings.rleb_log_error(f"TASK CHECK: Error fetching scheduled posts: {new_scheduled_posts}")
+                new_scheduled_posts = None
 
-        # After the threads are done, check if the data is available.
-        if get_weekly_events_ready.is_set():
-            tasks = get_weekly_events_result
-        if get_scheduled_posts_ready.is_set():
-            new_scheduled_posts = get_scheduled_posts_result
+        except asyncio.TimeoutError:
+            global_settings.rleb_log_error("TASK CHECK: Timeout fetching tasks or scheduled posts")
+            tasks = None
+            new_scheduled_posts = None
 
         if use_enhanced_logging:
             tasks_num = len(tasks) if tasks else "0"
@@ -434,9 +430,9 @@ def task_alert_check():
         # If the data was unobtainable, wait 5m and try again.
         if tasks == None or new_scheduled_posts == None:
             global_settings.rleb_log_info(
-                f"TASK CHECK: Skipping null posts. tasks={tasks}, schedule posts={new_scheduled_posts}. tasks is set={get_weekly_events_ready.is_set()}, scheduled posts is set={get_scheduled_posts_ready.is_set()}"
+                f"TASK CHECK: Skipping null posts. tasks={tasks}, schedule posts={new_scheduled_posts}."
             )
-            time.sleep(60 * 5)
+            await asyncio.sleep(60 * 5)
             continue
 
         # Gather tasks which don't have a scheduled post.
@@ -546,5 +542,5 @@ def task_alert_check():
         # Break before waiting for the interval.
         if not global_settings.task_alert_check_enabled:
             break
-        time.sleep(60 * 10)  # 60 seconds, 10 minutes
+        await asyncio.sleep(60 * 10)  # 10 minutes
     global_settings.rleb_log_info(f"TASK CHECK: Exiting task_check loop.")

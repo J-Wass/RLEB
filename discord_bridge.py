@@ -67,7 +67,7 @@ class RLEsportsBot(discord.Client):
 
     async def setup_hook(self):
         """Setup hook to create background tasks."""
-        # Create asynchronous discord tasks.
+        # Create asynchronous discord tasks for Reddit monitoring
         self.loop.create_task(self.check_new_submissions())
         self.loop.create_task(self.check_new_modfeed())
         self.loop.create_task(self.check_new_alerts())
@@ -75,6 +75,14 @@ class RLEsportsBot(discord.Client):
         self.loop.create_task(self.check_new_thread_creation())
         self.loop.create_task(self.check_new_verified_comments())
         self.loop.create_task(self.check_modqueue_length())
+        self.loop.create_task(self.process_reddit_inbox())
+        self.loop.create_task(self.auto_update_threads())
+
+        # Create asyncio tasks for health monitoring and task alerts
+        if global_settings.health_enabled:
+            self.loop.create_task(self.run_health_check())
+        if global_settings.task_alerts_enabled:
+            self.loop.create_task(self.run_task_alerts())
 
     async def on_ready(self):
         """Indicate bot has joined the discord."""
@@ -152,12 +160,16 @@ class RLEsportsBot(discord.Client):
             break
 
     async def check_new_submissions(self):
-        """Check submissions queue to post in 'new posts' discord channel."""
+        """Check Reddit submissions directly and post in 'new posts' discord channel."""
+        from reddit_bridge import stream_new_submissions
+
         await asyncio.sleep(10)
         while True:
             try:
-                while not global_settings.queues["submissions"].empty():
-                    submission = global_settings.queues["submissions"].get()
+                if not global_settings.discord_check_new_submission_enabled:
+                    break
+
+                async for submission in stream_new_submissions():
                     global_settings.rleb_log_info(
                         "[DISCORD]: Received submission id {0}: {1}".format(
                             submission, submission.title
@@ -177,35 +189,31 @@ class RLEsportsBot(discord.Client):
                         await self.roster_news_channel.send(embed=embed)
 
                     await self.new_post_channel.send(embed=embed)
+
                 global_settings.asyncio_threads_heartbeats["submissions"] = (
                     datetime.now()
                 )
-                if not global_settings.discord_check_new_submission_enabled:
-                    break
             except Exception as e:
                 global_settings.rleb_log_error(
                     "[DISCORD]: Submissions asyncio thread failed - {0}".format(e)
                 )
-                global_settings.queues["alerts"].put(
-                    (
-                        "New Submissions asyncio thread died",
-                        global_settings.BOT_COMMANDS_CHANNEL_ID,
-                    )
-                )
+                await self.bot_command_channel.send("New Submissions asyncio thread encountered error")
                 global_settings.rleb_log_error(traceback.format_exc())
                 global_settings.thread_crashes["asyncio"] += 1
                 global_settings.last_datetime_crashed["asyncio"] = datetime.now()
             await asyncio.sleep(global_settings.discord_async_interval_seconds)
 
     async def check_new_verified_comments(self):
-        """Check verified comments queue to post in 'new posts' discord channel."""
+        """Check Reddit verified comments directly and post in discord channel."""
+        from reddit_bridge import stream_verified_comments
+
         await asyncio.sleep(10)
         while True:
             try:
-                while not global_settings.queues["verified_comments"].empty():
-                    verified_comments = global_settings.queues[
-                        "verified_comments"
-                    ].get()
+                if not global_settings.discord_check_new_verified_comments_enabled:
+                    break
+
+                async for verified_comments in stream_verified_comments():
                     global_settings.rleb_log_info(
                         "[DISCORD]: Received comment id {0}: {1}, {2}".format(
                             verified_comments,
@@ -229,21 +237,15 @@ class RLEsportsBot(discord.Client):
                     embed.set_author(name=verified_comments.author.name)
 
                     await self.verified_comments_channel.send(embed=embed)
+
                 global_settings.asyncio_threads_heartbeats["verified_comments"] = (
                     datetime.now()
                 )
-                if not global_settings.discord_check_new_verified_comments_enabled:
-                    break
             except Exception as e:
                 global_settings.rleb_log_error(
                     "[DISCORD]: Verified comments asyncio thread failed - {0}".format(e)
                 )
-                global_settings.queues["alerts"].put(
-                    (
-                        "Verified Comments asyncio thread died",
-                        global_settings.BOT_COMMANDS_CHANNEL_ID,
-                    )
-                )
+                await self.bot_command_channel.send("Verified Comments asyncio thread encountered error")
                 global_settings.rleb_log_error(traceback.format_exc())
                 global_settings.thread_crashes["asyncio"] += 1
                 global_settings.last_datetime_crashed["asyncio"] = datetime.now()
@@ -379,14 +381,18 @@ class RLEsportsBot(discord.Client):
             await asyncio.sleep(global_settings.discord_async_interval_seconds)
 
     async def check_new_modfeed(self):
-        """Check modmail/modlog queue to post in discord."""
+        """Check Reddit modmail/modlog directly and post in discord."""
+        from reddit_bridge import stream_modlog, stream_modmail
+
         await asyncio.sleep(10)
         while True:
             try:
+                if not global_settings.discord_check_new_modmail_enabled:
+                    break
+
                 # Mod Log
-                while not global_settings.queues["modlog"].empty():
+                async for item in stream_modlog():
                     await asyncio.sleep(1)
-                    item = global_settings.queues["modlog"].get()
 
                     # Create an embed to post for each mod log.
                     embed = discord.Embed(
@@ -424,8 +430,7 @@ class RLEsportsBot(discord.Client):
                         await self.modlog_channel.send(item.description)
 
                 # Mod Mail
-                while not global_settings.queues["modmail"].empty():
-                    conversation = global_settings.queues["modmail"].get()
+                async for conversation in stream_modmail():
                     global_settings.rleb_log_info(
                         "[DISCORD]: Received modmail id {0}: {1}".format(
                             conversation.id, conversation.messages[-1].body_markdown
@@ -462,18 +467,11 @@ class RLEsportsBot(discord.Client):
                         )
 
                 global_settings.asyncio_threads_heartbeats["modmail"] = datetime.now()
-                if not global_settings.discord_check_new_modmail_enabled:
-                    break
             except Exception as e:
                 global_settings.rleb_log_error(
                     "[DISCORD]: Modfeed asyncio thread failed - {0}".format(e)
                 )
-                global_settings.queues["alerts"].put(
-                    (
-                        "Modfeed asyncio thread died",
-                        global_settings.BOT_COMMANDS_CHANNEL_ID,
-                    )
-                )
+                await self.bot_command_channel.send("Modfeed asyncio thread encountered error")
                 global_settings.rleb_log_error(traceback.format_exc())
                 global_settings.thread_crashes["asyncio"] += 1
                 global_settings.last_datetime_crashed["asyncio"] = datetime.now()
@@ -544,6 +542,137 @@ class RLEsportsBot(discord.Client):
                 global_settings.last_datetime_crashed["asyncio"] = datetime.now()
 
             await asyncio.sleep(global_settings.MODQUEUE_CHECK_INTERVAL)
+
+    async def process_reddit_inbox(self):
+        """Process Reddit inbox for flair requests."""
+        from reddit_bridge import process_inbox
+
+        await asyncio.sleep(10)
+        while True:
+            try:
+                if global_settings.monitor_subreddit_enabled:
+                    await process_inbox()
+
+                global_settings.asyncio_threads_heartbeats["inbox"] = datetime.now()
+            except Exception as e:
+                global_settings.rleb_log_error(
+                    "[DISCORD]: Inbox processing failed - {0}".format(e)
+                )
+                global_settings.rleb_log_error(traceback.format_exc())
+                global_settings.thread_crashes["asyncio"] += 1
+                global_settings.last_datetime_crashed["asyncio"] = datetime.now()
+
+            await asyncio.sleep(global_settings.discord_async_interval_seconds)
+
+    async def auto_update_threads(self):
+        """Auto-update Reddit threads with fresh Liquipedia data."""
+        await asyncio.sleep(10)
+        while True:
+            try:
+                auto_updates = global_settings.auto_updates.values()
+                if auto_updates:
+                    global_settings.rleb_log_info("[AUTO UPDATER]: Starting auto update check.")
+
+                for auto_update in auto_updates:
+                    try:
+                        day_number = auto_update.day_number
+                        liquipedia_url = auto_update.liquipedia_url
+
+                        options = auto_update.thread_options
+                        tourney_system = auto_update.thread_type
+                        stringified_options = "-".join(sorted(options.lower().split(",")))
+                        if stringified_options == "none":
+                            template = tourney_system
+                        else:
+                            template = f"{tourney_system}-{stringified_options}"
+
+                        # Run blocking diesel call in thread pool
+                        fresh_markdown = await asyncio.to_thread(
+                            diesel.get_make_thread_markdown,
+                            liquipedia_url,
+                            template,
+                            day_number
+                        )
+
+                        # If markdown is the same as last time, don't write to reddit
+                        if (
+                            liquipedia_url in global_settings.auto_update_markdown
+                            and global_settings.auto_update_markdown[liquipedia_url]
+                            == fresh_markdown
+                        ):
+                            continue
+
+                        reddit_url = auto_update.reddit_url
+
+                        # https://www.reddit.com/r/RLCSnewsTest/comments/17oh7u8/auto_update_test/
+                        # becomes
+                        # 17oh7u8
+                        submission_id = reddit_url.split("/comments/")[1].split("/")[0]
+
+                        # Run blocking PRAW operations in thread pool
+                        def update_reddit():
+                            submission = global_settings.r.submission(id=submission_id)
+                            if not submission:
+                                return False
+                            if submission.selftext == fresh_markdown:
+                                return None
+                            submission.edit(fresh_markdown)
+                            return True
+
+                        result = await asyncio.to_thread(update_reddit)
+
+                        if result is False:
+                            global_settings.rleb_log_error(
+                                f"Could not find reddit url to auto update {reddit_url}"
+                            )
+                            del global_settings.auto_updates[auto_update.auto_update_id]
+                            Data.singleton().delete_auto_update(auto_update)
+                        elif result is True:
+                            global_settings.rleb_log_info(
+                                f"[AUTO UPDATER]: Updated {auto_update.reddit_url}"
+                            )
+                            global_settings.auto_update_markdown[liquipedia_url] = fresh_markdown
+
+                    except Exception as e:
+                        global_settings.rleb_log_error(
+                            f"[AUTO UPDATER]: Failed to auto update reddit thread {auto_update.reddit_url}. {str(e)}"
+                        )
+
+                global_settings.asyncio_threads_heartbeats["auto_update"] = datetime.now()
+
+            except Exception as e:
+                global_settings.rleb_log_error(
+                    "[DISCORD]: Auto updater failed - {0}".format(e)
+                )
+                global_settings.rleb_log_error(traceback.format_exc())
+                global_settings.thread_crashes["asyncio"] += 1
+                global_settings.last_datetime_crashed["asyncio"] = datetime.now()
+
+            await asyncio.sleep(60)  # Check every 60 seconds
+
+    async def run_health_check(self):
+        """Run the health check monitor."""
+        from health_check import health_check
+
+        try:
+            await health_check()
+        except Exception as e:
+            global_settings.rleb_log_error(
+                "[DISCORD]: Health check failed - {0}".format(e)
+            )
+            global_settings.rleb_log_error(traceback.format_exc())
+
+    async def run_task_alerts(self):
+        """Run the task alert checker."""
+        from tasks import task_alert_check
+
+        try:
+            await task_alert_check()
+        except Exception as e:
+            global_settings.rleb_log_error(
+                "[DISCORD]: Task alerts failed - {0}".format(e)
+            )
+            global_settings.rleb_log_error(traceback.format_exc())
 
     # Record that a user was responded to. Useful for responding "thanks".
     async def add_response(self, message):

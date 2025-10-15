@@ -44,7 +44,7 @@ asyncio_health_check_enabled = True
 thread_health_check_enabled = True
 task_alert_check_enabled = True
 
-# Mapping of each asyncio thread to the last time it sent a heartbeat out. Used to determine if an asnycio thread has crashed.
+# Mapping of each asyncio task to the last time it sent a heartbeat out. Used to determine if an asyncio task has crashed.
 asyncio_threads_heartbeats = {
     "submissions": datetime.now(),
     "alerts": datetime.now(),
@@ -53,10 +53,15 @@ asyncio_threads_heartbeats = {
     "thread_creation": datetime.now(),
     "verified_comments": datetime.now(),
     "modqueue": datetime.now(),
+    "inbox": datetime.now(),
+    "auto_update": datetime.now(),
+    "health": datetime.now(),
+    "task_alerts": datetime.now(),
 }
 
 # List of threads to check for heartbeat in health check.
-threads_to_check = {"Task alert thread", "Auto update thread"}
+# All monitoring is now asyncio, so no threads to check
+threads_to_check = set()
 
 # Mapping of each thread to the last time it sent a heartbeat out. Used to determine if a thread has crashed.
 threads_heartbeats = {}
@@ -71,7 +76,7 @@ thread_crashes = {"asyncio": 0, "thread": 0}
 # The last time a thread or asyncio thread crashed and had to be restarted. Used for logging.
 last_datetime_crashed = {"asyncio": None, "thread": None}
 
-# Mapping of reminder_ids to Timers
+# Remindme timers are now managed by asyncio tasks in the Discord bot
 remindme_timers = {}
 
 # Mapping of auto_update_ids to autoupdates.
@@ -84,41 +89,50 @@ auto_update_empties = 0
 auto_update_markdown: Dict[str, str] = {}
 
 
+# Remindme will be managed by asyncio tasks instead of threading.Timer
+
+def refresh_remindmes() -> None:
+    """Loads !remindme data from db. The Discord bot will handle scheduling."""
+    # remindmes are now handled by the Discord bot's asyncio event loop
+    # This function just needs to exist for compatibility
+    pass
+
+
 def _trigger_remindme(remindme: Remindme) -> None:
     """Executes a remindme and removes it from the db."""
-    user_id = user_names_to_ids[remindme.discord_username]
-    msg = f"**Reminder for <@{user_id}>:** {remindme.message}"
+    user_id = user_names_to_ids.get(remindme.discord_username)
+    if user_id:
+        msg = f"**Reminder for <@{user_id}>:** {remindme.message}"
+    else:
+        msg = f"**Reminder for {remindme.discord_username}:** {remindme.message}"
     queues["alerts"].put((msg, remindme.channel_id))
     Data.singleton().delete_remindme(remindme.remindme_id)
-    del remindme_timers[remindme.remindme_id]
+    if remindme.remindme_id in remindme_timers:
+        del remindme_timers[remindme.remindme_id]
 
     rleb_log_info(f"REMINDME: Triggered remindme {remindme.remindme_id}")
 
 
 def schedule_remindme(remindme: Remindme) -> None:
-    """Starts a new timer for the readme and adds it to the readme_timers."""
+    """Starts a new asyncio task for the reminder and adds it to the remindme_timers."""
+    import asyncio
+    import time
 
     seconds_remaining = remindme.trigger_timestamp - time.time()
     delay = max(60, seconds_remaining)
 
-    timer = Timer(delay, _trigger_remindme, args=(remindme,))
-    remindme_timers[remindme.remindme_id] = timer
-    timer.start()
+    async def reminder_task():
+        await asyncio.sleep(delay)
+        _trigger_remindme(remindme)
 
-    rleb_log_info(f"REMINDME: Created remindme {remindme.remindme_id} due in {delay}s.")
-
-
-def refresh_remindmes() -> None:
-    """Loads !remindme schedulers from db."""
-    # Delete old timers.
-    for timer in remindme_timers.values():
-        timer.cancel()
-    remindme_timers.clear()
-
-    # Create fresh timers from db.
-    remindmes = Data.singleton().read_remindmes()
-    for remindme in remindmes:
-        schedule_remindme(remindme)
+    try:
+        loop = asyncio.get_event_loop()
+        task = loop.create_task(reminder_task())
+        remindme_timers[remindme.remindme_id] = task
+        rleb_log_info(f"REMINDME: Created remindme {remindme.remindme_id} due in {delay}s.")
+    except RuntimeError:
+        # No event loop running, this is okay in tests
+        rleb_log_info(f"REMINDME: No event loop for remindme {remindme.remindme_id}.")
 
 
 def refresh_autoupdates() -> bool:

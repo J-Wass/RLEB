@@ -1,39 +1,29 @@
 import pathlib
+import asyncio
 import global_settings
 from global_settings import rleb_log_error
 
-import time
 from datetime import datetime
 
 
-# Monitors health of other threads.
-def health_check():
-    """Every minute, check if all threads are still running and restart if needed."""
-    time.sleep(global_settings.health_check_startup_latency)
+# Monitors health of asyncio tasks.
+async def health_check(alert_channel):
+    """Every 30 seconds, check if all asyncio tasks are healthy."""
+    await asyncio.sleep(global_settings.health_check_startup_latency)
 
     while True:
         try:
-            # Monitor Threads
+            # Monitor crash counts
             if global_settings.thread_crashes["thread"] >= 5:
                 global_settings.thread_health_check_enabled = False
                 global_settings.health_enabled = False
                 rleb_log_error("[HEALTH]: More than 5 thread crashes.")
-                global_settings.queues["alerts"].put(
-                    (
-                        "More than 5 thread crashes detected. Consider using `!restart`.",
-                        global_settings.BOT_COMMANDS_CHANNEL_ID,
-                    )
-                )
+                await alert_channel.send("More than 5 thread crashes detected. Consider using `!restart`.")
             if global_settings.thread_crashes["asyncio"] >= 5:
-                global_settings.thread_health_check_enabled = False
+                global_settings.asyncio_health_check_enabled = False
                 global_settings.health_enabled = False
                 rleb_log_error("[HEALTH]: More than 5 asyncio crashes.")
-                global_settings.queues["alerts"].put(
-                    (
-                        "More than 5 asyncio crashes detected. Consider using `!restart`.",
-                        global_settings.BOT_COMMANDS_CHANNEL_ID,
-                    )
-                )
+                await alert_channel.send("More than 5 asyncio crashes detected. Consider using `!restart`.")
 
             worst_heartbeat = 0
 
@@ -57,13 +47,10 @@ def health_check():
                             asyncio_thread, global_settings.thread_crashes["asyncio"]
                         )
                     )
-                    global_settings.queues["alerts"].put(
-                        (
-                            "{0} asyncio thread has stopped responding! ({1} crashes)".format(
-                                asyncio_thread,
-                                global_settings.thread_crashes["asyncio"],
-                            ),
-                            global_settings.BOT_COMMANDS_CHANNEL_ID,
+                    await alert_channel.send(
+                        "{0} asyncio thread has stopped responding! ({1} crashes)".format(
+                            asyncio_thread,
+                            global_settings.thread_crashes["asyncio"],
                         )
                     )
                     dead_asyncio_threads.append(asyncio_thread)
@@ -81,12 +68,7 @@ def health_check():
                 worst_heartbeat = max(worst_heartbeat, round(thread_heartbeat))
                 if thread_heartbeat > global_settings.thread_timeout:
                     rleb_log_error(f"HEALTH: {thread} has stopped responding!")
-                    global_settings.queues["alerts"].put(
-                        (
-                            f"{thread} has stopped responding!",
-                            global_settings.BOT_COMMANDS_CHANNEL_ID,
-                        )
-                    )
+                    await alert_channel.send(f"{thread} has stopped responding!")
                     dead_threads.append(thread)
 
             # Don't warn about this thread again.
@@ -97,19 +79,21 @@ def health_check():
             if not global_settings.health_enabled:
                 break
 
-            global_settings.threads_heartbeats["Health thread"] = datetime.now()
+            global_settings.asyncio_threads_heartbeats["health"] = datetime.now()
 
+            # Write heartbeat to file asynchronously
             current_path = str(pathlib.Path(__file__).parent.resolve())
-            with open(f"{current_path}/heartbeat.txt", "w") as f:
-                f.write(str(worst_heartbeat))
+            def write_heartbeat():
+                with open(f"{current_path}/heartbeat.txt", "w") as f:
+                    f.write(str(worst_heartbeat))
 
-            time.sleep(30)
+            await asyncio.to_thread(write_heartbeat)
+
+            await asyncio.sleep(30)
         except Exception as e:
-            rleb_log_error(f"HEALTH: Hit exception when checking threads.\n{e}")
-            global_settings.queues["alerts"].put(
-                (
-                    f"HEALTH: Hit exception when checking threads. {e}",
-                    global_settings.BOT_COMMANDS_CHANNEL_ID,
-                )
-            )
-            time.sleep(30)
+            rleb_log_error(f"HEALTH: Hit exception when checking asyncio tasks.\n{e}")
+            try:
+                await alert_channel.send(f"HEALTH: Hit exception when checking asyncio tasks. {e}")
+            except:
+                pass  # If we can't send alert, just log it
+            await asyncio.sleep(30)
