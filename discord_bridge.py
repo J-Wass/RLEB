@@ -67,12 +67,12 @@ class RLEsportsBot(discord.Client):
 
     async def setup_hook(self):
         """Setup hook to create background tasks."""
+        # Store reference to Discord client globally for direct communication
+        global_settings.discord_client = self
+
         # Create asynchronous discord tasks for Reddit monitoring
         self.loop.create_task(self.check_new_submissions())
         self.loop.create_task(self.check_new_modfeed())
-        self.loop.create_task(self.check_new_alerts())
-        self.loop.create_task(self.check_new_direct_messages())
-        self.loop.create_task(self.check_new_thread_creation())
         self.loop.create_task(self.check_new_verified_comments())
         self.loop.create_task(self.check_modqueue_length())
         self.loop.create_task(self.process_reddit_inbox())
@@ -251,135 +251,6 @@ class RLEsportsBot(discord.Client):
                 global_settings.last_datetime_crashed["asyncio"] = datetime.now()
             await asyncio.sleep(global_settings.discord_async_interval_seconds)
 
-    async def check_new_thread_creation(self):
-        """Checks thread_creation queue to send warnings into #thread-creation."""
-        await asyncio.sleep(10)
-        while True:
-            try:
-                while not global_settings.queues["thread_creation"].empty():
-                    message = global_settings.queues["thread_creation"].get()
-                    global_settings.rleb_log_info(
-                        "[DISCORD]: Received thread creation alert '{0}'".format(
-                            message
-                        )
-                    )
-                    thread_creation_message = await self.thread_creation_channel.send(
-                        message
-                    )
-                    await thread_creation_message.edit(suppress=True)
-
-                global_settings.asyncio_threads_heartbeats["thread_creation"] = (
-                    datetime.now()
-                )
-                if not global_settings.discord_check_new_thread_creation_enabled:
-                    break
-            except Exception as e:
-                global_settings.rleb_log_error(
-                    "[DISCORD]: New Threads asyncio thread failed - {0}".format(e)
-                )
-                global_settings.queues["alerts"].put(
-                    (
-                        "Thread Creation asyncio thread died",
-                        global_settings.BOT_COMMANDS_CHANNEL_ID,
-                    )
-                )
-                global_settings.rleb_log_error(traceback.format_exc())
-                global_settings.thread_crashes["asyncio"] += 1
-                global_settings.last_datetime_crashed["asyncio"] = datetime.now()
-            await asyncio.sleep(global_settings.discord_async_interval_seconds)
-
-    async def check_new_direct_messages(self):
-        """Checks direct_messages queue to send DMs to discord users."""
-        await asyncio.sleep(10)
-        while True:
-            try:
-                while not global_settings.queues["direct_messages"].empty():
-                    author_message_tuple = global_settings.queues[
-                        "direct_messages"
-                    ].get()
-                    global_settings.rleb_log_info(
-                        "[DISCORD]: Received DM '{0}'".format(author_message_tuple)
-                    )
-                    author = author_message_tuple[0]
-                    message = author_message_tuple[1]
-                    user_mapping = global_settings.user_names_to_ids
-                    if user_mapping == None or len(user_mapping) == 0:
-                        continue
-                    discord_user = self.get_user(user_mapping[author])
-                    if discord_user == None:
-                        continue
-                    message = "\n".join(
-                        [
-                            random.choice(global_settings.greetings),
-                            "\n----------\n",
-                            message,
-                            "\n----------\n",
-                        ]
-                    )
-                    if global_settings.RUNNING_MODE == "local":
-                        await self.bot_command_channel.send(f"**DM For {author}**")
-                        testing_msg = await self.bot_command_channel.send(message)
-                        await testing_msg.edit(suppress=True)
-                    else:
-                        DM = await discord_user.send(message)
-                        await DM.edit(suppress=True)
-
-                global_settings.asyncio_threads_heartbeats["direct_messages"] = (
-                    datetime.now()
-                )
-                if not global_settings.discord_check_direct_messages_enabled:
-                    break
-            except Exception as e:
-                global_settings.rleb_log_error(
-                    "[DISCORD]: DM asyncio thread failed - {0}".format(e)
-                )
-                global_settings.queues["alerts"].put(
-                    ("DM asyncio thread died", global_settings.BOT_COMMANDS_CHANNEL_ID)
-                )
-                global_settings.rleb_log_error(traceback.format_exc())
-                global_settings.thread_crashes["asyncio"] += 1
-                global_settings.last_datetime_crashed["asyncio"] = datetime.now()
-            await asyncio.sleep(global_settings.discord_async_interval_seconds)
-
-    async def check_new_alerts(self):
-        """Check alerts queue to post in 'bot commands' discord channel."""
-        await asyncio.sleep(10)
-        while True:
-            try:
-                while not global_settings.queues["alerts"].empty():
-                    alert = global_settings.queues["alerts"].get()
-                    message = alert[0]
-                    channel_id = alert[1]
-
-                    global_settings.rleb_log_info(
-                        "[DISCORD]: Received alert '{0}'".format(alert)
-                    )
-
-                    # Send to specific channel. If any issue arrises, send to bot commands instead.
-                    try:
-                        channel = self.get_channel(channel_id)
-                        await channel.send(message)
-                    except:
-                        channel = self.bot_command_channel
-                        await channel.send(message)
-                global_settings.asyncio_threads_heartbeats["alerts"] = datetime.now()
-                if not global_settings.discord_check_new_alerts_enabled:
-                    break
-            except Exception as e:
-                global_settings.rleb_log_error(
-                    "[DISCORD]: Alert asyncio thread failed - {0}".format(e)
-                )
-                global_settings.queues["alerts"].put(
-                    (
-                        "Alerts asyncio thread died",
-                        global_settings.BOT_COMMANDS_CHANNEL_ID,
-                    )
-                )
-                global_settings.rleb_log_error(traceback.format_exc())
-                global_settings.thread_crashes["asyncio"] += 1
-                global_settings.last_datetime_crashed["asyncio"] = datetime.now()
-            await asyncio.sleep(global_settings.discord_async_interval_seconds)
-
     async def check_new_modfeed(self):
         """Check Reddit modmail/modlog directly and post in discord."""
         from reddit_bridge import stream_modlog, stream_modmail
@@ -531,7 +402,7 @@ class RLEsportsBot(discord.Client):
                 global_settings.rleb_log_error(
                     "[DISCORD]: Modqueue check asyncio thread failed - {0}".format(e)
                 )
-                global_settings.queues["alerts"].put(
+                await global_settings.queues["alerts"].put(
                     (
                         "Modqueue check asyncio thread died",
                         global_settings.BOT_COMMANDS_CHANNEL_ID,
@@ -667,7 +538,7 @@ class RLEsportsBot(discord.Client):
         from tasks import task_alert_check
 
         try:
-            await task_alert_check()
+            await task_alert_check(self.thread_creation_channel, self)
         except Exception as e:
             global_settings.rleb_log_error(
                 "[DISCORD]: Task alerts failed - {0}".format(e)

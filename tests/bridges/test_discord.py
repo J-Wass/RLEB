@@ -13,7 +13,7 @@ from tests.common.rleb_async_test_case import RLEBAsyncTestCase
 import requests
 import discord
 from threading import Thread
-from queue import Queue
+import asyncio
 
 
 class TestDiscord(RLEBAsyncTestCase):
@@ -55,21 +55,6 @@ class TestDiscord(RLEBAsyncTestCase):
             name="Discord Test Thread",
         )
         self.discord_thread.setDaemon(True)
-
-        # Used for passing reddit submissions from reddit to discord.
-        submissions_queue = Queue()
-        # Used for passing modmail from reddit to discord.
-        modmail_queue = Queue()
-        # Used for passing alerts from reddit to discord.
-        alert_queue = Queue()
-        # Used for passing alerts from reddit to discord.
-        verified_comments_queue = Queue()
-
-        global_settings.queues["submissions"] = submissions_queue
-        global_settings.queues["verified_comments"] = verified_comments_queue
-        global_settings.queues["modmail"] = modmail_queue
-        global_settings.queues["alerts"] = alert_queue
-        global_settings.queues["modlog"] = Queue()
 
         global_settings.colors = [0x2644CE]
 
@@ -241,16 +226,6 @@ class TestDiscord(RLEBAsyncTestCase):
                     ]
                 )
 
-    async def test_reads_new_alerts(self):
-        # Add the alert to the queue.
-        global_settings.queues["alerts"].put(("this is a test alert", 123))
-
-        global_settings.discord_check_new_alerts_enabled = False
-
-        await self.discord_client.check_new_alerts()
-        self.discord_client.bot_command_channel.send.assert_awaited_with(
-            "this is a test alert"
-        )
 
     async def test_reads_new_roster_change_submission(self):
         # Build a mock embed.
