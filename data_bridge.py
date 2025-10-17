@@ -182,14 +182,18 @@ class Data(DataStub):
     @classmethod
     def singleton(cls):
         if cls._singleton is None:
-            cls._singleton = cls.__new__(
-                cls
-                if (
-                    os.environ.get("DATA_MODE") == "real"
-                    or rleb_secrets.DATA_MODE == "real"
-                )
-                else DataStub
-            )
+            data_mode = os.environ.get("DATA_MODE") or getattr(rleb_secrets, "DATA_MODE", "stubbed")
+
+            if data_mode == "real":
+                # Use real PostgreSQL database
+                cls._singleton = cls.__new__(cls)
+            elif data_mode == "test":
+                # Use test stub with sample data
+                from test_data_stub import DataStubWithSampleData
+                cls._singleton = DataStubWithSampleData.singleton()
+            else:
+                # Use empty stub (default for "stubbed" or any other value)
+                cls._singleton = cls.__new__(DataStub)
         return cls._singleton
 
     def postgres_connection(self):
