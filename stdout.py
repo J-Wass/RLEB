@@ -87,7 +87,6 @@ async def print_to_channel(
             message = await channel.send(response)
         await message.edit(suppress=True)  # remove those annoying embeds
     except Exception as e:
-
         # If something goes wrong with paste.ee or pastebin, print text directly to discord.
 
         global_settings.rleb_log_error(traceback.format_exc())

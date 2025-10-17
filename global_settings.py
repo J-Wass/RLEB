@@ -17,8 +17,10 @@ from data_bridge import AutoUpdate, Data, Remindme
 try:
     import rleb_secrets
 except Exception as e:
+
     class rleb_secrets:  # type: ignore[no-redef]
         pass
+
     print("rleb_secrets.py not found, using keys in environment settings.")
 
 # OS
@@ -91,6 +93,7 @@ auto_update_markdown: Dict[str, str] = {}
 
 # Remindme will be managed by asyncio tasks instead of threading.Timer
 
+
 def refresh_remindmes() -> None:
     """Loads !remindme data from db. The Discord bot will handle scheduling."""
     # remindmes are now handled by the Discord bot's asyncio event loop
@@ -113,7 +116,9 @@ async def _trigger_remindme(remindme: Remindme) -> None:
             if channel:
                 await channel.send(msg)
         except Exception as e:
-            rleb_log_error(f"REMINDME: Failed to send reminder {remindme.remindme_id}: {e}")
+            rleb_log_error(
+                f"REMINDME: Failed to send reminder {remindme.remindme_id}: {e}"
+            )
 
     Data.singleton().delete_remindme(remindme.remindme_id)
     if remindme.remindme_id in remindme_timers:
@@ -138,7 +143,9 @@ def schedule_remindme(remindme: Remindme) -> None:
         loop = asyncio.get_event_loop()
         task = loop.create_task(reminder_task())
         remindme_timers[remindme.remindme_id] = task
-        rleb_log_info(f"REMINDME: Created remindme {remindme.remindme_id} due in {delay}s.")
+        rleb_log_info(
+            f"REMINDME: Created remindme {remindme.remindme_id} due in {delay}s."
+        )
     except RuntimeError:
         # No event loop running, this is okay in tests
         rleb_log_info(f"REMINDME: No event loop for remindme {remindme.remindme_id}.")
@@ -210,7 +217,7 @@ thread_restart_interval_seconds = 30
 # MODQUEUE MONITORING
 MODQUEUE_ALERT_THRESHOLD = 6  # number of items in modqueue before alerting
 MODQUEUE_CHECK_INTERVAL = 60  # seconds between modqueue checks (1 minute)
-MODQUEUE_ALERT_COOLDOWN = 2*60*60  # seconds before re-alerting (2 hours)
+MODQUEUE_ALERT_COOLDOWN = 2 * 60 * 60  # seconds before re-alerting (2 hours)
 
 # GOOGLE
 GOOGLE_CALENDAR_ID = os.environ.get("CALENDAR_ID") or rleb_secrets.CALENDAR_ID
@@ -406,4 +413,6 @@ PASTEBIN_USER_PASS = (
 )
 PASTEEE_APP_KEY = os.environ.get("PASTEEE_APP_KEY") or rleb_secrets.PASTEEE_APP_KEY
 
-ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY") or getattr(rleb_secrets, "ANTHROPIC_API_KEY", None)
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY") or getattr(
+    rleb_secrets, "ANTHROPIC_API_KEY", None
+)

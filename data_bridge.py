@@ -9,8 +9,10 @@ from dataclasses import dataclass
 try:
     import rleb_secrets
 except Exception as e:
+
     class rleb_secrets:  # type: ignore[no-redef]
         pass
+
     print("rleb_secrets.py not found, using keys in environment settings.")
 
 
@@ -46,14 +48,14 @@ class AutoUpdate:
 
 
 class DataStub(object):
-    _singleton: Optional['DataStub'] = None
+    _singleton: Optional["DataStub"] = None
     _cache: dict[str, Any] = {}
 
     def __init__(self) -> None:
         raise RuntimeError("Call singleton() instead")
 
     @classmethod
-    def singleton(cls) -> 'DataStub':
+    def singleton(cls) -> "DataStub":
         if cls._singleton is None:
             cls._singleton = cls.__new__(cls)
         return cls._singleton
@@ -167,7 +169,7 @@ class DataStub(object):
 class Data(DataStub):
     """Bridge between RLEB and postgres DB"""
 
-    _singleton: Optional['Data'] = None
+    _singleton: Optional["Data"] = None
 
     # Generic cache, mapping a string key to any object.
     _cache: dict[str, Any] = {}
@@ -182,9 +184,11 @@ class Data(DataStub):
             del Data._cache[cache_key]
 
     @classmethod
-    def singleton(cls) -> 'DataStub':
+    def singleton(cls) -> "DataStub":
         if cls._singleton is None:
-            data_mode = os.environ.get("DATA_MODE") or getattr(rleb_secrets, "DATA_MODE", "stubbed")
+            data_mode = os.environ.get("DATA_MODE") or getattr(
+                rleb_secrets, "DATA_MODE", "stubbed"
+            )
 
             if data_mode == "real":
                 # Use real PostgreSQL database
@@ -192,6 +196,7 @@ class Data(DataStub):
             elif data_mode == "test":
                 # Use test stub with sample data
                 from test_data_stub import DataStubWithSampleData
+
                 cls._singleton = DataStubWithSampleData.singleton()  # type: ignore[assignment]
             else:
                 # Use empty stub (default for "stubbed" or any other value)

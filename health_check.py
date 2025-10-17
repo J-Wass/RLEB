@@ -18,12 +18,16 @@ async def health_check(alert_channel):
                 global_settings.thread_health_check_enabled = False
                 global_settings.health_enabled = False
                 rleb_log_error("[HEALTH]: More than 5 thread crashes.")
-                await alert_channel.send("More than 5 thread crashes detected. Consider using `!restart`.")
+                await alert_channel.send(
+                    "More than 5 thread crashes detected. Consider using `!restart`."
+                )
             if global_settings.thread_crashes["asyncio"] >= 5:
                 global_settings.asyncio_health_check_enabled = False
                 global_settings.health_enabled = False
                 rleb_log_error("[HEALTH]: More than 5 asyncio crashes.")
-                await alert_channel.send("More than 5 asyncio crashes detected. Consider using `!restart`.")
+                await alert_channel.send(
+                    "More than 5 asyncio crashes detected. Consider using `!restart`."
+                )
 
             worst_heartbeat = 0
 
@@ -83,6 +87,7 @@ async def health_check(alert_channel):
 
             # Write heartbeat to file asynchronously
             current_path = str(pathlib.Path(__file__).parent.resolve())
+
             def write_heartbeat():
                 with open(f"{current_path}/heartbeat.txt", "w") as f:
                     f.write(str(worst_heartbeat))
@@ -93,7 +98,9 @@ async def health_check(alert_channel):
         except Exception as e:
             rleb_log_error(f"HEALTH: Hit exception when checking asyncio tasks.\n{e}")
             try:
-                await alert_channel.send(f"HEALTH: Hit exception when checking asyncio tasks. {e}")
+                await alert_channel.send(
+                    f"HEALTH: Hit exception when checking asyncio tasks. {e}"
+                )
             except:
                 pass  # If we can't send alert, just log it
             await asyncio.sleep(30)

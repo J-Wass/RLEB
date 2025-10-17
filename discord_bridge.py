@@ -94,7 +94,9 @@ class RLEsportsBot(discord.Client):
         self.thread_creation_channel = self.get_channel(
             global_settings.THREAD_CREATION_CHANNEL_ID
         )
-        self.moderation_channel = self.get_channel(global_settings.MODERATION_CHANNEL_ID)
+        self.moderation_channel = self.get_channel(
+            global_settings.MODERATION_CHANNEL_ID
+        )
 
         # Now that channels are initialized, create background tasks
         self.loop.create_task(self.check_new_submissions())
@@ -109,7 +111,6 @@ class RLEsportsBot(discord.Client):
             self.loop.create_task(self.run_health_check())
         if global_settings.task_alerts_enabled:
             self.loop.create_task(self.run_task_alerts())
-
 
         # Create a mapping of discord usernames to discord ids for future use.
         for m in self.new_post_channel.members:
@@ -190,7 +191,9 @@ class RLEsportsBot(discord.Client):
                     if len(already_posted_submissions_ordered) >= 100:
                         for sub_to_delete in already_posted_submissions_ordered[:50]:
                             already_posted_submissions.remove(sub_to_delete)
-                        already_posted_submissions_ordered = already_posted_submissions_ordered[50:]
+                        already_posted_submissions_ordered = (
+                            already_posted_submissions_ordered[50:]
+                        )
 
                     global_settings.rleb_log_info(
                         "[DISCORD]: Received submission id {0}: {1}".format(
@@ -219,7 +222,9 @@ class RLEsportsBot(discord.Client):
                 global_settings.rleb_log_error(
                     "[DISCORD]: Submissions asyncio thread failed - {0}".format(e)
                 )
-                await self.bot_command_channel.send("New Submissions asyncio thread encountered error")
+                await self.bot_command_channel.send(
+                    "New Submissions asyncio thread encountered error"
+                )
                 global_settings.rleb_log_error(traceback.format_exc())
                 global_settings.thread_crashes["asyncio"] += 1
                 global_settings.last_datetime_crashed["asyncio"] = datetime.now()
@@ -267,7 +272,9 @@ class RLEsportsBot(discord.Client):
                 global_settings.rleb_log_error(
                     "[DISCORD]: Verified comments asyncio thread failed - {0}".format(e)
                 )
-                await self.bot_command_channel.send("Verified Comments asyncio thread encountered error")
+                await self.bot_command_channel.send(
+                    "Verified Comments asyncio thread encountered error"
+                )
                 global_settings.rleb_log_error(traceback.format_exc())
                 global_settings.thread_crashes["asyncio"] += 1
                 global_settings.last_datetime_crashed["asyncio"] = datetime.now()
@@ -364,7 +371,9 @@ class RLEsportsBot(discord.Client):
                 global_settings.rleb_log_error(
                     "[DISCORD]: Modfeed asyncio thread failed - {0}".format(e)
                 )
-                await self.bot_command_channel.send("Modfeed asyncio thread encountered error")
+                await self.bot_command_channel.send(
+                    "Modfeed asyncio thread encountered error"
+                )
                 global_settings.rleb_log_error(traceback.format_exc())
                 global_settings.thread_crashes["asyncio"] += 1
                 global_settings.last_datetime_crashed["asyncio"] = datetime.now()
@@ -394,8 +403,13 @@ class RLEsportsBot(discord.Client):
                         should_alert = True
                     else:
                         # Check if cooldown period has passed
-                        time_since_last_alert = (datetime.now() - self.last_modqueue_alert_time).total_seconds()
-                        if time_since_last_alert >= global_settings.MODQUEUE_ALERT_COOLDOWN:
+                        time_since_last_alert = (
+                            datetime.now() - self.last_modqueue_alert_time
+                        ).total_seconds()
+                        if (
+                            time_since_last_alert
+                            >= global_settings.MODQUEUE_ALERT_COOLDOWN
+                        ):
                             should_alert = True
 
                 if should_alert:
@@ -411,7 +425,9 @@ class RLEsportsBot(discord.Client):
                 # Send congrats message when queue returns to 0
                 if modqueue_count == 0 and not self.modqueue_congrats_sent:
                     emoji = random.choice(global_settings.success_emojis)
-                    congrats_message = f"{emoji}{emoji}{emoji} The modqueue has been cleared!"
+                    congrats_message = (
+                        f"{emoji}{emoji}{emoji} The modqueue has been cleared!"
+                    )
                     await self.moderation_channel.send(congrats_message)
                     self.modqueue_congrats_sent = True
                     global_settings.rleb_log_info(
@@ -424,7 +440,9 @@ class RLEsportsBot(discord.Client):
                 global_settings.rleb_log_error(
                     "[DISCORD]: Modqueue check asyncio thread failed - {0}".format(e)
                 )
-                await self.bot_command_channel.send("Modqueue check asyncio thread died")
+                await self.bot_command_channel.send(
+                    "Modqueue check asyncio thread died"
+                )
                 global_settings.rleb_log_error(traceback.format_exc())
                 global_settings.thread_crashes["asyncio"] += 1
                 global_settings.last_datetime_crashed["asyncio"] = datetime.now()
@@ -459,7 +477,9 @@ class RLEsportsBot(discord.Client):
             try:
                 auto_updates = global_settings.auto_updates.values()
                 if auto_updates:
-                    global_settings.rleb_log_info("[AUTO UPDATER]: Starting auto update check.")
+                    global_settings.rleb_log_info(
+                        "[AUTO UPDATER]: Starting auto update check."
+                    )
 
                 for auto_update in auto_updates:
                     try:
@@ -468,7 +488,9 @@ class RLEsportsBot(discord.Client):
 
                         options = auto_update.thread_options
                         tourney_system = auto_update.thread_type
-                        stringified_options = "-".join(sorted(options.lower().split(",")))
+                        stringified_options = "-".join(
+                            sorted(options.lower().split(","))
+                        )
                         if stringified_options == "none":
                             template = tourney_system
                         else:
@@ -479,7 +501,7 @@ class RLEsportsBot(discord.Client):
                             diesel.get_make_thread_markdown,
                             liquipedia_url,
                             template,
-                            day_number
+                            day_number,
                         )
 
                         # If markdown is the same as last time, don't write to reddit
@@ -519,14 +541,18 @@ class RLEsportsBot(discord.Client):
                             global_settings.rleb_log_info(
                                 f"[AUTO UPDATER]: Updated {auto_update.reddit_url}"
                             )
-                            global_settings.auto_update_markdown[liquipedia_url] = fresh_markdown
+                            global_settings.auto_update_markdown[liquipedia_url] = (
+                                fresh_markdown
+                            )
 
                     except Exception as e:
                         global_settings.rleb_log_error(
                             f"[AUTO UPDATER]: Failed to auto update reddit thread {auto_update.reddit_url}. {str(e)}"
                         )
 
-                global_settings.asyncio_threads_heartbeats["auto_update"] = datetime.now()
+                global_settings.asyncio_threads_heartbeats["auto_update"] = (
+                    datetime.now()
+                )
 
             except Exception as e:
                 global_settings.rleb_log_error(
@@ -673,7 +699,6 @@ class RLEsportsBot(discord.Client):
                 await message.channel.send(msg_to_send)
 
         elif discord_message.startswith("!census") and is_staff(message.author):
-
             if not global_settings.is_discord_mod(message.author):
                 return
 
@@ -701,7 +726,6 @@ class RLEsportsBot(discord.Client):
             await self.add_response(message)
 
         elif discord_message == "!verified" and is_staff(message.author):
-
             if not global_settings.is_discord_mod(message.author):
                 return
 
@@ -715,7 +739,6 @@ class RLEsportsBot(discord.Client):
             await self.add_response(message)
 
         elif discord_message.startswith("!migrate") and is_staff(message.author):
-
             if not global_settings.is_discord_mod(message.author):
                 return
 
@@ -755,7 +778,6 @@ class RLEsportsBot(discord.Client):
                 global_settings.asyncio_timeout = 60 * 5
 
         elif discord_message == "!confirm migrate" and is_staff(message.author):
-
             if not global_settings.is_discord_mod(message.author):
                 return
 
@@ -793,7 +815,6 @@ class RLEsportsBot(discord.Client):
             global_settings.asyncio_timeout = 60 * 5
 
         elif discord_message == "!triflairs list" and is_staff(message.author):
-
             if not global_settings.is_discord_mod(message.author):
                 return
 
@@ -810,7 +831,6 @@ class RLEsportsBot(discord.Client):
         elif discord_message.startswith("!triflairs remove") and is_staff(
             message.author
         ):
-
             if not global_settings.is_discord_mod(message.author):
                 return
 
@@ -839,7 +859,6 @@ class RLEsportsBot(discord.Client):
                 await self.add_response(message)
 
         elif discord_message.startswith("!triflairs add") and is_staff(message.author):
-
             if not global_settings.is_discord_mod(message.author):
                 return
 
@@ -873,7 +892,6 @@ class RLEsportsBot(discord.Client):
                 await self.add_response(message)
 
         elif discord_message.startswith("!flush") and is_staff(message.author):
-
             if not global_settings.is_discord_mod(message.author):
                 return
 
@@ -909,7 +927,6 @@ class RLEsportsBot(discord.Client):
             await message.channel.send(f"```\n{response}\n```")
 
         elif discord_message.startswith("!logs") and is_staff(message.author):
-
             if not global_settings.is_discord_mod(message.author):
                 return
 
@@ -980,10 +997,9 @@ class RLEsportsBot(discord.Client):
                 pass
 
             # Last resort: terminate the process so Docker will restart the container
-            os._exit(0)   # hard exit, no atexit handlers
+            os._exit(0)  # hard exit, no atexit handlers
 
         elif discord_message == "!status" and is_staff(message.author):
-
             if not global_settings.is_discord_mod(message.author):
                 return
 
@@ -1074,7 +1090,7 @@ class RLEsportsBot(discord.Client):
                 )
 
             asyncio_heartbeat = [
-                f"{k}: {round((datetime.now()-v).total_seconds(),1)}s ago"
+                f"{k}: {round((datetime.now() - v).total_seconds(), 1)}s ago"
                 for k, v in global_settings.asyncio_threads_heartbeats.items()
             ]
             await message.channel.send(f"**Asyncio heartbeats:** {asyncio_heartbeat}")
@@ -1082,7 +1098,6 @@ class RLEsportsBot(discord.Client):
             await self.add_response(message)
 
         elif discord_message == "!reset crashes" and is_staff(message.author):
-
             if not global_settings.is_discord_mod(message.author):
                 return
 
@@ -1773,6 +1788,7 @@ class RLEsportsBot(discord.Client):
                 return
             try:
                 import chat
+
                 response = await chat.ask_claude(user_message)
                 await message.channel.send(response)
             except Exception as e:

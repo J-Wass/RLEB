@@ -38,7 +38,10 @@ async def stream_new_submissions():
                         break
                     # Sometimes, submission stream gives us old posts. Only accept posts that are within 2m of now.
                     submission_datetime = datetime.fromtimestamp(submission.created_utc)
-                    if abs((datetime.now() - submission_datetime).total_seconds()) > 60 * 2:
+                    if (
+                        abs((datetime.now() - submission_datetime).total_seconds())
+                        > 60 * 2
+                    ):
                         continue
                     submissions.append(submission)
             except Exception:
@@ -74,6 +77,7 @@ async def stream_new_submissions():
 async def stream_verified_comments():
     """Stream verified comments. Async generator that yields verified comments."""
     try:
+
         def get_comments():
             comments = []
             try:
@@ -82,7 +86,10 @@ async def stream_verified_comments():
                         break
                     # check if it arrived in the last 2 mins.
                     submission_datetime = datetime.fromtimestamp(comment.created_utc)
-                    if abs((datetime.now() - submission_datetime).total_seconds()) > 60 * 2:
+                    if (
+                        abs((datetime.now() - submission_datetime).total_seconds())
+                        > 60 * 2
+                    ):
                         continue
 
                     for flair in sub.flair(comment.author):
@@ -104,9 +111,7 @@ async def stream_verified_comments():
 
         comments = await asyncio.to_thread(get_comments)
         for comment in comments:
-            global_settings.rleb_log_info(
-                "[REDDIT]: Comment - {0}".format(comment)
-            )
+            global_settings.rleb_log_info("[REDDIT]: Comment - {0}".format(comment))
             yield comment
 
     except AssertionError as e:
@@ -131,6 +136,7 @@ async def stream_verified_comments():
 async def process_inbox():
     """Process inbox messages, handling flair requests."""
     try:
+
         def check_inbox():
             processed = []
             try:
@@ -158,9 +164,7 @@ async def process_inbox():
     except AssertionError as e:
         if "429" in str(e):
             await asyncio.sleep(60 * 11)
-            global_settings.rleb_log_error(
-                f"[REDDIT]: process_inbox() -> {str(e)}"
-            )
+            global_settings.rleb_log_error(f"[REDDIT]: process_inbox() -> {str(e)}")
     except prawcore.exceptions.ServerError as e:
         pass  # Reddit server borked, wait an interval and try again
     except prawcore.exceptions.RequestException as e:
@@ -177,6 +181,7 @@ async def process_inbox():
 async def stream_modlog():
     """Stream mod log entries. Async generator that yields modlog entries."""
     try:
+
         def get_modlog():
             logs_to_yield = []
             try:
@@ -191,7 +196,9 @@ async def stream_modlog():
                         break
 
                     # only accept logs that have an appropriate mod & action
-                    if log.mod != None and (log.mod in global_settings.filtered_mod_log):
+                    if log.mod != None and (
+                        log.mod in global_settings.filtered_mod_log
+                    ):
                         continue
                     if log.action != None and (
                         log.action.lower() not in global_settings.allowed_mod_actions
@@ -209,9 +216,7 @@ async def stream_modlog():
     except AssertionError as e:
         if "429" in str(e):
             await asyncio.sleep(60 * 11)
-            global_settings.rleb_log_error(
-                f"[REDDIT]: stream_modlog() -> {str(e)}"
-            )
+            global_settings.rleb_log_error(f"[REDDIT]: stream_modlog() -> {str(e)}")
     except prawcore.exceptions.ServerError as e:
         pass  # Reddit server borked, wait an interval and try again
     except prawcore.exceptions.RequestException as e:
@@ -231,6 +236,7 @@ async def stream_modmail():
     already_printed_convos_ordered: list[str] = []
 
     try:
+
         def get_modmail():
             conversations_to_yield = []
             try:
@@ -258,7 +264,9 @@ async def stream_modmail():
                     if len(already_printed_convos_ordered) >= 100:
                         for convo_to_delete in already_printed_convos_ordered[:50]:
                             already_printed_convos.remove(convo_to_delete)
-                        already_printed_convos_ordered = already_printed_convos_ordered[50:]
+                        already_printed_convos_ordered = already_printed_convos_ordered[
+                            50:
+                        ]
                         global_settings.rleb_log_info(
                             "[REDDIT]: Modmail - Clearing modmail convo cache"
                         )
@@ -310,9 +318,7 @@ async def stream_modmail():
     except AssertionError as e:  # rate limit
         if "429" in str(e):
             await asyncio.sleep(60 * 11)
-            global_settings.rleb_log_error(
-                f"[REDDIT]: stream_modmail() -> {str(e)}"
-            )
+            global_settings.rleb_log_error(f"[REDDIT]: stream_modmail() -> {str(e)}")
     except prawcore.exceptions.ServerError as e:
         pass  # Reddit server borked, wait an interval and try again
     except prawcore.exceptions.RequestException as e:

@@ -42,7 +42,7 @@ class DataStubWithSampleData(DataStub):
     _next_remindme_id: int = 1
 
     @classmethod
-    def singleton(cls) -> 'DataStubWithSampleData':
+    def singleton(cls) -> "DataStubWithSampleData":
         if cls._singleton is None:
             cls._singleton = cls.__new__(cls)
             cls._singleton._initialize_sample_data()

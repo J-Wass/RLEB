@@ -91,7 +91,6 @@ async def send_tasks(
     if len(message) > 1990:
         message = await stdout.create_paste(message, title=f"{user}'s tasks")
     try:
-
         await discord_user.send(message)
     except Exception as e:
         await stdout.print_to_channel(
@@ -279,14 +278,16 @@ class Event:
 async def get_scheduled_posts(
     already_warned_scheduled_posts: list[int] = None,
     days_ago: int = 5,
-    thread_creation_channel = None
+    thread_creation_channel=None,
 ) -> list[Event]:
     """Returns a list of scheduled posts from the sub starting `days_ago`, ignoring posts already in already_warned_scheduled_posts."""
     scheduled_posts = []
 
     # Fetch logs in a thread to avoid blocking
     def fetch_logs():
-        return list(global_settings.sub.mod.log(action="create_scheduled_post", limit=20))
+        return list(
+            global_settings.sub.mod.log(action="create_scheduled_post", limit=20)
+        )
 
     logs = await asyncio.to_thread(fetch_logs)
 
@@ -317,7 +318,10 @@ async def get_scheduled_posts(
             scheduled_posts.append(scheduled_event)
         except Exception as e:
             # only send warnings if the caller provided a channel and a list to be filled out
-            if already_warned_scheduled_posts is not None and thread_creation_channel is not None:
+            if (
+                already_warned_scheduled_posts is not None
+                and thread_creation_channel is not None
+            ):
                 await thread_creation_channel.send(
                     f"Failed to parse scheduled post **{log.details}** {log.description}. Use `!logs db 10` to debug further."
                 )
@@ -410,22 +414,31 @@ async def task_alert_check(thread_creation_channel, client):
             tasks, new_scheduled_posts = await asyncio.wait_for(
                 asyncio.gather(
                     asyncio.to_thread(get_weekly_events),
-                    get_scheduled_posts(already_warned_scheduled_posts, thread_creation_channel=thread_creation_channel),
-                    return_exceptions=True
+                    get_scheduled_posts(
+                        already_warned_scheduled_posts,
+                        thread_creation_channel=thread_creation_channel,
+                    ),
+                    return_exceptions=True,
                 ),
-                timeout=20.0
+                timeout=20.0,
             )
 
             # Check if either task raised an exception
             if isinstance(tasks, Exception):
-                global_settings.rleb_log_error(f"TASK CHECK: Error fetching weekly events: {tasks}")
+                global_settings.rleb_log_error(
+                    f"TASK CHECK: Error fetching weekly events: {tasks}"
+                )
                 tasks = None
             if isinstance(new_scheduled_posts, Exception):
-                global_settings.rleb_log_error(f"TASK CHECK: Error fetching scheduled posts: {new_scheduled_posts}")
+                global_settings.rleb_log_error(
+                    f"TASK CHECK: Error fetching scheduled posts: {new_scheduled_posts}"
+                )
                 new_scheduled_posts = None
 
         except asyncio.TimeoutError:
-            global_settings.rleb_log_error("TASK CHECK: Timeout fetching tasks or scheduled posts")
+            global_settings.rleb_log_error(
+                "TASK CHECK: Timeout fetching tasks or scheduled posts"
+            )
             tasks = None
             new_scheduled_posts = None
 
@@ -447,7 +460,6 @@ async def task_alert_check(thread_creation_channel, client):
         # Gather tasks which don't have a scheduled post.
         unscheduled_tasks: list[Event] = []
         for task in tasks:
-
             # Find if any posts are scheduled at the right time. If they are, assume post is scheduled.
             post_at_same_time = list(
                 filter(
@@ -542,17 +554,25 @@ async def task_alert_check(thread_creation_channel, client):
                 # Send DM directly
                 user_mapping = global_settings.user_names_to_ids
                 if user_mapping and unscheduled_task.event_creator in user_mapping:
-                    discord_user = client.get_user(user_mapping[unscheduled_task.event_creator])
+                    discord_user = client.get_user(
+                        user_mapping[unscheduled_task.event_creator]
+                    )
                     if discord_user:
-                        dm_message = "\n".join([
-                            random.choice(global_settings.greetings),
-                            "\n----------\n",
-                            message,
-                            "\n----------\n",
-                        ])
+                        dm_message = "\n".join(
+                            [
+                                random.choice(global_settings.greetings),
+                                "\n----------\n",
+                                message,
+                                "\n----------\n",
+                            ]
+                        )
                         if global_settings.RUNNING_MODE == "local":
-                            bot_channel = client.get_channel(global_settings.BOT_COMMANDS_CHANNEL_ID)
-                            await bot_channel.send(f"**DM For {unscheduled_task.event_creator}**")
+                            bot_channel = client.get_channel(
+                                global_settings.BOT_COMMANDS_CHANNEL_ID
+                            )
+                            await bot_channel.send(
+                                f"**DM For {unscheduled_task.event_creator}**"
+                            )
                             testing_msg = await bot_channel.send(dm_message)
                             await testing_msg.edit(suppress=True)
                         else:
