@@ -48,6 +48,8 @@ class TestDiscord(RLEBAsyncTestCase):
         self.discord_client.get_channel = MagicMock(
             return_value=self.discord_client.bot_command_channel
         )
+        # Mock wait_until_ready to return immediately in tests
+        self.discord_client.wait_until_ready = mock.AsyncMock()
 
         self.discord_thread = Thread(
             target=self.discord_client.run,

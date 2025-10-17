@@ -66,27 +66,15 @@ class RLEsportsBot(discord.Client):
         self.modqueue_congrats_sent = False
 
     async def setup_hook(self):
-        """Setup hook to create background tasks."""
+        """Setup hook to store global reference."""
         # Store reference to Discord client globally for direct communication
         global_settings.discord_client = self
 
-        # Create asynchronous discord tasks for Reddit monitoring
-        self.loop.create_task(self.check_new_submissions())
-        self.loop.create_task(self.check_new_modfeed())
-        self.loop.create_task(self.check_new_verified_comments())
-        self.loop.create_task(self.check_modqueue_length())
-        self.loop.create_task(self.process_reddit_inbox())
-        self.loop.create_task(self.auto_update_threads())
-
-        # Create asyncio tasks for health monitoring and task alerts
-        if global_settings.health_enabled:
-            self.loop.create_task(self.run_health_check())
-        if global_settings.task_alerts_enabled:
-            self.loop.create_task(self.run_task_alerts())
-
     async def on_ready(self):
-        """Indicate bot has joined the discord."""
+        """Indicate bot has joined the discord and start background tasks."""
         global_settings.rleb_log_info("[DISCORD]: Logged on as {0}".format(self.user))
+
+        # Initialize all channels first
         self.new_post_channel = self.get_channel(global_settings.NEW_POSTS_CHANNEL_ID)
         self.modmail_channel = self.get_channel(global_settings.MODMAIL_CHANNEL_ID)
         self.bot_command_channel = self.get_channel(
@@ -106,6 +94,20 @@ class RLEsportsBot(discord.Client):
             global_settings.THREAD_CREATION_CHANNEL_ID
         )
         self.moderation_channel = self.get_channel(global_settings.MODERATION_CHANNEL_ID)
+
+        # Now that channels are initialized, create background tasks
+        self.loop.create_task(self.check_new_submissions())
+        self.loop.create_task(self.check_new_modfeed())
+        self.loop.create_task(self.check_new_verified_comments())
+        self.loop.create_task(self.check_modqueue_length())
+        self.loop.create_task(self.process_reddit_inbox())
+        self.loop.create_task(self.auto_update_threads())
+
+        # Create asyncio tasks for health monitoring and task alerts
+        if global_settings.health_enabled:
+            self.loop.create_task(self.run_health_check())
+        if global_settings.task_alerts_enabled:
+            self.loop.create_task(self.run_task_alerts())
 
 
         # Create a mapping of discord usernames to discord ids for future use.
@@ -402,12 +404,7 @@ class RLEsportsBot(discord.Client):
                 global_settings.rleb_log_error(
                     "[DISCORD]: Modqueue check asyncio thread failed - {0}".format(e)
                 )
-                await global_settings.queues["alerts"].put(
-                    (
-                        "Modqueue check asyncio thread died",
-                        global_settings.BOT_COMMANDS_CHANNEL_ID,
-                    )
-                )
+                await self.bot_command_channel.send("Modqueue check asyncio thread died")
                 global_settings.rleb_log_error(traceback.format_exc())
                 global_settings.thread_crashes["asyncio"] += 1
                 global_settings.last_datetime_crashed["asyncio"] = datetime.now()
@@ -526,7 +523,7 @@ class RLEsportsBot(discord.Client):
         from health_check import health_check
 
         try:
-            await health_check()
+            await health_check(self.bot_command_channel)
         except Exception as e:
             global_settings.rleb_log_error(
                 "[DISCORD]: Health check failed - {0}".format(e)
