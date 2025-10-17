@@ -568,5 +568,5 @@ async def task_alert_check(thread_creation_channel, client):
         # Break before waiting for the interval.
         if not global_settings.task_alert_check_enabled:
             break
-        await asyncio.sleep(60 * 5)  # 5 minutes
+        await asyncio.sleep(60 * 3)  # 3 minutes
     global_settings.rleb_log_info(f"TASK CHECK: Exiting task_check loop.")

@@ -165,6 +165,10 @@ class RLEsportsBot(discord.Client):
         """Check Reddit submissions directly and post in 'new posts' discord channel."""
         from reddit_bridge import stream_new_submissions
 
+        # Track already posted submissions to avoid duplicates
+        already_posted_submissions: set[str] = set()
+        already_posted_submissions_ordered: list[str] = []
+
         await asyncio.sleep(10)
         while True:
             try:
@@ -172,6 +176,21 @@ class RLEsportsBot(discord.Client):
                     break
 
                 async for submission in stream_new_submissions():
+                    # Skip if we've already posted this submission
+                    submission_id = submission.id
+                    if submission_id in already_posted_submissions:
+                        continue
+
+                    # Track this submission as posted
+                    already_posted_submissions.add(submission_id)
+                    already_posted_submissions_ordered.append(submission_id)
+
+                    # Keep cache size reasonable (clear oldest 50 when we hit 100)
+                    if len(already_posted_submissions_ordered) >= 100:
+                        for sub_to_delete in already_posted_submissions_ordered[:50]:
+                            already_posted_submissions.remove(sub_to_delete)
+                        already_posted_submissions_ordered = already_posted_submissions_ordered[50:]
+
                     global_settings.rleb_log_info(
                         "[DISCORD]: Received submission id {0}: {1}".format(
                             submission, submission.title
