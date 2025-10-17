@@ -79,6 +79,9 @@ class TestDualFlairs(RLEBTestCase):
         mock_moderator = mock.Mock(auto_spec=praw.models.Redditor)
         mock_moderator.name = "mr_mod"
 
+        # Add the moderator to the global_settings.moderators list
+        global_settings.moderators = [mock_moderator]
+
         handle_flair_request(self.mock_sub, mock_moderator, ":NRG: Modguy")
 
         self.mock_sub_flair.set.assert_called_once_with(

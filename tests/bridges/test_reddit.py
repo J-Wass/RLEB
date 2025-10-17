@@ -91,13 +91,18 @@ class TestReddit(RLEBAsyncTestCase):
             return [{"flair_text": "verified user"}]
 
         with patch.object(reddit_bridge.sub.stream, "comments", new=mock_comments):
-            with patch.object(reddit_bridge.sub, "flair", new=mock_flair):
-                comments = []
-                async for comment in reddit_bridge.stream_verified_comments():
-                    comments.append(comment)
+            # Mock sub.flair as a callable
+            with patch("global_settings.sub") as mock_sub:
+                mock_sub.stream.comments = mock_comments
+                mock_sub.flair = mock.Mock(side_effect=mock_flair)
+                # Update reddit_bridge.sub to use our mock
+                with patch.object(reddit_bridge, "sub", mock_sub):
+                    comments = []
+                    async for comment in reddit_bridge.stream_verified_comments():
+                        comments.append(comment)
 
-                self.assertEqual(len(comments), 1)
-                self.assertEqual(comments[0], mock_comment)
+                    self.assertEqual(len(comments), 1)
+                    self.assertEqual(comments[0], mock_comment)
 
     async def test_stream_verified_comments_old_comment(self):
         mock_comment = mock.Mock()
@@ -130,13 +135,18 @@ class TestReddit(RLEBAsyncTestCase):
             return [{"flair_text": "regular user"}]
 
         with patch.object(reddit_bridge.sub.stream, "comments", new=mock_comments):
-            with patch.object(reddit_bridge.sub, "flair", new=mock_flair):
-                comments = []
-                async for comment in reddit_bridge.stream_verified_comments():
-                    comments.append(comment)
+            # Mock sub.flair as a callable
+            with patch("global_settings.sub") as mock_sub:
+                mock_sub.stream.comments = mock_comments
+                mock_sub.flair = mock.Mock(side_effect=mock_flair)
+                # Update reddit_bridge.sub to use our mock
+                with patch.object(reddit_bridge, "sub", mock_sub):
+                    comments = []
+                    async for comment in reddit_bridge.stream_verified_comments():
+                        comments.append(comment)
 
-                # Comment without verified flair should be filtered out
-                self.assertEqual(len(comments), 0)
+                    # Comment without verified flair should be filtered out
+                    self.assertEqual(len(comments), 0)
 
     async def test_process_inbox(self):
         mock_inbox_item = mock.Mock(spec=praw.models.Message)
