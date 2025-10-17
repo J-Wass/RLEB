@@ -7,7 +7,7 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 import unittest
 import unittest.mock as mock
 from unittest.mock import patch
-from tests.common.rleb_test_case import RLEBTestCase
+from tests.common.rleb_async_test_case import RLEBAsyncTestCase
 
 from threading import Thread
 from queue import Queue
@@ -18,9 +18,9 @@ def instantly_crash():
     pass
 
 
-class TestHealth(RLEBTestCase):
-    def setUp(self):
-        super().setUp()
+class TestHealth(RLEBAsyncTestCase):
+    async def asyncSetUp(self):
+        await super().asyncSetUp()
 
         # import health_check after setUp is done so that rleb_settings loads with mocks/patches
         global health_check
@@ -39,12 +39,12 @@ class TestHealth(RLEBTestCase):
         self.mock_rleb_log_error = mock.Mock()
         global_settings.rleb_log_error = self.mock_rleb_log_error
 
-        global_settings.queues["alerts"] = Queue()
-
         global_settings.threads_heartbeats["Task alert thread"] = datetime.now()
         global_settings.threads_heartbeats["Auto update thread"] = datetime.now()
 
-    def test_alerts_on_dead_asyncio_thread(self):
+    async def test_alerts_on_dead_asyncio_thread(self):
+        import asyncio
+
         global_settings.asyncio_health_check_enabled = True
         global_settings.asyncio_threads_heartbeats = {
             "submissions": datetime.now() - timedelta(seconds=350),
@@ -53,15 +53,24 @@ class TestHealth(RLEBTestCase):
         }
         global_settings.thread_crashes["asyncio"] = 2
 
-        with patch("health_check.rleb_log_error") as mock_log_error:
-            health_check.health_check()
+        # Create a mock alert channel
+        mock_alert_channel = mock.AsyncMock()
 
-            mock_log_error.assert_called_with(
-                "HEALTH: submissions asyncio thread has stopped responding! (2 crashes)"
-            )
-        self.assertEqual(
-            "submissions asyncio thread has stopped responding! (2 crashes)",
-            global_settings.queues["alerts"].get()[0],
+        # Create a task that will run health_check
+        health_task = asyncio.create_task(health_check.health_check(mock_alert_channel))
+
+        # Let it run once, then cancel it
+        await asyncio.sleep(0.1)
+        health_task.cancel()
+
+        try:
+            await health_task
+        except asyncio.CancelledError:
+            pass
+
+        # Verify the alert was sent to the channel
+        mock_alert_channel.send.assert_awaited_with(
+            "submissions asyncio thread has stopped responding! (2 crashes)"
         )
 
 

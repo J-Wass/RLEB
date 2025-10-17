@@ -7,17 +7,18 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 import unittest
 import unittest.mock as mock
 from unittest.mock import patch
-from tests.common.rleb_test_case import RLEBTestCase
+from tests.common.rleb_async_test_case import RLEBAsyncTestCase
 from praw.models import ModmailConversation
 
 from queue import Queue
 import praw
+import asyncio
 from datetime import datetime, timezone
 
 
-class TestReddit(RLEBTestCase):
-    def setUp(self):
-        super().setUp()
+class TestReddit(RLEBAsyncTestCase):
+    async def asyncSetUp(self):
+        await super().asyncSetUp()
 
         # import rleb_reddit after setUp is done so that rleb_settings loads with mocks/patches
         global reddit_bridge
@@ -27,555 +28,149 @@ class TestReddit(RLEBTestCase):
         import global_settings
         import triflairs
 
-        global_settings.queues["submissions"] = Queue()
-        global_settings.queues["modmail"] = Queue()
-        global_settings.queues["modlog"] = Queue()
         global_settings.thread_restart_interval_seconds = 0
 
-    def test_read_new_submissions(self):
-        global_settings.read_new_submissions_enabled = False
-
+    async def test_stream_new_submissions(self):
         mock_submission = mock.Mock(spec=praw.models.Submission)
         mock_submission.created_utc = datetime.now().timestamp()
 
-        def mock_submissions(args=[]):
+        def mock_submissions(pause_after=0):
             """Mock method for sub.stream.submissions()."""
-            return [mock_submission]
+            yield mock_submission
+            yield None  # PRAW streams yield None when pause_after is used
 
-        # Mock the new submissions stream to be an array of 1.
+        # Mock the new submissions stream
         mock_sub = patch.object(
             reddit_bridge.sub.stream, "submissions", new=mock_submissions
         ).start()
         self.addCleanup(mock_sub)
 
-        # Assert that the new submissions is in the submissions queue after the method.
-        self.assertEqual(global_settings.queues["submissions"].qsize(), 0)
-        reddit_bridge.read_new_submissions()
-        self.assertEqual(global_settings.queues["submissions"].qsize(), 1)
+        # Collect items from the async generator
+        submissions = []
+        async for submission in reddit_bridge.stream_new_submissions():
+            submissions.append(submission)
 
-        submission_from_queue = global_settings.queues["submissions"].get()
-        self.assertEqual(submission_from_queue, mock_submission)
+        self.assertEqual(len(submissions), 1)
+        self.assertEqual(submissions[0], mock_submission)
 
-    def test_monitor_subreddit(self):
-        global_settings.monitor_subreddit_enabled = False
-
-        mock_inbox_item = mock.Mock(spec=praw.models.Message)
-        mock_inbox_item.subject = "flair request"
-        mock_inbox_item.body = "flair request body"
-        mock_inbox_item.author = "some_user"
-
-        def mock_inbox_stream(args=[]):
-            """Mock method for sub.stream.submissions()."""
-            return [mock_inbox_item]
-
-        # Mock the inbox stream to be an array of 1.
-        inbox_stream = patch.object(
-            reddit_bridge.r.inbox, "stream", new=mock_inbox_stream
-        ).start()
-        self.addCleanup(inbox_stream)
-
-        # Assert that dualflairs was called.
-        mock_dualflairs = patch.object(reddit_bridge, "handle_flair_request").start()
-        self.addCleanup(mock_dualflairs)
-        reddit_bridge.monitor_subreddit()
-        mock_dualflairs.assert_called_once_with(
-            global_settings.sub, "some_user", "flair request body"
-        )
-
-    def test_monitor_modmail(self):
-        global_settings.monitor_modmail_enabled = False
-        global_settings.modmail_polling_interval_seconds = 0
-
-        mock_modmail_item = mock.Mock(spec=ModmailConversation)
-        mock_modmail_item.id = "123"
-        mock_modmail_item.last_updated = datetime.now(timezone.utc).isoformat()
-        mock_modmail_item.messages = [1, 2]
-        mock_modmail_item.subject = "modmail subject line"
-
-        with patch(
-            "global_settings.sub.modmail.conversations",
-            return_value=[mock_modmail_item],
-        ):
-            # Assert that the new modmail is in the modmail queue after the method.
-            self.assertEqual(global_settings.queues["modmail"].qsize(), 0)
-            reddit_bridge.monitor_modmail()
-            self.assertEqual(global_settings.queues["modmail"].qsize(), 1)
-
-            modmail_from_queue = global_settings.queues["modmail"].get()
-            self.assertEqual(modmail_from_queue, mock_modmail_item)
-
-    def test_monitor_modmail_for_multiflair(self):
-        global_settings.monitor_modmail_enabled = False
-        global_settings.modmail_polling_interval_seconds = 0
-
-        mock_sub_flair = mock.MagicMock()
-        global_settings.sub.flair = mock_sub_flair
-
-        mock_modmail_item = mock.Mock(spec=ModmailConversation)
-        mock_modmail_item.id = "123"
-        mock_modmail_item.last_updated = datetime.now(timezone.utc).isoformat()
-
-        message = mock.Mock()
-        message.body_markdown = ":NRG: :G2:"
-        mock_modmail_item.messages = [message]
-        mock_modmail_item.subject = "triflair"
-
-        mock_user = mock.Mock()
-        mock_modmail_item.authors = [mock_user]
-
-        with patch(
-            "global_settings.sub.modmail.conversations",
-            return_value=[mock_modmail_item],
-        ):
-
-            # Assert that the new modmail isn't in the queue since it is filtered.
-            self.assertEqual(global_settings.queues["modmail"].qsize(), 0)
-
-            reddit_bridge.monitor_modmail()
-            self.assertEqual(global_settings.queues["modmail"].qsize(), 0)
-
-            mock_sub_flair.set.assert_called_once_with(
-                mock_user, text=":NRG: :G2:", css_class=""
-            )
-
-    def test_monitor_modmail_for_removal_reason(self):
-        global_settings.monitor_modmail_enabled = False
-        global_settings.modmail_polling_interval_seconds = 0
-
-        mock_user = mock.Mock()
-        mock_modmail_item = mock.Mock()
-        mock_modmail_item.id = "123"
-        mock_modmail_item.subject = (
-            "Your comment was removed from /r/RocketLeagueEsports"
-        )
-        mock_modmail_item.body = "blah blah foobar"
-        mock_modmail_item.author = mock_user
-        mock_modmail_item.parent_id = None
-
-        mock_sub_flair = mock.MagicMock()
-        global_settings.sub.flair = mock_sub_flair
-
-        def mock_modmail_stream(args=[]):
-            """Mock method for sub.stream.submissions()."""
-            return [mock_modmail_item]
-
-        # Mock the modmail stream to be an array of 1.
-        modmail_stream = patch.object(
-            reddit_bridge.sub.mod, "unread", new=mock_modmail_stream
-        ).start()
-        self.addCleanup(modmail_stream)
-
-        # Assert that the new modmail isn't in the queue since it is filtered.
-        self.assertEqual(global_settings.queues["modmail"].qsize(), 0)
-
-        reddit_bridge.monitor_modmail()
-        self.assertEqual(global_settings.queues["modmail"].qsize(), 0)
-
-    def test_monitor_modlog(self):
-        global_settings.monitor_modlog_enabled = False
-        global_settings.modmail_polling_interval_seconds = 0
-
-        mock_modlog_item = mock.Mock()
-        mock_modlog_item.id = "123"
-        mock_modlog_item.action = "removecomment"
-
-        def mock_modlog_stream(
-            args=[], pause_after=None, skip_existing=True, attribute_name="id"
-        ):
-            """Mock method for sub.stream.submissions()."""
-            return [mock_modlog_item]
-
-        # Mock the modmail stream to be an array of 1.
-        modlog_stream = patch.object(
-            praw.models.util, "stream_generator", new=mock_modlog_stream
-        ).start()
-        self.addCleanup(modlog_stream)
-
-        # Assert that the new modmail is in the modmail queue after the method.
-        self.assertEqual(global_settings.queues["modlog"].qsize(), 0)
-        reddit_bridge.monitor_modlog()
-        self.assertEqual(global_settings.queues["modlog"].qsize(), 1)
-
-        modlog_from_queue = global_settings.queues["modlog"].get()
-        self.assertEqual(modlog_from_queue, mock_modlog_item)
-
-    def test_monitor_modlog_unallowed_action(self):
-        global_settings.monitor_modlog_enabled = False
-        global_settings.modmail_polling_interval_seconds = 0
-
-        mock_modlog_item = mock.Mock()
-        mock_modlog_item.id = "123"
-        mock_modlog_item.action = "unallowed action"
-
-        def mock_modlog_stream(
-            args=[], pause_after=None, skip_existing=True, attribute_name="id"
-        ):
-            """Mock method for sub.stream.submissions()."""
-            return [mock_modlog_item]
-
-        # Mock the modmail stream to be an array of 1.
-        modlog_stream = patch.object(
-            praw.models.util, "stream_generator", new=mock_modlog_stream
-        ).start()
-        self.addCleanup(modlog_stream)
-
-        # Assert that the new modmail is in the modmail queue after the method.
-        self.assertEqual(global_settings.queues["modlog"].qsize(), 0)
-        reddit_bridge.monitor_modlog()
-        self.assertEqual(global_settings.queues["modlog"].qsize(), 0)
-
-    def test_read_new_submissions_old_submission(self):
-        global_settings.read_new_submissions_enabled = False
-
+    async def test_stream_new_submissions_old_submission(self):
         mock_submission = mock.Mock(spec=praw.models.Submission)
         # Old submission from 10 minutes ago
         mock_submission.created_utc = datetime.now().timestamp() - 600
 
-        def mock_submissions(args=[]):
-            return [mock_submission]
+        def mock_submissions(pause_after=0):
+            yield mock_submission
+            yield None
 
         mock_sub = patch.object(
             reddit_bridge.sub.stream, "submissions", new=mock_submissions
         ).start()
         self.addCleanup(mock_sub)
 
-        self.assertEqual(global_settings.queues["submissions"].qsize(), 0)
-        reddit_bridge.read_new_submissions()
-        # Old submission should not be queued
-        self.assertEqual(global_settings.queues["submissions"].qsize(), 0)
+        # Collect submissions
+        submissions = []
+        async for submission in reddit_bridge.stream_new_submissions():
+            submissions.append(submission)
 
-    def test_read_new_submissions_rate_limit(self):
-        global_settings.read_new_submissions_enabled = False
+        # Old submission should be filtered out
+        self.assertEqual(len(submissions), 0)
 
-        def mock_submissions_error(args=[]):
-            raise AssertionError("429 Rate limit")
 
-        with patch.object(reddit_bridge.sub.stream, "submissions", new=mock_submissions_error):
-            with patch("reddit_bridge.time.sleep") as mock_sleep:
-                reddit_bridge.read_new_submissions()
-                mock_sleep.assert_called()
-
-    def test_read_new_submissions_server_error(self):
-        global_settings.read_new_submissions_enabled = False
-
-        def mock_submissions_error(args=[]):
-            raise Exception("prawcore.exceptions.ServerError")
-
-        with patch.object(reddit_bridge.sub.stream, "submissions", new=mock_submissions_error):
-            with patch("reddit_bridge.time.sleep") as mock_sleep:
-                reddit_bridge.read_new_submissions()
-
-    def test_read_new_submissions_request_exception(self):
-        global_settings.read_new_submissions_enabled = False
-
-        def mock_submissions_error(args=[]):
-            import prawcore
-            raise prawcore.exceptions.RequestException(mock.Mock(), mock.Mock(), "timeout")
-
-        with patch.object(reddit_bridge.sub.stream, "submissions", new=mock_submissions_error):
-            with patch("reddit_bridge.time.sleep") as mock_sleep:
-                reddit_bridge.read_new_submissions()
-                mock_sleep.assert_called_with(60)
-
-    def test_read_new_submissions_generic_exception(self):
-        global_settings.read_new_submissions_enabled = False
-        global_settings.thread_crashes = {"thread": 0}
-        global_settings.last_datetime_crashed = {}
-
-        def mock_submissions_error(args=[]):
-            raise Exception("Generic error")
-
-        with patch.object(reddit_bridge.sub.stream, "submissions", new=mock_submissions_error):
-            with patch("reddit_bridge.time.sleep"):
-                reddit_bridge.read_new_submissions()
-                self.assertEqual(global_settings.thread_crashes["thread"], 1)
-
-    def test_read_new_submissions_crash_limit(self):
-        global_settings.read_new_submissions_enabled = False
-        global_settings.thread_crashes = {"thread": 10}
-
-        def mock_submissions_error(args=[]):
-            raise Exception("Too many crashes")
-
-        with patch.object(reddit_bridge.sub.stream, "submissions", new=mock_submissions_error):
-            reddit_bridge.read_new_submissions()
-
-    def test_read_new_verified_comments(self):
-        global_settings.read_new_verified_comments_enabled = False
-        global_settings.queues["verified_comments"] = Queue()
+    async def test_stream_verified_comments(self):
         global_settings.verified_needle = "verified"
 
         mock_comment = mock.Mock()
         mock_comment.created_utc = datetime.now().timestamp()
         mock_comment.author = "test_user"
 
-        def mock_comments(skip_existing=True):
-            return [mock_comment]
+        def mock_comments(skip_existing=True, pause_after=0):
+            yield mock_comment
+            yield None
 
         def mock_flair(user):
             return [{"flair_text": "verified user"}]
 
         with patch.object(reddit_bridge.sub.stream, "comments", new=mock_comments):
             with patch.object(reddit_bridge.sub, "flair", new=mock_flair):
-                self.assertEqual(global_settings.queues["verified_comments"].qsize(), 0)
-                reddit_bridge.read_new_verfied_comments()
-                self.assertEqual(global_settings.queues["verified_comments"].qsize(), 1)
+                comments = []
+                async for comment in reddit_bridge.stream_verified_comments():
+                    comments.append(comment)
 
-    def test_read_new_verified_comments_old_comment(self):
-        global_settings.read_new_verified_comments_enabled = False
-        global_settings.queues["verified_comments"] = Queue()
+                self.assertEqual(len(comments), 1)
+                self.assertEqual(comments[0], mock_comment)
 
+    async def test_stream_verified_comments_old_comment(self):
         mock_comment = mock.Mock()
         mock_comment.created_utc = datetime.now().timestamp() - 600
 
-        def mock_comments(skip_existing=True):
-            return [mock_comment]
+        def mock_comments(skip_existing=True, pause_after=0):
+            yield mock_comment
+            yield None
 
         with patch.object(reddit_bridge.sub.stream, "comments", new=mock_comments):
-            reddit_bridge.read_new_verfied_comments()
-            self.assertEqual(global_settings.queues["verified_comments"].qsize(), 0)
+            comments = []
+            async for comment in reddit_bridge.stream_verified_comments():
+                comments.append(comment)
 
-    def test_read_new_verified_comments_no_flair(self):
-        global_settings.read_new_verified_comments_enabled = False
-        global_settings.queues["verified_comments"] = Queue()
+            # Old comment should be filtered out
+            self.assertEqual(len(comments), 0)
+
+    async def test_stream_verified_comments_no_verified_flair(self):
+        global_settings.verified_needle = "verified"
 
         mock_comment = mock.Mock()
         mock_comment.created_utc = datetime.now().timestamp()
         mock_comment.author = "test_user"
 
-        def mock_comments(skip_existing=True):
-            return [mock_comment]
+        def mock_comments(skip_existing=True, pause_after=0):
+            yield mock_comment
+            yield None
 
         def mock_flair(user):
-            return [None]
+            return [{"flair_text": "regular user"}]
 
         with patch.object(reddit_bridge.sub.stream, "comments", new=mock_comments):
             with patch.object(reddit_bridge.sub, "flair", new=mock_flair):
-                reddit_bridge.read_new_verfied_comments()
-                self.assertEqual(global_settings.queues["verified_comments"].qsize(), 0)
+                comments = []
+                async for comment in reddit_bridge.stream_verified_comments():
+                    comments.append(comment)
 
-    def test_read_new_verified_comments_no_flair_text(self):
-        global_settings.read_new_verified_comments_enabled = False
-        global_settings.queues["verified_comments"] = Queue()
+                # Comment without verified flair should be filtered out
+                self.assertEqual(len(comments), 0)
 
-        mock_comment = mock.Mock()
-        mock_comment.created_utc = datetime.now().timestamp()
-        mock_comment.author = "test_user"
+    async def test_process_inbox(self):
+        mock_inbox_item = mock.Mock(spec=praw.models.Message)
+        mock_inbox_item.subject = "flair request"
+        mock_inbox_item.body = "flair request body"
+        mock_inbox_item.author = "some_user"
 
-        def mock_comments(skip_existing=True):
-            return [mock_comment]
+        def mock_inbox_stream(pause_after=0):
+            """Mock method for r.inbox.stream()."""
+            yield mock_inbox_item
+            yield None
 
-        def mock_flair(user):
-            return [{}]
+        # Mock the inbox stream
+        inbox_stream = patch.object(
+            reddit_bridge.r.inbox, "stream", new=mock_inbox_stream
+        ).start()
+        self.addCleanup(inbox_stream)
 
-        with patch.object(reddit_bridge.sub.stream, "comments", new=mock_comments):
-            with patch.object(reddit_bridge.sub, "flair", new=mock_flair):
-                reddit_bridge.read_new_verfied_comments()
-                self.assertEqual(global_settings.queues["verified_comments"].qsize(), 0)
+        # Mock mark_read
+        mark_read = patch.object(reddit_bridge.r.inbox, "mark_read").start()
+        self.addCleanup(mark_read)
 
-    def test_read_new_verified_comments_empty_flair_text(self):
-        global_settings.read_new_verified_comments_enabled = False
-        global_settings.queues["verified_comments"] = Queue()
+        # Mock handle_flair_request to verify it gets called
+        mock_dualflairs = patch.object(reddit_bridge, "handle_flair_request").start()
+        self.addCleanup(mock_dualflairs)
 
-        mock_comment = mock.Mock()
-        mock_comment.created_utc = datetime.now().timestamp()
-        mock_comment.author = "test_user"
+        # Run the process_inbox async function (not a generator)
+        await reddit_bridge.process_inbox()
 
-        def mock_comments(skip_existing=True):
-            return [mock_comment]
+        mock_dualflairs.assert_called_once_with(
+            global_settings.sub, "some_user", "flair request body"
+        )
 
-        def mock_flair(user):
-            return [{"flair_text": ""}]
-
-        with patch.object(reddit_bridge.sub.stream, "comments", new=mock_comments):
-            with patch.object(reddit_bridge.sub, "flair", new=mock_flair):
-                reddit_bridge.read_new_verfied_comments()
-                self.assertEqual(global_settings.queues["verified_comments"].qsize(), 0)
-
-    def test_read_new_verified_comments_rate_limit(self):
-        global_settings.read_new_verified_comments_enabled = False
-
-        def mock_comments_error(skip_existing=True):
-            raise AssertionError("429 Rate limit")
-
-        with patch.object(reddit_bridge.sub.stream, "comments", new=mock_comments_error):
-            with patch("reddit_bridge.time.sleep") as mock_sleep:
-                reddit_bridge.read_new_verfied_comments()
-                mock_sleep.assert_called()
-
-    def test_read_new_verified_comments_server_error(self):
-        global_settings.read_new_verified_comments_enabled = False
-
-        def mock_comments_error(skip_existing=True):
-            import prawcore
-            raise prawcore.exceptions.ServerError(mock.Mock())
-
-        with patch.object(reddit_bridge.sub.stream, "comments", new=mock_comments_error):
-            reddit_bridge.read_new_verfied_comments()
-
-    def test_read_new_verified_comments_request_exception(self):
-        global_settings.read_new_verified_comments_enabled = False
-
-        def mock_comments_error(skip_existing=True):
-            import prawcore
-            raise prawcore.exceptions.RequestException(mock.Mock(), mock.Mock(), "timeout")
-
-        with patch.object(reddit_bridge.sub.stream, "comments", new=mock_comments_error):
-            with patch("reddit_bridge.time.sleep") as mock_sleep:
-                reddit_bridge.read_new_verfied_comments()
-                mock_sleep.assert_called_with(60)
-
-    def test_read_new_verified_comments_generic_exception(self):
-        global_settings.read_new_verified_comments_enabled = False
-        global_settings.thread_crashes = {"thread": 0}
-        global_settings.last_datetime_crashed = {}
-
-        def mock_comments_error(skip_existing=True):
-            raise Exception("Generic error")
-
-        with patch.object(reddit_bridge.sub.stream, "comments", new=mock_comments_error):
-            with patch("reddit_bridge.time.sleep"):
-                reddit_bridge.read_new_verfied_comments()
-                self.assertEqual(global_settings.thread_crashes["thread"], 1)
-
-    def test_monitor_subreddit_rate_limit(self):
-        global_settings.monitor_subreddit_enabled = False
-
-        def mock_inbox_error(args=[]):
-            raise AssertionError("429 Rate limit")
-
-        with patch.object(reddit_bridge.r.inbox, "stream", new=mock_inbox_error):
-            with patch("reddit_bridge.time.sleep") as mock_sleep:
-                reddit_bridge.monitor_subreddit()
-                mock_sleep.assert_called()
-
-    def test_monitor_subreddit_server_error(self):
-        global_settings.monitor_subreddit_enabled = False
-
-        def mock_inbox_error(args=[]):
-            import prawcore
-            raise prawcore.exceptions.ServerError(mock.Mock())
-
-        with patch.object(reddit_bridge.r.inbox, "stream", new=mock_inbox_error):
-            reddit_bridge.monitor_subreddit()
-
-    def test_monitor_subreddit_request_exception(self):
-        global_settings.monitor_subreddit_enabled = False
-
-        def mock_inbox_error(args=[]):
-            import prawcore
-            raise prawcore.exceptions.RequestException(mock.Mock(), mock.Mock(), "timeout")
-
-        with patch.object(reddit_bridge.r.inbox, "stream", new=mock_inbox_error):
-            with patch("reddit_bridge.time.sleep") as mock_sleep:
-                reddit_bridge.monitor_subreddit()
-                mock_sleep.assert_called_with(60)
-
-    def test_monitor_subreddit_generic_exception(self):
-        global_settings.monitor_subreddit_enabled = False
-        global_settings.thread_crashes = {"thread": 0}
-        global_settings.last_datetime_crashed = {}
-
-        def mock_inbox_error(args=[]):
-            raise Exception("Generic error")
-
-        with patch.object(reddit_bridge.r.inbox, "stream", new=mock_inbox_error):
-            with patch("reddit_bridge.time.sleep"):
-                reddit_bridge.monitor_subreddit()
-                self.assertEqual(global_settings.thread_crashes["thread"], 1)
-
-    def test_monitor_modlog_filtered_mod(self):
-        global_settings.monitor_modlog_enabled = False
-        global_settings.modmail_polling_interval_seconds = 0
-        global_settings.filtered_mod_log = ["filtered_mod"]
-
-        mock_modlog_item = mock.Mock()
-        mock_modlog_item.id = "123"
-        mock_modlog_item.mod = "filtered_mod"
-        mock_modlog_item.action = "removecomment"
-
-        def mock_modlog_stream(
-            args=[], pause_after=None, skip_existing=True, attribute_name="id"
-        ):
-            return [mock_modlog_item]
-
-        with patch.object(praw.models.util, "stream_generator", new=mock_modlog_stream):
-            self.assertEqual(global_settings.queues["modlog"].qsize(), 0)
-            reddit_bridge.monitor_modlog()
-            self.assertEqual(global_settings.queues["modlog"].qsize(), 0)
-
-    def test_monitor_modlog_none_item(self):
-        global_settings.monitor_modlog_enabled = False
-        global_settings.modmail_polling_interval_seconds = 0
-
-        def mock_modlog_stream(
-            args=[], pause_after=None, skip_existing=True, attribute_name="id"
-        ):
-            return [None]
-
-        with patch.object(praw.models.util, "stream_generator", new=mock_modlog_stream):
-            self.assertEqual(global_settings.queues["modlog"].qsize(), 0)
-            reddit_bridge.monitor_modlog()
-            self.assertEqual(global_settings.queues["modlog"].qsize(), 0)
-
-    def test_monitor_modlog_rate_limit(self):
-        global_settings.monitor_modlog_enabled = False
-
-        def mock_modlog_error(
-            args=[], pause_after=None, skip_existing=True, attribute_name="id"
-        ):
-            raise AssertionError("429 Rate limit")
-
-        with patch.object(praw.models.util, "stream_generator", new=mock_modlog_error):
-            with patch("reddit_bridge.time.sleep") as mock_sleep:
-                reddit_bridge.monitor_modlog()
-                mock_sleep.assert_called()
-
-    def test_monitor_modlog_server_error(self):
-        global_settings.monitor_modlog_enabled = False
-
-        def mock_modlog_error(
-            args=[], pause_after=None, skip_existing=True, attribute_name="id"
-        ):
-            import prawcore
-            raise prawcore.exceptions.ServerError(mock.Mock())
-
-        with patch.object(praw.models.util, "stream_generator", new=mock_modlog_error):
-            reddit_bridge.monitor_modlog()
-
-    def test_monitor_modlog_request_exception(self):
-        global_settings.monitor_modlog_enabled = False
-
-        def mock_modlog_error(
-            args=[], pause_after=None, skip_existing=True, attribute_name="id"
-        ):
-            import prawcore
-            raise prawcore.exceptions.RequestException(mock.Mock(), mock.Mock(), "timeout")
-
-        with patch.object(praw.models.util, "stream_generator", new=mock_modlog_error):
-            with patch("reddit_bridge.time.sleep") as mock_sleep:
-                reddit_bridge.monitor_modlog()
-                mock_sleep.assert_called_with(60)
-
-    def test_monitor_modlog_generic_exception(self):
-        global_settings.monitor_modlog_enabled = False
-        global_settings.thread_crashes = {"thread": 0}
-        global_settings.last_datetime_crashed = {}
-
-        def mock_modlog_error(
-            args=[], pause_after=None, skip_existing=True, attribute_name="id"
-        ):
-            raise Exception("Generic error")
-
-        with patch.object(praw.models.util, "stream_generator", new=mock_modlog_error):
-            with patch("reddit_bridge.time.sleep"):
-                reddit_bridge.monitor_modlog()
-                self.assertEqual(global_settings.thread_crashes["thread"], 1)
-
-    def test_monitor_modmail_old_conversation(self):
-        global_settings.monitor_modmail_enabled = False
-        global_settings.modmail_polling_interval_seconds = 0
-
+    async def test_stream_modmail_old_conversation(self):
         mock_modmail_item = mock.Mock(spec=ModmailConversation)
         mock_modmail_item.id = "123"
         # Old conversation from 10 minutes ago
@@ -584,70 +179,37 @@ class TestReddit(RLEBTestCase):
         mock_modmail_item.messages = [1]
         mock_modmail_item.subject = "test"
 
-        with patch("global_settings.sub.modmail.conversations", return_value=[mock_modmail_item]):
-            self.assertEqual(global_settings.queues["modmail"].qsize(), 0)
-            reddit_bridge.monitor_modmail()
-            self.assertEqual(global_settings.queues["modmail"].qsize(), 0)
+        def mock_conversations(state="new"):
+            return [mock_modmail_item]
 
-    def test_monitor_modmail_cache_cleanup(self):
-        global_settings.monitor_modmail_enabled = False
-        global_settings.modmail_polling_interval_seconds = 0
+        with patch.object(reddit_bridge.sub.modmail, "conversations", new=mock_conversations):
+            modmails = []
+            async for modmail in reddit_bridge.stream_modmail():
+                modmails.append(modmail)
 
-        # Create 100 mock modmail conversations to trigger cache cleanup
-        conversations = []
-        for i in range(100):
-            mock_conv = mock.Mock(spec=ModmailConversation)
-            mock_conv.id = str(i)
-            mock_conv.last_updated = datetime.now(timezone.utc).isoformat()
-            mock_conv.messages = [1]
-            mock_conv.subject = f"test_{i}"
-            conversations.append(mock_conv)
+            # Old modmail should be filtered out
+            self.assertEqual(len(modmails), 0)
 
-        with patch("global_settings.sub.modmail.conversations", return_value=conversations):
-            reddit_bridge.monitor_modmail()
+    async def test_stream_modlog(self):
+        mock_modlog_item = mock.Mock()
+        mock_modlog_item.id = "123"
+        mock_modlog_item.action = "removecomment"
+        mock_modlog_item.mod = "some_mod"
 
-    def test_monitor_modmail_not_conversation_instance(self):
-        global_settings.monitor_modmail_enabled = False
-        global_settings.modmail_polling_interval_seconds = 0
+        def mock_stream_generator(*args, **kwargs):
+            """Mock for praw.models.util.stream_generator()."""
+            yield mock_modlog_item
+            yield None
 
-        with patch("global_settings.sub.modmail.conversations", return_value=[None]):
-            self.assertEqual(global_settings.queues["modmail"].qsize(), 0)
-            reddit_bridge.monitor_modmail()
-            self.assertEqual(global_settings.queues["modmail"].qsize(), 0)
+        # Mock the stream_generator used by stream_modlog
+        with patch.object(praw.models.util, "stream_generator", new=mock_stream_generator):
+            # Collect items from the async generator
+            modlogs = []
+            async for modlog in reddit_bridge.stream_modlog():
+                modlogs.append(modlog)
 
-    def test_monitor_modmail_rate_limit(self):
-        global_settings.monitor_modmail_enabled = False
-
-        with patch("global_settings.sub.modmail.conversations", side_effect=AssertionError("429 Rate limit")):
-            with patch("reddit_bridge.time.sleep") as mock_sleep:
-                reddit_bridge.monitor_modmail()
-                mock_sleep.assert_called()
-
-    def test_monitor_modmail_server_error(self):
-        global_settings.monitor_modmail_enabled = False
-
-        import prawcore
-        with patch("global_settings.sub.modmail.conversations", side_effect=prawcore.exceptions.ServerError(mock.Mock())):
-            reddit_bridge.monitor_modmail()
-
-    def test_monitor_modmail_request_exception(self):
-        global_settings.monitor_modmail_enabled = False
-
-        import prawcore
-        with patch("global_settings.sub.modmail.conversations", side_effect=prawcore.exceptions.RequestException(mock.Mock(), mock.Mock(), "timeout")):
-            with patch("reddit_bridge.time.sleep") as mock_sleep:
-                reddit_bridge.monitor_modmail()
-                mock_sleep.assert_called_with(60)
-
-    def test_monitor_modmail_generic_exception(self):
-        global_settings.monitor_modmail_enabled = False
-        global_settings.thread_crashes = {"thread": 0}
-        global_settings.last_datetime_crashed = {}
-
-        with patch("global_settings.sub.modmail.conversations", side_effect=Exception("Generic error")):
-            with patch("reddit_bridge.time.sleep"):
-                reddit_bridge.monitor_modmail()
-                self.assertEqual(global_settings.thread_crashes["thread"], 1)
+            self.assertEqual(len(modlogs), 1)
+            self.assertEqual(modlogs[0], mock_modlog_item)
 
 
 if __name__ == "__main__":

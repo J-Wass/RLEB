@@ -13,7 +13,7 @@ from tests.common.rleb_async_test_case import RLEBAsyncTestCase
 import requests
 import discord
 from threading import Thread
-from queue import Queue
+import asyncio
 
 
 class TestDiscord(RLEBAsyncTestCase):
@@ -48,6 +48,8 @@ class TestDiscord(RLEBAsyncTestCase):
         self.discord_client.get_channel = MagicMock(
             return_value=self.discord_client.bot_command_channel
         )
+        # Mock wait_until_ready to return immediately in tests
+        self.discord_client.wait_until_ready = mock.AsyncMock()
 
         self.discord_thread = Thread(
             target=self.discord_client.run,
@@ -55,21 +57,6 @@ class TestDiscord(RLEBAsyncTestCase):
             name="Discord Test Thread",
         )
         self.discord_thread.setDaemon(True)
-
-        # Used for passing reddit submissions from reddit to discord.
-        submissions_queue = Queue()
-        # Used for passing modmail from reddit to discord.
-        modmail_queue = Queue()
-        # Used for passing alerts from reddit to discord.
-        alert_queue = Queue()
-        # Used for passing alerts from reddit to discord.
-        verified_comments_queue = Queue()
-
-        global_settings.queues["submissions"] = submissions_queue
-        global_settings.queues["verified_comments"] = verified_comments_queue
-        global_settings.queues["modmail"] = modmail_queue
-        global_settings.queues["alerts"] = alert_queue
-        global_settings.queues["modlog"] = Queue()
 
         global_settings.colors = [0x2644CE]
 
@@ -91,16 +78,20 @@ class TestDiscord(RLEBAsyncTestCase):
         mock_submission.author.name = "author"
         mock_submission.link_flair_text = "general"
 
-        # Add the submission to the queue.
-        global_settings.queues["submissions"].put(mock_submission)
+        # Mock the async generator to yield our test submission then stop
+        async def mock_stream_submissions():
+            yield mock_submission
+            # After yielding once, disable to break the while loop
+            global_settings.discord_check_new_submission_enabled = False
 
-        global_settings.discord_check_new_submission_enabled = False
+        with patch("reddit_bridge.stream_new_submissions", new=mock_stream_submissions):
+            global_settings.discord_check_new_submission_enabled = True
 
-        await self.discord_client.check_new_submissions()
-        self.discord_client.new_post_channel.send.assert_awaited_once_with(
-            embed=self.mock_embedded_object
-        )
-        self.discord_client.roster_news_channel.assert_not_awaited()
+            await self.discord_client.check_new_submissions()
+            self.discord_client.new_post_channel.send.assert_awaited_once_with(
+                embed=self.mock_embedded_object
+            )
+            self.discord_client.roster_news_channel.assert_not_awaited()
 
     async def test_reads_new_verified_coments(self):
         # Build a mock embed.
@@ -110,22 +101,26 @@ class TestDiscord(RLEBAsyncTestCase):
         self.mock_embedded_object = mock.Mock(autospec=discord.Embed)
         self.mock_embed.return_value = self.mock_embedded_object
 
-        # Build a mock reddit submission.
-        mock_submission = mock.Mock()
-        mock_submission.body = "test comment from verified user"
-        mock_submission.permalink = "/r/permalink"
-        mock_submission.author.name = "author"
+        # Build a mock reddit comment.
+        mock_comment = mock.Mock()
+        mock_comment.body = "test comment from verified user"
+        mock_comment.permalink = "/r/permalink"
+        mock_comment.author.name = "author"
 
-        # Add the submission to the queue.
-        global_settings.queues["verified_comments"].put(mock_submission)
+        # Mock the async generator to yield our test comment then stop
+        async def mock_stream_verified_comments():
+            yield mock_comment
+            # After yielding once, disable to break the while loop
+            global_settings.discord_check_new_verified_comments_enabled = False
 
-        global_settings.discord_check_new_verified_comments_enabled = False
+        with patch("reddit_bridge.stream_verified_comments", new=mock_stream_verified_comments):
+            global_settings.discord_check_new_verified_comments_enabled = True
 
-        await self.discord_client.check_new_verified_comments()
-        self.discord_client.verified_comments_channel.send.assert_awaited_once_with(
-            embed=self.mock_embedded_object
-        )
-        self.discord_client.roster_news_channel.assert_not_awaited()
+            await self.discord_client.check_new_verified_comments()
+            self.discord_client.verified_comments_channel.send.assert_awaited_once_with(
+                embed=self.mock_embedded_object
+            )
+            self.discord_client.roster_news_channel.assert_not_awaited()
 
     async def test_reads_new_modmail(self):
         # Build a mock embed.
@@ -149,29 +144,38 @@ class TestDiscord(RLEBAsyncTestCase):
         mock_modmail.authors = [mock_author]
         mock_modmail.parent_id = None
 
-        # Add the modmail to the queue.
-        global_settings.queues["modmail"].put(mock_modmail)
+        # Mock the async generators
+        async def mock_stream_modlog():
+            return
+            yield  # Make this a generator
 
-        global_settings.discord_check_new_modmail_enabled = False
+        async def mock_stream_modmail():
+            yield mock_modmail
+            # After yielding once, disable to break the while loop
+            global_settings.discord_check_new_modmail_enabled = False
 
-        await self.discord_client.check_new_modfeed()
+        with patch("reddit_bridge.stream_modlog", new=mock_stream_modlog):
+            with patch("reddit_bridge.stream_modmail", new=mock_stream_modmail):
+                global_settings.discord_check_new_modmail_enabled = True
 
-        self.mock_embed.assert_called_with(
-            title="Created: 'modmail subject'",
-            url="https://mod.reddit.com/mail/all",
-            color=0x2644CE,
-        )
-        self.mock_embedded_object.set_author.assert_called_with(name="author")
-        self.assertEqual(
-            self.mock_embedded_object.description,
-            f"modmail body\n--------------------------------------------------------",
-        )
+                await self.discord_client.check_new_modfeed()
 
-        self.discord_client.modmail_channel.send.assert_has_awaits(
-            [
-                call(embed=self.mock_embedded_object),
-            ]
-        )
+                self.mock_embed.assert_called_with(
+                    title="Created: 'modmail subject'",
+                    url="https://mod.reddit.com/mail/all",
+                    color=0x2644CE,
+                )
+                self.mock_embedded_object.set_author.assert_called_with(name="author")
+                self.assertEqual(
+                    self.mock_embedded_object.description,
+                    f"modmail body\n--------------------------------------------------------",
+                )
+
+                self.discord_client.modmail_channel.send.assert_has_awaits(
+                    [
+                        call(embed=self.mock_embedded_object),
+                    ]
+                )
 
     async def test_reads_new_modlogs(self):
         # Build a mock embed.
@@ -191,40 +195,39 @@ class TestDiscord(RLEBAsyncTestCase):
         mock_modlog.target_author = "author"
         mock_modlog.action = "approvecomment"
 
-        # Add the modmail to the queue.
-        global_settings.queues["modlog"].put(mock_modlog)
+        # Mock the async generators
+        async def mock_stream_modlog():
+            yield mock_modlog
+            # After yielding once, disable to break the while loop
+            global_settings.discord_check_new_modmail_enabled = False
 
-        global_settings.discord_check_new_modmail_enabled = False
+        async def mock_stream_modmail():
+            return
+            yield  # Make this a generator
 
-        await self.discord_client.check_new_modfeed()
+        with patch("reddit_bridge.stream_modlog", new=mock_stream_modlog):
+            with patch("reddit_bridge.stream_modmail", new=mock_stream_modmail):
+                global_settings.discord_check_new_modmail_enabled = True
 
-        self.mock_embed.assert_called_with(
-            title="Approvecomment",
-            url="https://www.reddit.com/r/RocketLeagueEsports/about/log/",
-            color=2507982,
-        )
-        self.mock_embedded_object.set_author.assert_called_with(name="mod")
+                await self.discord_client.check_new_modfeed()
 
-        self.assertEqual(
-            self.mock_embedded_object.description,
-            "**Title**: title\n**User**: author\n**Description**: description\n**Extra Details**: details\n--------------------------------------------------------",
-        )
-        self.discord_client.modlog_channel.send.assert_has_awaits(
-            [
-                call(embed=self.mock_embedded_object),
-            ]
-        )
+                self.mock_embed.assert_called_with(
+                    title="Approvecomment",
+                    url="https://www.reddit.com/r/RocketLeagueEsports/about/log/",
+                    color=2507982,
+                )
+                self.mock_embedded_object.set_author.assert_called_with(name="mod")
 
-    async def test_reads_new_alerts(self):
-        # Add the alert to the queue.
-        global_settings.queues["alerts"].put(("this is a test alert", 123))
+                self.assertEqual(
+                    self.mock_embedded_object.description,
+                    "**Title**: title\n**User**: author\n**Description**: description\n**Extra Details**: details\n--------------------------------------------------------",
+                )
+                self.discord_client.modlog_channel.send.assert_has_awaits(
+                    [
+                        call(embed=self.mock_embedded_object),
+                    ]
+                )
 
-        global_settings.discord_check_new_alerts_enabled = False
-
-        await self.discord_client.check_new_alerts()
-        self.discord_client.bot_command_channel.send.assert_awaited_with(
-            "this is a test alert"
-        )
 
     async def test_reads_new_roster_change_submission(self):
         # Build a mock embed.
@@ -241,18 +244,22 @@ class TestDiscord(RLEBAsyncTestCase):
         mock_submission.author.name = "author"
         mock_submission.link_flair_text = "roster news"
 
-        # Add the submission to the queue.
-        global_settings.queues["submissions"].put(mock_submission)
+        # Mock the async generator to yield our test submission then stop
+        async def mock_stream_submissions():
+            yield mock_submission
+            # After yielding once, disable to break the while loop
+            global_settings.discord_check_new_submission_enabled = False
 
-        global_settings.discord_check_new_submission_enabled = False
+        with patch("reddit_bridge.stream_new_submissions", new=mock_stream_submissions):
+            global_settings.discord_check_new_submission_enabled = True
 
-        await self.discord_client.check_new_submissions()
-        self.discord_client.new_post_channel.send.assert_awaited_once_with(
-            embed=self.mock_embedded_object
-        )
-        self.discord_client.roster_news_channel.send.assert_awaited_once_with(
-            embed=self.mock_embedded_object
-        )
+            await self.discord_client.check_new_submissions()
+            self.discord_client.new_post_channel.send.assert_awaited_once_with(
+                embed=self.mock_embedded_object
+            )
+            self.discord_client.roster_news_channel.send.assert_awaited_once_with(
+                embed=self.mock_embedded_object
+            )
 
 
 if __name__ == "__main__":

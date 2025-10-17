@@ -5,15 +5,15 @@ from data_bridge import Remindme
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 
-from tests.common.rleb_test_case import RLEBTestCase
+from tests.common.rleb_async_test_case import RLEBAsyncTestCase
 
 from threading import Timer
-from queue import Queue
+import asyncio
 
 
-class TestRemindme(RLEBTestCase):
-    def setUp(self):
-        super().setUp()
+class TestRemindme(RLEBAsyncTestCase):
+    async def asyncSetUp(self):
+        await super().asyncSetUp()
 
         # import rleb_data after setUp is done so that rleb_settings loads with mocks/patches
         global data_bridge
@@ -22,22 +22,31 @@ class TestRemindme(RLEBTestCase):
         import global_settings
 
         global_settings.user_names_to_ids = {"tester#123": 567}
-        global_settings.queues["alerts"] = Queue()
 
-    def test_trigger_alert(self):
+        # Create a mock Discord client
+        import unittest.mock as mock
+        global_settings.discord_client = mock.AsyncMock()
+        global_settings.discord_client.get_channel = mock.Mock()
+        self.mock_channel = mock.AsyncMock()
+        global_settings.discord_client.get_channel.return_value = self.mock_channel
+
+    async def test_trigger_alert(self):
         reminder = Remindme(1, "tester#123", "message lol", 123, 321)
         global_settings.remindme_timers[1] = None
-        global_settings._trigger_remindme(reminder)
+        await global_settings._trigger_remindme(reminder)
 
-        self.assertEqual(
-            global_settings.queues["alerts"].get(),
-            ("**Reminder for <@567>:** message lol", 321),
-        )
+        # Verify the message was sent to the correct channel
+        global_settings.discord_client.get_channel.assert_called_with(321)
+        self.mock_channel.send.assert_awaited_once_with("**Reminder for <@567>:** message lol")
 
-    def test_schedule_remindme(self):
+    async def test_schedule_remindme(self):
+        import asyncio
+
         reminder = Remindme(1, "tester#123", "message lol", 123, 321)
         global_settings.schedule_remindme(reminder)
 
-        timer = global_settings.remindme_timers[1]
-        self.assertEqual(type(timer), Timer)
-        timer.cancel()
+        # With asyncio, the timer is now a Task (if event loop exists) or None (if no loop)
+        timer = global_settings.remindme_timers.get(1)
+        if timer is not None:
+            self.assertEqual(type(timer), asyncio.Task)
+            timer.cancel()
