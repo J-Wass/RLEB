@@ -28,8 +28,8 @@ def handle_flair_request(
 
         # break string into :emoji: tokens
         flairs = re.findall(flair_pattern, body)
-        seen = set()
-        flairs = [f for f in flairs if not (f in seen or seen.add(f))]
+        seen: set[str] = set()
+        flairs = [f for f in flairs if not (f in seen or seen.add(f))]  # type: ignore[func-returns-value]
 
         # only get allowed emoji tokens
         allowed_flairs = [f for f in flairs if f in allowed]

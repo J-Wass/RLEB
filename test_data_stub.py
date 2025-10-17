@@ -42,13 +42,13 @@ class DataStubWithSampleData(DataStub):
     _next_remindme_id: int = 1
 
     @classmethod
-    def singleton(cls):
+    def singleton(cls) -> 'DataStubWithSampleData':
         if cls._singleton is None:
             cls._singleton = cls.__new__(cls)
             cls._singleton._initialize_sample_data()
         return cls._singleton
 
-    def _initialize_sample_data(self):
+    def _initialize_sample_data(self) -> None:
         """Populate the stub with realistic sample data."""
 
         # Sample user statistics
@@ -206,14 +206,14 @@ class DataStubWithSampleData(DataStub):
     # === Remindme Methods ===
 
     def write_remindme(
-        self, user: str, message: str, elapsed_time: int, channel_id: int
+        self, user: str, message: str, elapsed_time: int, channel_id: str
     ) -> Remindme:
         remindme = Remindme(
             self._next_remindme_id,
             user,
             message,
             int(time.time()) + elapsed_time,
-            str(channel_id),
+            channel_id,
         )
         self._remindmes[self._next_remindme_id] = remindme
         self._next_remindme_id += 1
@@ -267,8 +267,9 @@ class DataStubWithSampleData(DataStub):
         self._triflairs.add(flair_to_add)
 
     def read_triflairs(self) -> list[str]:
-        # Return as list of tuples to match DB format
-        return [(flair,) for flair in sorted(self._triflairs)]
+        # Return as list of tuples to match DB format (but type is list[str])
+        result: list[str] = [(flair,) for flair in sorted(self._triflairs)]  # type: ignore[assignment,misc]
+        return result
 
     def yeet_triflair(self, flair_to_remove: str) -> None:
         self._triflairs.discard(flair_to_remove)

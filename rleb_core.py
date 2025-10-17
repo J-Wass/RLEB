@@ -5,7 +5,7 @@ import global_settings
 from global_settings import rleb_log_info
 
 
-def start():
+def start() -> None:
     # Allows discord bot to use asyncio event loop.
     asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
 

@@ -1,9 +1,8 @@
 # Utilities file. Houses methods that are used throughout rleb.
 import threading
 import time
-from typing import Dict
+from typing import Dict, Any
 import praw
-import datetime
 import requests
 import json
 from datetime import datetime
@@ -18,7 +17,8 @@ from data_bridge import AutoUpdate, Data, Remindme
 try:
     import rleb_secrets
 except Exception as e:
-    rleb_secrets = {}
+    class rleb_secrets:  # type: ignore[no-redef]
+        pass
     print("rleb_secrets.py not found, using keys in environment settings.")
 
 # OS
@@ -39,7 +39,7 @@ health_enabled = True
 task_alerts_enabled = True
 health_check_startup_latency = 10  # seconds to wait before health thread starts
 task_alerts_startup_latency = 10  # seconds to wait before task alert thread starts
-queues = {}  # Global queue dictionary for various things in RLEB.
+queues: dict[str, Any] = {}  # Global queue dictionary for various things in RLEB.
 asyncio_health_check_enabled = True
 thread_health_check_enabled = True
 task_alert_check_enabled = True
@@ -47,10 +47,7 @@ task_alert_check_enabled = True
 # Mapping of each asyncio task to the last time it sent a heartbeat out. Used to determine if an asyncio task has crashed.
 asyncio_threads_heartbeats = {
     "submissions": datetime.now(),
-    "alerts": datetime.now(),
     "modmail": datetime.now(),
-    "direct_messages": datetime.now(),
-    "thread_creation": datetime.now(),
     "verified_comments": datetime.now(),
     "modqueue": datetime.now(),
     "inbox": datetime.now(),
@@ -61,10 +58,10 @@ asyncio_threads_heartbeats = {
 
 # List of threads to check for heartbeat in health check.
 # All monitoring is now asyncio, so no threads to check
-threads_to_check = set()
+threads_to_check: set[str] = set()
 
 # Mapping of each thread to the last time it sent a heartbeat out. Used to determine if a thread has crashed.
-threads_heartbeats = {}
+threads_heartbeats: dict[str, datetime] = {}
 
 # seconds until an asyncio_thread is considered timed-out.
 asyncio_timeout = 60 * 5
@@ -77,7 +74,7 @@ thread_crashes = {"asyncio": 0, "thread": 0}
 last_datetime_crashed = {"asyncio": None, "thread": None}
 
 # Remindme timers are now managed by asyncio tasks in the Discord bot
-remindme_timers = {}
+remindme_timers: dict[int, Any] = {}
 
 # Discord client reference for direct communication (set by discord_bridge on startup)
 discord_client = None
@@ -133,7 +130,7 @@ def schedule_remindme(remindme: Remindme) -> None:
     seconds_remaining = remindme.trigger_timestamp - time.time()
     delay = max(60, seconds_remaining)
 
-    async def reminder_task():
+    async def reminder_task() -> None:
         await asyncio.sleep(delay)
         await _trigger_remindme(remindme)
 
@@ -160,6 +157,8 @@ def refresh_autoupdates() -> bool:
     autoupdates = Data.singleton().read_all_auto_updates()
     for autoupdate in autoupdates:
         auto_updates[autoupdate.auto_update_id] = autoupdate
+
+    return len(autoupdates) > 0
 
 
 # REDDIT
@@ -193,7 +192,7 @@ allowed_mod_actions = [
 ]  # list of mod actions which should show up in discord #mod-log channgel
 
 
-def is_mod(username):
+def is_mod(username: str) -> bool:
     """Return true if username belongs to a sub moderator.
 
     Args:
@@ -310,7 +309,7 @@ moderator_emails = json.loads(
 )
 
 # Mapping of discord staff usernames to their ids
-user_names_to_ids = {}
+user_names_to_ids: dict[str, int] = {}
 
 
 def refresh_discord_username_id_mapping(channel: discord.TextChannel) -> None:
@@ -319,13 +318,13 @@ def refresh_discord_username_id_mapping(channel: discord.TextChannel) -> None:
     Args:
         channel (discord.channel.TextChannel): Discord channel to make mapping from.
     """
-    user_mappings = {}
+    user_mappings: dict[str, int] = {}
     for m in channel.members:
         user_mappings[m.name.lower() + "#" + m.discriminator] = m.id
     user_names_to_ids = user_mappings
 
 
-def is_discord_mod(user: discord.Member):
+def is_discord_mod(user: discord.Member) -> bool:
     """Returns true if the discord user is a verified moderator."""
     if user.discriminator == "0":
         username = user.name.lower()
@@ -345,7 +344,7 @@ enable_direct_channel_messages = (
 logging_enabled = True
 
 
-def flush_memory_log():
+def flush_memory_log() -> None:
     """Write all logs from memory to db."""
     if RUNNING_MODE == "local":
         return
@@ -357,7 +356,7 @@ def flush_memory_log():
 memory_log: list[tuple[datetime, str]] = []
 
 
-def _rleb_log(message, should_flush=False) -> None:
+def _rleb_log(message: str, should_flush: bool = False) -> None:
     """Log a message to memory. If `should_flush` is True or memory is too full, the logs will be sent to db."""
     print(f"{datetime.now()} - {message}")
     if not logging_enabled:

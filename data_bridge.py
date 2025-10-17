@@ -1,6 +1,6 @@
 from datetime import datetime
 import time
-from typing import Optional
+from typing import Optional, Any
 import psycopg2
 import os
 from dataclasses import dataclass
@@ -9,7 +9,8 @@ from dataclasses import dataclass
 try:
     import rleb_secrets
 except Exception as e:
-    rleb_secrets = {}
+    class rleb_secrets:  # type: ignore[no-redef]
+        pass
     print("rleb_secrets.py not found, using keys in environment settings.")
 
 
@@ -45,14 +46,14 @@ class AutoUpdate:
 
 
 class DataStub(object):
-    _singleton = None
-    _cache = {}
+    _singleton: Optional['DataStub'] = None
+    _cache: dict[str, Any] = {}
 
-    def __init__(self):
+    def __init__(self) -> None:
         raise RuntimeError("Call singleton() instead")
 
     @classmethod
-    def singleton(cls):
+    def singleton(cls) -> 'DataStub':
         if cls._singleton is None:
             cls._singleton = cls.__new__(cls)
         return cls._singleton
@@ -117,7 +118,7 @@ class DataStub(object):
         )
 
     def write_remindme(
-        self, user: str, message: str, elapsed_time: int, channel_id: int
+        self, user: str, message: str, elapsed_time: int, channel_id: str
     ) -> Remindme:
         return Remindme(-1, user, message, int(time.time()) + elapsed_time, channel_id)
 
@@ -153,50 +154,51 @@ class DataStub(object):
     def read_logs(self, count: int = 10) -> list[tuple[datetime, str]]:
         return []
 
-    def add_triflair(self, flair_to_add) -> None:
+    def add_triflair(self, flair_to_add: str) -> None:
         pass
 
     def read_triflairs(self) -> list[str]:
         return []
 
-    def yeet_triflair(self, flair_to_remove) -> None:
+    def yeet_triflair(self, flair_to_remove: str) -> None:
         pass
 
 
 class Data(DataStub):
     """Bridge between RLEB and postgres DB"""
 
-    _singleton = None
+    _singleton: Optional['Data'] = None
 
     # Generic cache, mapping a string key to any object.
-    _cache = {}
+    _cache: dict[str, Any] = {}
 
-    def __init__(self):
+    def __init__(self) -> None:
         raise RuntimeError("Call singleton() instead")
 
+    @staticmethod
     def _empty_cache(cache_key: str) -> None:
         """Safely removes cache_key and its memory from the internal data cache."""
         if cache_key in Data._cache:
             del Data._cache[cache_key]
 
     @classmethod
-    def singleton(cls):
+    def singleton(cls) -> 'DataStub':
         if cls._singleton is None:
             data_mode = os.environ.get("DATA_MODE") or getattr(rleb_secrets, "DATA_MODE", "stubbed")
 
             if data_mode == "real":
                 # Use real PostgreSQL database
-                cls._singleton = cls.__new__(cls)
+                cls._singleton = cls.__new__(cls)  # type: ignore[assignment]
             elif data_mode == "test":
                 # Use test stub with sample data
                 from test_data_stub import DataStubWithSampleData
-                cls._singleton = DataStubWithSampleData.singleton()
+                cls._singleton = DataStubWithSampleData.singleton()  # type: ignore[assignment]
             else:
                 # Use empty stub (default for "stubbed" or any other value)
-                cls._singleton = cls.__new__(DataStub)
-        return cls._singleton
+                cls._singleton = cls.__new__(DataStub)  # type: ignore[assignment]
+        return cls._singleton  # type: ignore[return-value]
 
-    def postgres_connection(self):
+    def postgres_connection(self) -> Any:
         """Returns the postgresSQL connection."""
         connection = psycopg2.connect(
             dbname=os.environ.get("DB_NAME") or rleb_secrets.DB_NAME,
@@ -225,7 +227,7 @@ class Data(DataStub):
 
     def read_all_user_statistics(self) -> list[UserStatistics]:
         if "user_statistics" in Data._cache:
-            return Data._cache["user_statistics"]
+            return Data._cache["user_statistics"]  # type: ignore[no-any-return]
 
         with self.postgres_connection() as db:
             cursor = db.cursor()
@@ -237,7 +239,7 @@ class Data(DataStub):
 
     def read_user_statistics(self, discord_username: str) -> Optional[UserStatistics]:
         if f"user_statistics_{discord_username}" in Data._cache:
-            return Data._cache[f"user_statistics_{discord_username}"]
+            return Data._cache[f"user_statistics_{discord_username}"]  # type: ignore[no-any-return]
 
         with self.postgres_connection() as db:
             cursor = db.cursor()
@@ -300,7 +302,7 @@ class Data(DataStub):
         """Returns a mapping of long_name to short_name for each alias"""
 
         if "aliases" in Data._cache:
-            return Data._cache["aliases"]
+            return Data._cache["aliases"]  # type: ignore[no-any-return]
         with self.postgres_connection() as db:
             cursor = db.cursor()
             cursor.execute("SELECT * FROM public.aliases;")
@@ -378,7 +380,7 @@ class Data(DataStub):
             thread_options: Additional options on top of the tourney system, delimited by -dashes-.
             day_number: The first, second, third, (etc) day of the tournament.
         """
-        seconds_since_epoch = datetime.now().timestamp()
+        seconds_since_epoch = int(datetime.now().timestamp())
         liquipedia_url = (
             liquipedia_url.split("#")[0] if "#" in liquipedia_url else liquipedia_url
         )
@@ -407,10 +409,10 @@ class Data(DataStub):
         )
 
     def write_remindme(
-        self, user: str, message: str, elapsed_time: int, channel_id: int
+        self, user: str, message: str, elapsed_time: int, channel_id: str
     ) -> Remindme:
         """Adds a remindme notification to the database."""
-        target_timestamp = elapsed_time + time.time()
+        target_timestamp = int(elapsed_time + time.time())
         remindme_id = -1
 
         with self.postgres_connection() as db:
@@ -502,7 +504,7 @@ class Data(DataStub):
         """Reads logs to the database."""
 
         if "logs" in Data._cache:
-            return Data._cache["logs"]
+            return Data._cache["logs"]  # type: ignore[no-any-return]
 
         with self.postgres_connection() as db:
             cursor = db.cursor()
@@ -512,10 +514,10 @@ class Data(DataStub):
             )
             all_logs = cursor.fetchall()
             Data._cache["logs"] = all_logs
-            return all_logs
+            return all_logs  # type: ignore[no-any-return]
 
-    def add_triflair(self, flair_to_add) -> list[str]:
-        """Yeets a triflair out of the database."""
+    def add_triflair(self, flair_to_add: str) -> None:
+        """Adds a triflair to the database."""
         with self.postgres_connection() as db:
             cursor = db.cursor()
             # NOTE: For legacy reasons, triflairs are called "dualflairs" in postgres.
@@ -529,16 +531,16 @@ class Data(DataStub):
         """Reads all the triflair from the database."""
 
         if "triflair" in Data._cache:
-            return Data._cache["triflair"]
+            return Data._cache["triflair"]  # type: ignore[no-any-return]
 
         with self.postgres_connection() as db:
             cursor = db.cursor()
             cursor.execute("SELECT * FROM public.dualflairs;")
             all_dualflairs = cursor.fetchall()
             Data._cache["dualflairs"] = all_dualflairs
-            return all_dualflairs
+            return all_dualflairs  # type: ignore[no-any-return]
 
-    def yeet_triflair(self, flair_to_remove) -> list[str]:
+    def yeet_triflair(self, flair_to_remove: str) -> None:
         """Yeets a triflair out of the database."""
         with self.postgres_connection() as db:
             cursor = db.cursor()
