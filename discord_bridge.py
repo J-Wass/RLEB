@@ -63,7 +63,8 @@ class RLEsportsBot(discord.Client):
         self.last_modqueue_alert_time = None
 
         # Track if we've sent the congrats message for empty modqueue
-        self.modqueue_congrats_sent = False
+        # Initialize to True so we don't send congrats on bot startup if queue is already empty
+        self.modqueue_congrats_sent = True
 
     async def setup_hook(self):
         """Setup hook to store global reference."""
@@ -1072,17 +1073,11 @@ class RLEsportsBot(discord.Client):
                     )
                 )
 
-            thread_heartbeat = [
-                f"{k}: {round((datetime.now()-v).total_seconds(),1)}s ago"
-                for k, v in global_settings.threads_heartbeats.items()
-            ]
-            await message.channel.send(f"**Thread heartbeats:** {thread_heartbeat}")
-
-            thread_heartbeat = [
+            asyncio_heartbeat = [
                 f"{k}: {round((datetime.now()-v).total_seconds(),1)}s ago"
                 for k, v in global_settings.asyncio_threads_heartbeats.items()
             ]
-            await message.channel.send(f"**Asyncio heartbeats:** {thread_heartbeat}")
+            await message.channel.send(f"**Asyncio heartbeats:** {asyncio_heartbeat}")
 
             await self.add_response(message)
 
