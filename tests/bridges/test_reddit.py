@@ -204,7 +204,11 @@ class TestReddit(RLEBAsyncTestCase):
         mock_modmail.conversations = mock_conversations
         mock_modmail.side_effect = mock_modmail_call
 
-        with patch.object(type(reddit_bridge.sub), "modmail", new_callable=PropertyMock, return_value=mock_modmail):
+        # Create a complete mock sub with modmail set up
+        mock_sub = mock.Mock()
+        mock_sub.modmail = mock_modmail
+
+        with patch.object(reddit_bridge, "sub", mock_sub):
             modmails = []
             async for modmail in reddit_bridge.stream_modmail():
                 modmails.append(modmail)
@@ -258,7 +262,11 @@ class TestReddit(RLEBAsyncTestCase):
         mock_modmail.conversations = mock_conversations
         mock_modmail.side_effect = mock_modmail_call
 
-        with patch.object(type(reddit_bridge.sub), "modmail", new_callable=PropertyMock, return_value=mock_modmail):
+        # Create a complete mock sub with modmail set up
+        mock_sub = mock.Mock()
+        mock_sub.modmail = mock_modmail
+
+        with patch.object(reddit_bridge, "sub", mock_sub):
             modmails = []
             async for modmail in reddit_bridge.stream_modmail():
                 modmails.append(modmail)
@@ -298,7 +306,11 @@ class TestReddit(RLEBAsyncTestCase):
         mock_modmail.conversations = mock_conversations
         mock_modmail.side_effect = mock_modmail_call
 
-        with patch.object(type(reddit_bridge.sub), "modmail", new_callable=PropertyMock, return_value=mock_modmail):
+        # Create a complete mock sub with modmail set up
+        mock_sub = mock.Mock()
+        mock_sub.modmail = mock_modmail
+
+        with patch.object(reddit_bridge, "sub", mock_sub):
             modmails = []
             async for modmail in reddit_bridge.stream_modmail():
                 modmails.append(modmail)
@@ -337,7 +349,11 @@ class TestReddit(RLEBAsyncTestCase):
         mock_modmail.conversations = mock_conversations
         mock_modmail.side_effect = mock_modmail_call
 
-        with patch.object(type(reddit_bridge.sub), "modmail", new_callable=PropertyMock, return_value=mock_modmail):
+        # Create a complete mock sub with modmail set up
+        mock_sub = mock.Mock()
+        mock_sub.modmail = mock_modmail
+
+        with patch.object(reddit_bridge, "sub", mock_sub):
             modmails = []
             async for modmail in reddit_bridge.stream_modmail():
                 modmails.append(modmail)
@@ -396,7 +412,11 @@ class TestReddit(RLEBAsyncTestCase):
         mock_modmail.conversations = mock_conversations
         mock_modmail.side_effect = mock_modmail_call
 
-        with patch.object(type(reddit_bridge.sub), "modmail", new_callable=PropertyMock, return_value=mock_modmail):
+        # Create a complete mock sub with modmail set up
+        mock_sub = mock.Mock()
+        mock_sub.modmail = mock_modmail
+
+        with patch.object(reddit_bridge, "sub", mock_sub):
             modmails = []
             async for modmail in reddit_bridge.stream_modmail():
                 modmails.append(modmail)
