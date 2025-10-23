@@ -503,13 +503,9 @@ class Data(DataStub):
                 "INSERT INTO public.logs (log_time, log) VALUES (%s, %s);",
                 [(datetime_log[0], datetime_log[1]) for datetime_log in logs],
             )
-            Data._empty_cache("logs")
 
     def read_logs(self, count: int = 10) -> list[tuple[datetime, str]]:
         """Reads logs to the database."""
-
-        if "logs" in Data._cache:
-            return Data._cache["logs"]  # type: ignore[no-any-return]
 
         with self.postgres_connection() as db:
             cursor = db.cursor()
@@ -518,7 +514,6 @@ class Data(DataStub):
                 (count,),
             )
             all_logs = cursor.fetchall()
-            Data._cache["logs"] = all_logs
             return all_logs  # type: ignore[no-any-return]
 
     def add_triflair(self, flair_to_add: str) -> None:

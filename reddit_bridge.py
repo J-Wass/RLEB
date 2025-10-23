@@ -238,6 +238,7 @@ async def stream_modmail():
     try:
 
         def get_modmail():
+            nonlocal already_printed_convos, already_printed_convos_ordered
             conversations_to_yield = []
             try:
                 for conversation in sub.modmail.conversations(state="new"):
@@ -246,11 +247,11 @@ async def stream_modmail():
                     ):
                         continue
 
-                    # only find modmails from 2m ago
+                    # only find modmails from 5m ago
                     last_updated = datetime.fromisoformat(conversation.last_updated)
                     if (
                         abs((datetime.now(timezone.utc) - last_updated).total_seconds())
-                        > 60 * 2
+                        > 60 * 5
                     ):
                         continue
 

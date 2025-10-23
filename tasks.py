@@ -393,7 +393,7 @@ async def task_alert_check(thread_creation_channel, client):
 
     while True:
         global_settings.asyncio_threads_heartbeats["task_alerts"] = datetime.now()
-
+        
         use_enhanced_logging = counter % 10 == 0
         if use_enhanced_logging:
             global_settings.rleb_log_info(
@@ -454,7 +454,7 @@ async def task_alert_check(thread_creation_channel, client):
             global_settings.rleb_log_info(
                 f"TASK CHECK: Skipping null posts. tasks={tasks}, schedule posts={new_scheduled_posts}."
             )
-            await asyncio.sleep(60 * 5)
+            await asyncio.sleep(60)
             continue
 
         # Gather tasks which don't have a scheduled post.

@@ -594,12 +594,10 @@ class TestData(unittest.TestCase):
         mock_connect.return_value = mock_conn
 
         Data._singleton = None
-        Data._cache = {"logs": []}
         data = Data.singleton()
         data.write_to_logs([(datetime.now(), "log1"), (datetime.now(), "log2")])
 
         mock_cursor.executemany.assert_called_once()
-        self.assertNotIn("logs", Data._cache)
 
     @patch("data_bridge.psycopg2.connect")
     @patch.dict(os.environ, {"DATA_MODE": "real"})
@@ -614,12 +612,10 @@ class TestData(unittest.TestCase):
         mock_connect.return_value = mock_conn
 
         Data._singleton = None
-        Data._cache = {}
         data = Data.singleton()
         logs = data.read_logs(10)
 
         self.assertEqual(len(logs), 2)
-        self.assertIn("logs", Data._cache)
 
     @patch("data_bridge.psycopg2.connect")
     @patch.dict(os.environ, {"DATA_MODE": "real"})

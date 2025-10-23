@@ -6,7 +6,7 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 
 import unittest
 import unittest.mock as mock
-from unittest.mock import patch
+from unittest.mock import patch, PropertyMock
 from tests.common.rleb_async_test_case import RLEBAsyncTestCase
 from praw.models import ModmailConversation
 
@@ -180,7 +180,41 @@ class TestReddit(RLEBAsyncTestCase):
             global_settings.sub, "some_user", "flair request body"
         )
 
+    async def test_stream_modmail_new_conversation(self):
+        """Test that a new modmail conversation is yielded."""
+        mock_modmail_item = mock.Mock(spec=ModmailConversation)
+        mock_modmail_item.id = "123"
+        mock_modmail_item.last_updated = datetime.now(timezone.utc).isoformat()
+        mock_modmail_item.messages = [mock.Mock(body_markdown="test message")]
+        mock_modmail_item.subject = "test subject"
+        mock_modmail_item.authors = [mock.Mock()]
+
+        # Mock the full conversation returned by sub.modmail()
+        mock_full_convo = mock.Mock()
+        mock_full_convo.read = mock.Mock()
+
+        def mock_conversations(state="new"):
+            return [mock_modmail_item]
+
+        def mock_modmail_call(convo_id):
+            return mock_full_convo
+
+        # Create a mock modmail object that has both conversations method and is callable
+        mock_modmail = mock.Mock()
+        mock_modmail.conversations = mock_conversations
+        mock_modmail.side_effect = mock_modmail_call
+
+        with patch.object(type(reddit_bridge.sub), "modmail", new_callable=PropertyMock, return_value=mock_modmail):
+            modmails = []
+            async for modmail in reddit_bridge.stream_modmail():
+                modmails.append(modmail)
+
+            self.assertEqual(len(modmails), 1)
+            self.assertEqual(modmails[0].id, "123")
+            mock_full_convo.read.assert_called_once()
+
     async def test_stream_modmail_old_conversation(self):
+        """Test that old modmail conversations are filtered out."""
         mock_modmail_item = mock.Mock(spec=ModmailConversation)
         mock_modmail_item.id = "123"
         # Old conversation from 10 minutes ago
@@ -199,6 +233,177 @@ class TestReddit(RLEBAsyncTestCase):
 
             # Old modmail should be filtered out
             self.assertEqual(len(modmails), 0)
+
+    async def test_stream_modmail_deduplication(self):
+        """Test that duplicate conversations in same batch are deduplicated based on id and message count."""
+        mock_modmail_item = mock.Mock(spec=ModmailConversation)
+        mock_modmail_item.id = "123"
+        mock_modmail_item.last_updated = datetime.now(timezone.utc).isoformat()
+        mock_modmail_item.messages = [mock.Mock(body_markdown="test message")]
+        mock_modmail_item.subject = "test subject"
+        mock_modmail_item.authors = [mock.Mock()]
+
+        mock_full_convo = mock.Mock()
+        mock_full_convo.read = mock.Mock()
+
+        def mock_conversations(state="new"):
+            # Return same conversation twice in the same batch
+            return [mock_modmail_item, mock_modmail_item]
+
+        def mock_modmail_call(convo_id):
+            return mock_full_convo
+
+        # Create a mock modmail object that has both conversations method and is callable
+        mock_modmail = mock.Mock()
+        mock_modmail.conversations = mock_conversations
+        mock_modmail.side_effect = mock_modmail_call
+
+        with patch.object(type(reddit_bridge.sub), "modmail", new_callable=PropertyMock, return_value=mock_modmail):
+            modmails = []
+            async for modmail in reddit_bridge.stream_modmail():
+                modmails.append(modmail)
+
+            # Should only yield once despite duplicate
+            self.assertEqual(len(modmails), 1)
+
+    async def test_stream_modmail_cache_bounding(self):
+        """Test that the conversation cache is bounded to 100 items, removing oldest 50 within a single batch."""
+        mock_full_convo = mock.Mock()
+        mock_full_convo.read = mock.Mock()
+
+        # Create 150 conversations in a single batch, with the first 50 duplicated at the end
+        # This tests that after hitting 100 items, the oldest 50 are removed from cache
+        def create_conversation(idx):
+            mock_item = mock.Mock(spec=ModmailConversation)
+            mock_item.id = str(idx)
+            mock_item.last_updated = datetime.now(timezone.utc).isoformat()
+            mock_item.messages = [mock.Mock(body_markdown="test")]
+            mock_item.subject = "test"
+            mock_item.authors = [mock.Mock()]
+            return mock_item
+
+        # Create 100 unique conversations, then add first 50 again as duplicates
+        conversations = [create_conversation(i) for i in range(100)]
+        # Add first 50 again - they should be yielded since cache was cleared
+        conversations.extend([create_conversation(i) for i in range(50)])
+
+        def mock_conversations(state="new"):
+            return conversations
+
+        def mock_modmail_call(convo_id):
+            return mock_full_convo
+
+        # Create a mock modmail object that has both conversations method and is callable
+        mock_modmail = mock.Mock()
+        mock_modmail.conversations = mock_conversations
+        mock_modmail.side_effect = mock_modmail_call
+
+        with patch.object(type(reddit_bridge.sub), "modmail", new_callable=PropertyMock, return_value=mock_modmail):
+            modmails = []
+            async for modmail in reddit_bridge.stream_modmail():
+                modmails.append(modmail)
+
+            # Should get 100 (first batch) + 50 (re-added after cache clear) = 150
+            # But the first 50 after cache clear will be deduplicated, so 100 total
+            # Actually, after 100 items the cache clears the oldest 50, so items 0-49 can appear again
+            # So we should get all 150: 100 unique + 50 that were cleared from cache
+            self.assertEqual(len(modmails), 150)
+
+    async def test_stream_modmail_flair_request(self):
+        """Test that flair requests are handled and archived."""
+        mock_modmail_item = mock.Mock(spec=ModmailConversation)
+        mock_modmail_item.id = "123"
+        mock_modmail_item.last_updated = datetime.now(timezone.utc).isoformat()
+        mock_modmail_item.messages = [mock.Mock(body_markdown="NRG, G2, C9")]
+        mock_modmail_item.subject = "Flair Request"  # This matches multiflair_request_keys
+        mock_modmail_item.authors = [mock.Mock()]
+
+        mock_full_convo = mock.Mock()
+        mock_full_convo.read = mock.Mock()
+        mock_full_convo.archive = mock.Mock()
+        mock_full_convo.state = "new"
+
+        def mock_conversations(state="new"):
+            return [mock_modmail_item]
+
+        def mock_modmail_call(convo_id):
+            return mock_full_convo
+
+        mock_handle_flair = patch.object(reddit_bridge, "handle_flair_request").start()
+        self.addCleanup(mock_handle_flair.stop)
+
+        # Create a mock modmail object that has both conversations method and is callable
+        mock_modmail = mock.Mock()
+        mock_modmail.conversations = mock_conversations
+        mock_modmail.side_effect = mock_modmail_call
+
+        with patch.object(type(reddit_bridge.sub), "modmail", new_callable=PropertyMock, return_value=mock_modmail):
+            modmails = []
+            async for modmail in reddit_bridge.stream_modmail():
+                modmails.append(modmail)
+
+            # Flair requests are not yielded (archived immediately)
+            self.assertEqual(len(modmails), 0)
+            # handle_flair_request should be called
+            mock_handle_flair.assert_called_once()
+            # Conversation should be archived
+            mock_full_convo.archive.assert_called_once()
+
+    async def test_stream_modmail_filter_removal_reasons(self):
+        """Test that single-message removal reason modmails are filtered out."""
+        mock_modmail_item = mock.Mock(spec=ModmailConversation)
+        mock_modmail_item.id = "123"
+        mock_modmail_item.last_updated = datetime.now(timezone.utc).isoformat()
+        mock_modmail_item.messages = [mock.Mock(body_markdown="Your comment was removed")]
+        mock_modmail_item.subject = "Your comment was removed from /r/RocketLeagueEsports"
+        mock_modmail_item.authors = [mock.Mock()]
+
+        def mock_conversations(state="new"):
+            return [mock_modmail_item]
+
+        with patch.object(reddit_bridge.sub.modmail, "conversations", new=mock_conversations):
+            modmails = []
+            async for modmail in reddit_bridge.stream_modmail():
+                modmails.append(modmail)
+
+            # Single-message removal reasons should be filtered
+            self.assertEqual(len(modmails), 0)
+
+    async def test_stream_modmail_allow_removal_reason_replies(self):
+        """Test that replies to removal reasons are not filtered."""
+        mock_modmail_item = mock.Mock(spec=ModmailConversation)
+        mock_modmail_item.id = "123"
+        mock_modmail_item.last_updated = datetime.now(timezone.utc).isoformat()
+        # Multiple messages = reply to removal reason
+        mock_modmail_item.messages = [
+            mock.Mock(body_markdown="Your comment was removed"),
+            mock.Mock(body_markdown="Why was this removed?")
+        ]
+        mock_modmail_item.subject = "Your comment was removed from /r/RocketLeagueEsports"
+        mock_modmail_item.authors = [mock.Mock()]
+
+        mock_full_convo = mock.Mock()
+        mock_full_convo.read = mock.Mock()
+
+        def mock_conversations(state="new"):
+            return [mock_modmail_item]
+
+        def mock_modmail_call(convo_id):
+            return mock_full_convo
+
+        # Create a mock modmail object that has both conversations method and is callable
+        mock_modmail = mock.Mock()
+        mock_modmail.conversations = mock_conversations
+        mock_modmail.side_effect = mock_modmail_call
+
+        with patch.object(type(reddit_bridge.sub), "modmail", new_callable=PropertyMock, return_value=mock_modmail):
+            modmails = []
+            async for modmail in reddit_bridge.stream_modmail():
+                modmails.append(modmail)
+
+            # Replies to removal reasons should be yielded
+            self.assertEqual(len(modmails), 1)
+            self.assertEqual(len(modmails[0].messages), 2)
 
     async def test_stream_modlog(self):
         mock_modlog_item = mock.Mock()
