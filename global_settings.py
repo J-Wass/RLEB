@@ -180,7 +180,14 @@ r = praw.Reddit(
     password=os.environ.get("REDDIT_PASSWORD") or rleb_secrets.REDDIT_PASSWORD,
 )
 sub = r.subreddit(target_sub)
-moderators = sub.moderator()
+
+# Try to fetch moderators, but handle failures gracefully (e.g., in test environments)
+try:
+    moderators = sub.moderator()
+except Exception:
+    # In test environments or when Reddit API is unavailable, use empty list
+    moderators = []
+
 read_new_submissions_enabled = True
 read_new_verified_comments_enabled = True
 monitor_subreddit_enabled = True
