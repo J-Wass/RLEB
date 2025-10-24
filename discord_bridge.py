@@ -234,6 +234,10 @@ class RLEsportsBot(discord.Client):
         """Check Reddit verified comments directly and post in discord channel."""
         from reddit_bridge import stream_verified_comments
 
+        # Track already posted verified comments to avoid duplicates
+        already_posted_verified_comments: set[str] = set()
+        already_posted_verified_comments_ordered: list[str] = []
+
         await asyncio.sleep(10)
         while True:
             try:
@@ -241,6 +245,23 @@ class RLEsportsBot(discord.Client):
                     break
 
                 async for verified_comments in stream_verified_comments():
+                    # Skip if we've already posted this comment
+                    comment_id = verified_comments.id
+                    if comment_id in already_posted_verified_comments:
+                        continue
+
+                    # Track this comment as posted
+                    already_posted_verified_comments.add(comment_id)
+                    already_posted_verified_comments_ordered.append(comment_id)
+
+                    # Keep cache size reasonable (clear oldest 50 when we hit 100)
+                    if len(already_posted_verified_comments_ordered) >= 100:
+                        for comment_to_delete in already_posted_verified_comments_ordered[:50]:
+                            already_posted_verified_comments.remove(comment_to_delete)
+                        already_posted_verified_comments_ordered = (
+                            already_posted_verified_comments_ordered[50:]
+                        )
+
                     global_settings.rleb_log_info(
                         "[DISCORD]: Received comment id {0}: {1}, {2}".format(
                             verified_comments,
@@ -284,6 +305,14 @@ class RLEsportsBot(discord.Client):
         """Check Reddit modmail/modlog directly and post in discord."""
         from reddit_bridge import stream_modlog, stream_modmail
 
+        # Track already posted modlog entries to avoid duplicates
+        already_posted_modlog: set[str] = set()
+        already_posted_modlog_ordered: list[str] = []
+
+        # Track already posted modmail conversations to avoid duplicates
+        already_posted_modmail: set[str] = set()
+        already_posted_modmail_ordered: list[str] = []
+
         await asyncio.sleep(10)
         while True:
             try:
@@ -292,6 +321,21 @@ class RLEsportsBot(discord.Client):
 
                 # Mod Log
                 async for item in stream_modlog():
+                    # Skip if we've already posted this modlog entry
+                    modlog_id = item.id
+                    if modlog_id in already_posted_modlog:
+                        continue
+
+                    # Track this modlog entry as posted
+                    already_posted_modlog.add(modlog_id)
+                    already_posted_modlog_ordered.append(modlog_id)
+
+                    # Keep cache size reasonable (clear oldest 50 when we hit 100)
+                    if len(already_posted_modlog_ordered) >= 100:
+                        for log_to_delete in already_posted_modlog_ordered[:50]:
+                            already_posted_modlog.remove(log_to_delete)
+                        already_posted_modlog_ordered = already_posted_modlog_ordered[50:]
+
                     await asyncio.sleep(1)
 
                     # Create an embed to post for each mod log.
@@ -331,6 +375,21 @@ class RLEsportsBot(discord.Client):
 
                 # Mod Mail
                 async for conversation in stream_modmail():
+                    # Skip if we've already posted this modmail conversation
+                    # Use same dedupe logic as in stream_modmail (id + message count)
+                    dedupe_id = f"{conversation.id}:{len(conversation.messages)}"
+                    if dedupe_id in already_posted_modmail:
+                        continue
+
+                    # Track this modmail as posted
+                    already_posted_modmail.add(dedupe_id)
+                    already_posted_modmail_ordered.append(dedupe_id)
+
+                    # Keep cache size reasonable (clear oldest 50 when we hit 100)
+                    if len(already_posted_modmail_ordered) >= 100:
+                        for mail_to_delete in already_posted_modmail_ordered[:50]:
+                            already_posted_modmail.remove(mail_to_delete)
+                        already_posted_modmail_ordered = already_posted_modmail_ordered[50:]
                     global_settings.rleb_log_info(
                         "[DISCORD]: Received modmail id {0}: {1}".format(
                             conversation.id, conversation.messages[-1].body_markdown

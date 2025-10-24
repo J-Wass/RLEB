@@ -232,13 +232,12 @@ async def stream_modlog():
 
 async def stream_modmail():
     """Stream modmail conversations. Async generator that yields modmail conversations."""
-    already_printed_convos: set[str] = set()
-    already_printed_convos_ordered: list[str] = []
-
     try:
 
         def get_modmail():
-            nonlocal already_printed_convos, already_printed_convos_ordered
+            # Within-batch deduplication (only for this single batch)
+            seen_in_batch: set[str] = set()
+            seen_in_batch_ordered: list[str] = []
             conversations_to_yield = []
             try:
                 for conversation in sub.modmail.conversations(state="new"):
@@ -255,21 +254,20 @@ async def stream_modmail():
                     ):
                         continue
 
+                    # Deduplicate within this batch
                     dedupe_id = f"{conversation.id}:{len(conversation.messages)}"
-                    if dedupe_id in already_printed_convos:
+                    if dedupe_id in seen_in_batch:
                         continue
-                    already_printed_convos.add(dedupe_id)
-                    already_printed_convos_ordered.append(dedupe_id)
+                    seen_in_batch.add(dedupe_id)
+                    seen_in_batch_ordered.append(dedupe_id)
 
-                    # if above 100, dump the first 50 to not have the set grow unbounded
-                    if len(already_printed_convos_ordered) >= 100:
-                        for convo_to_delete in already_printed_convos_ordered[:50]:
-                            already_printed_convos.remove(convo_to_delete)
-                        already_printed_convos_ordered = already_printed_convos_ordered[
-                            50:
-                        ]
+                    # Bound cache size: if above 100, dump the first 50 to not have the set grow unbounded
+                    if len(seen_in_batch_ordered) >= 100:
+                        for convo_to_delete in seen_in_batch_ordered[:50]:
+                            seen_in_batch.remove(convo_to_delete)
+                        seen_in_batch_ordered = seen_in_batch_ordered[50:]
                         global_settings.rleb_log_info(
-                            "[REDDIT]: Modmail - Clearing modmail convo cache"
+                            "[REDDIT]: Modmail - Clearing modmail convo cache within batch"
                         )
 
                     # mark as read
