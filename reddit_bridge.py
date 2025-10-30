@@ -81,7 +81,7 @@ async def stream_verified_comments():
         def get_comments():
             comments = []
             try:
-                for comment in sub.stream.comments(skip_existing=True, pause_after=0):
+                for comment in sub.stream.comments(pause_after=0):
                     if comment is None:
                         break
                     # check if it arrived in the last 2 mins.

@@ -254,7 +254,7 @@ class RLEsportsBot(discord.Client):
                     already_posted_verified_comments.add(comment_id)
                     already_posted_verified_comments_ordered.append(comment_id)
 
-                    # Keep cache size reasonable (clear oldest 50 when we hit 100)
+                    # keep already_posted_verified_comments capped so it doesnt grow forever
                     if len(already_posted_verified_comments_ordered) >= 100:
                         for comment_to_delete in already_posted_verified_comments_ordered[:50]:
                             already_posted_verified_comments.remove(comment_to_delete)
