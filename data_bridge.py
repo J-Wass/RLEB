@@ -215,8 +215,24 @@ class Data(DataStub):
         return connection
 
     def yolo_query(self, sql: str) -> str:
+        # Security: Denylist dangerous SQL commands (backup to read-only transaction)
+        blocked_commands = [
+            # Write operations
+            "INSERT", "UPDATE", "DELETE", "DROP", "CREATE", "ALTER",
+            "TRUNCATE", "GRANT", "REVOKE", "EXECUTE", "CALL", "COPY",
+            # Esoteric and potentially dangerous commands
+            "DO", "LOAD", "VACUUM", "LOCK", "SET", "PREPARE",
+            "REFRESH", "REINDEX", "CLUSTER", "ANALYZE", "COMMENT",
+            "CHECKPOINT", "DISCARD", "IMPORT", "LISTEN", "UNLISTEN", "NOTIFY"
+        ]
+        sql_upper = sql.upper()
+        for cmd in blocked_commands:
+            if cmd in sql_upper:
+                raise ValueError(f"SQL command '{cmd}' is not allowed in yolo_query. Only SELECT queries are permitted.")
+
         with self.postgres_connection() as db:
             cursor = db.cursor()
+            cursor.execute("SET TRANSACTION READ ONLY;")
             cursor.execute(sql)
             response = cursor.fetchall()
             return "\n".join([str(r) for r in response])

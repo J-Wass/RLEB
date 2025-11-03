@@ -982,7 +982,12 @@ class RLEsportsBot(discord.Client):
                 return
 
             sql = " ".join(discord_message.split()[1:])
-            response = Data.singleton().yolo_query(sql)
+            try:
+                response = Data.singleton().yolo_query(sql)
+            except ValueError as e:
+                global_settings.rleb_log_info(f"Illegal sql command: {sql}", str(e), should_flush=True)
+                await message.channel.send(f"no")
+                return
             await message.channel.send(f"```\n{response}\n```")
 
         elif discord_message.startswith("!logs") and is_staff(message.author):

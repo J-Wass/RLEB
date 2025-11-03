@@ -168,7 +168,55 @@ class TestData(unittest.TestCase):
 
         self.assertIn("result1", result)
         self.assertIn("result2", result)
-        mock_cursor.execute.assert_called_once_with("SELECT * FROM test")
+        # Verify both the read-only transaction and the actual query were executed
+        self.assertEqual(mock_cursor.execute.call_count, 2)
+        mock_cursor.execute.assert_any_call("SET TRANSACTION READ ONLY;")
+        mock_cursor.execute.assert_any_call("SELECT * FROM test")
+
+    @patch("data_bridge.psycopg2.connect")
+    @patch.dict(os.environ, {"DATA_MODE": "real"})
+    def test_yolo_query_blocks_dangerous_commands(self, mock_connect):
+        Data._singleton = None
+        data = Data.singleton()
+
+        dangerous_queries = [
+            # Basic write operations
+            "INSERT INTO test VALUES (1)",
+            "UPDATE test SET col=1",
+            "DELETE FROM test",
+            "DROP TABLE test",
+            "CREATE TABLE test (id int)",
+            "ALTER TABLE test ADD col int",
+            "TRUNCATE TABLE test",
+            "GRANT ALL ON test TO user",
+            "REVOKE ALL ON test FROM user",
+            "EXECUTE my_procedure()",
+            "CALL my_procedure()",
+            "COPY test FROM '/file'",
+            # Esoteric commands
+            "DO $$ BEGIN RAISE NOTICE 'test'; END $$",
+            "LOAD '/path/to/library'",
+            "VACUUM test",
+            "LOCK TABLE test",
+            "SET search_path TO public",
+            "PREPARE stmt AS SELECT 1",
+            "REFRESH MATERIALIZED VIEW mv",
+            "REINDEX TABLE test",
+            "CLUSTER test USING idx",
+            "ANALYZE test",
+            "COMMENT ON TABLE test IS 'comment'",
+            "CHECKPOINT",
+            "DISCARD ALL",
+            "IMPORT FOREIGN SCHEMA s FROM SERVER srv INTO public",
+            "LISTEN channel",
+            "UNLISTEN channel",
+            "NOTIFY channel",
+        ]
+
+        for query in dangerous_queries:
+            with self.assertRaises(ValueError) as context:
+                data.yolo_query(query)
+            self.assertIn("is not allowed", str(context.exception))
 
     @patch("data_bridge.psycopg2.connect")
     @patch.dict(os.environ, {"DATA_MODE": "real"})
