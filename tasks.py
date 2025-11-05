@@ -393,7 +393,7 @@ async def task_alert_check(thread_creation_channel, client):
 
     while True:
         global_settings.asyncio_threads_heartbeats["task_alerts"] = datetime.now()
-        
+
         use_enhanced_logging = counter % 10 == 0
         if use_enhanced_logging:
             global_settings.rleb_log_info(

@@ -111,7 +111,9 @@ def refresh_remindmes() -> None:
         # Schedule the reminder (either expired or future)
         schedule_remindme(remindme)
 
-    rleb_log_info(f"REMINDME: Loaded {len(remindmes)} reminders from database on startup")
+    rleb_log_info(
+        f"REMINDME: Loaded {len(remindmes)} reminders from database on startup"
+    )
 
 
 async def _trigger_remindme(remindme: Remindme) -> None:
