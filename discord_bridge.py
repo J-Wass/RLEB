@@ -57,7 +57,7 @@ class RLEsportsBot(discord.Client):
         self.responses = {}
 
         # The subreddit of memes or images to flood into #bot-commands.
-        self.meme_subreddit = "eyebleach"
+        self.meme_subreddit = "wholesomepics"
 
         # The last time the modqueue alert was sent (for 12-hour cooldown)
         self.last_modqueue_alert_time = None
@@ -256,7 +256,9 @@ class RLEsportsBot(discord.Client):
 
                     # keep already_posted_verified_comments capped so it doesnt grow forever
                     if len(already_posted_verified_comments_ordered) >= 100:
-                        for comment_to_delete in already_posted_verified_comments_ordered[:50]:
+                        for (
+                            comment_to_delete
+                        ) in already_posted_verified_comments_ordered[:50]:
                             already_posted_verified_comments.remove(comment_to_delete)
                         already_posted_verified_comments_ordered = (
                             already_posted_verified_comments_ordered[50:]
@@ -334,7 +336,9 @@ class RLEsportsBot(discord.Client):
                     if len(already_posted_modlog_ordered) >= 100:
                         for log_to_delete in already_posted_modlog_ordered[:50]:
                             already_posted_modlog.remove(log_to_delete)
-                        already_posted_modlog_ordered = already_posted_modlog_ordered[50:]
+                        already_posted_modlog_ordered = already_posted_modlog_ordered[
+                            50:
+                        ]
 
                     await asyncio.sleep(1)
 
@@ -389,7 +393,9 @@ class RLEsportsBot(discord.Client):
                     if len(already_posted_modmail_ordered) >= 100:
                         for mail_to_delete in already_posted_modmail_ordered[:50]:
                             already_posted_modmail.remove(mail_to_delete)
-                        already_posted_modmail_ordered = already_posted_modmail_ordered[50:]
+                        already_posted_modmail_ordered = already_posted_modmail_ordered[
+                            50:
+                        ]
                     global_settings.rleb_log_info(
                         "[DISCORD]: Received modmail id {0}: {1}".format(
                             conversation.id, conversation.messages[-1].body_markdown
@@ -985,7 +991,9 @@ class RLEsportsBot(discord.Client):
             try:
                 response = Data.singleton().yolo_query(sql)
             except ValueError as e:
-                global_settings.rleb_log_info(f"Illegal sql command: {sql}", str(e), should_flush=True)
+                global_settings.rleb_log_info(
+                    f"Illegal sql command: {sql}", str(e), should_flush=True
+                )
                 await message.channel.send(f"no")
                 return
             await message.channel.send(f"```\n{response}\n```")

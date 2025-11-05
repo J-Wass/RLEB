@@ -50,3 +50,36 @@ class TestRemindme(RLEBAsyncTestCase):
         if timer is not None:
             self.assertEqual(type(timer), asyncio.Task)
             timer.cancel()
+
+    async def test_refresh_remindmes(self):
+        import asyncio
+        import time
+        import unittest.mock as mock
+
+        # Clear existing timers
+        global_settings.remindme_timers.clear()
+
+        # Mock the data bridge to return some reminders
+        future_time = int(time.time() + 3600)  # 1 hour from now
+        expired_time = int(time.time() - 3600)  # 1 hour ago
+
+        reminders = [
+            Remindme(1, "user1#123", "future reminder", future_time, 100),
+            Remindme(2, "user2#456", "expired reminder", expired_time, 200),
+        ]
+
+        with mock.patch.object(data_bridge.Data.singleton(), 'read_remindmes', return_value=reminders):
+            global_settings.refresh_remindmes()
+
+        # Verify both reminders were scheduled
+        self.assertEqual(len(global_settings.remindme_timers), 2)
+        self.assertIn(1, global_settings.remindme_timers)
+        self.assertIn(2, global_settings.remindme_timers)
+
+        # Verify they are asyncio tasks
+        for remindme_id, task in global_settings.remindme_timers.items():
+            self.assertEqual(type(task), asyncio.Task)
+            task.cancel()  # Clean up
+
+        # Clear for next test
+        global_settings.remindme_timers.clear()
