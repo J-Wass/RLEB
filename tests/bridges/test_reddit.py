@@ -6,7 +6,7 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 
 import unittest
 import unittest.mock as mock
-from unittest.mock import patch, PropertyMock
+from unittest.mock import patch, PropertyMock, MagicMock
 from tests.common.rleb_async_test_case import RLEBAsyncTestCase
 from praw.models import ModmailConversation
 
@@ -426,25 +426,19 @@ class TestReddit(RLEBAsyncTestCase):
             self.assertEqual(len(modmails[0].messages), 2)
 
     async def test_stream_modlog(self):
-        mock_modlog_item = mock.Mock()
-        mock_modlog_item.id = "123"
-        mock_modlog_item.action = "removecomment"
-        mock_modlog_item.mod = "some_mod"
+        log_allowed = MagicMock(mod="good_mod", action="approvecomment") #This should make it through the stream function
+        log_filtered = MagicMock(mod=global_settings.filtered_mod_log[0], action="approvelink") #This should get denied
+        log_disallowed = MagicMock(mod="bad_mod", action="notanaction") #This should get denied
 
-        def mock_stream_generator(*args, **kwargs):
-            """Mock for praw.models.util.stream_generator()."""
-            yield mock_modlog_item
-            yield None
 
-        # Mock the stream_generator used by stream_modlog
-        with patch.object(praw.models.util, "stream_generator", new=mock_stream_generator):
-            # Collect items from the async generator
-            modlogs = []
-            async for modlog in reddit_bridge.stream_modlog():
-                modlogs.append(modlog)
+        global_settings.mod_log =[log_allowed, log_filtered, log_disallowed, None] #Replace generator with list
 
-            self.assertEqual(len(modlogs), 1)
-            self.assertEqual(modlogs[0], mock_modlog_item)
+        modlogs = []
+        async for modlog in reddit_bridge.stream_modlog():
+            modlogs.append(modlog)
+
+        self.assertEqual(len(modlogs), 1) #Only one should get through
+        self.assertEqual(modlogs[0], log_allowed) #Validate the item that made it through.
 
 
 if __name__ == "__main__":
