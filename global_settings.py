@@ -95,10 +95,23 @@ auto_update_markdown: Dict[str, str] = {}
 
 
 def refresh_remindmes() -> None:
-    """Loads !remindme data from db. The Discord bot will handle scheduling."""
-    # remindmes are now handled by the Discord bot's asyncio event loop
-    # This function just needs to exist for compatibility
-    pass
+    """Loads !remindme data from db and schedules them."""
+    remindmes = Data.singleton().read_remindmes()
+    current_time = time.time()
+
+    for remindme in remindmes:
+        # If the reminder has already expired, schedule it to trigger immediately
+        if remindme.trigger_timestamp < current_time:
+            rleb_log_info(
+                f"REMINDME: Scheduling expired reminder {remindme.remindme_id} to trigger immediately"
+            )
+            # Create a copy with trigger time set to now + 5 seconds to give bot time to fully start
+            remindme.trigger_timestamp = int(current_time + 5)
+
+        # Schedule the reminder (either expired or future)
+        schedule_remindme(remindme)
+
+    rleb_log_info(f"REMINDME: Loaded {len(remindmes)} reminders from database on startup")
 
 
 async def _trigger_remindme(remindme: Remindme) -> None:
@@ -133,7 +146,7 @@ def schedule_remindme(remindme: Remindme) -> None:
     import time
 
     seconds_remaining = remindme.trigger_timestamp - time.time()
-    delay = max(60, seconds_remaining)
+    delay = max(0, seconds_remaining)
 
     async def reminder_task() -> None:
         await asyncio.sleep(delay)

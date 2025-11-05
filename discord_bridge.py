@@ -57,7 +57,7 @@ class RLEsportsBot(discord.Client):
         self.responses = {}
 
         # The subreddit of memes or images to flood into #bot-commands.
-        self.meme_subreddit = "eyebleach"
+        self.meme_subreddit = "wholesomepics"
 
         # The last time the modqueue alert was sent (for 12-hour cooldown)
         self.last_modqueue_alert_time = None
