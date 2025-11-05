@@ -57,7 +57,7 @@ class RLEsportsBot(discord.Client):
         self.responses = {}
 
         # The subreddit of memes or images to flood into #bot-commands.
-        self.meme_subreddit = "wholesomepics"
+        self.meme_subreddit = "minimalistphotography"
 
         # The last time the modqueue alert was sent (for 12-hour cooldown)
         self.last_modqueue_alert_time = None
@@ -563,6 +563,9 @@ class RLEsportsBot(discord.Client):
                         # Send to channel
                         try:
                             channel = self.get_channel(remindme.channel_id)
+                            if not channel:
+                                channel = self.get_channel(self.bot_command_channel)
+
                             if channel:
                                 await channel.send(msg)
                             else:
