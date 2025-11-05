@@ -180,6 +180,12 @@ r = praw.Reddit(
     password=os.environ.get("REDDIT_PASSWORD") or rleb_secrets.REDDIT_PASSWORD,
 )
 sub = r.subreddit(target_sub)
+mod_log = praw.models.util.stream_generator(
+                    sub.mod.log,
+                    pause_after=0,
+                    skip_existing=True,
+                    attribute_name="id",
+                )
 
 # Try to fetch moderators, but handle failures gracefully (e.g., in test environments)
 try:

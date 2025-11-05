@@ -181,17 +181,10 @@ async def process_inbox():
 async def stream_modlog():
     """Stream mod log entries. Async generator that yields modlog entries."""
     try:
-
         def get_modlog():
             logs_to_yield = []
             try:
-                logs = praw.models.util.stream_generator(
-                    global_settings.sub.mod.log,
-                    pause_after=0,
-                    skip_existing=True,
-                    attribute_name="id",
-                )
-                for log in logs:
+                for log in global_settings.mod_log:
                     if log is None:
                         break
 
@@ -205,7 +198,14 @@ async def stream_modlog():
                     ):
                         continue
                     logs_to_yield.append(log)
-            except Exception:
+            except Exception as e:
+                # If an error is thrown when retrieving the modlog, we need to recreate the stream generator.
+                global_settings.mod_log = praw.models.util.stream_generator(
+                    global_settings.sub.mod.log,
+                    pause_after=0,
+                    skip_existing=True,
+                    attribute_name="id",
+                )
                 pass
             return logs_to_yield
 
