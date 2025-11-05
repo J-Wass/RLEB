@@ -1,4 +1,5 @@
 # Utilities file. Houses methods that are used throughout rleb.
+import configparser
 import threading
 import time
 from typing import Dict, Any
@@ -13,15 +14,11 @@ import discord
 
 from data_bridge import AutoUpdate, Data, Remindme
 
-# This is bad code, don't tell anyone I wrote this.
-try:
-    import rleb_secrets
-except Exception as e:
-
-    class rleb_secrets:  # type: ignore[no-redef]
-        pass
-
-    print("rleb_secrets.py not found, using keys in environment settings.")
+config = configparser.ConfigParser(interpolation=None)
+if os.path.exists("rleb_secrets.ini"):
+    config.read("rleb_secrets.ini")
+else:
+    config.read("rleb_secrets_sample.ini")
 
 # OS
 ENVIRONMENT_DICT = {
@@ -34,7 +31,7 @@ ENVIRONMENT_DICT = {
 
 RUNNING_ENVIRONMENT = ENVIRONMENT_DICT[platform]
 
-RUNNING_MODE = os.environ.get("RUNNING_MODE") or rleb_secrets.RUNNING_MODE
+RUNNING_MODE = os.environ.get("RUNNING_MODE") or config["General"]["RUNNING_MODE"]
 
 # CORE
 health_enabled = True
@@ -115,20 +112,20 @@ def refresh_autoupdates() -> bool:
 reddit_enabled = True
 target_sub = "rocketleagueesports" if RUNNING_MODE == "production" else "rlcsnewstest"
 r = praw.Reddit(
-    client_id=os.environ.get("REDDIT_CLIENT_ID") or rleb_secrets.REDDIT_CLIENT_ID,
+    client_id=os.environ.get("REDDIT_CLIENT_ID")
+    or config["Reddit"]["REDDIT_CLIENT_ID"],
     client_secret=os.environ.get("REDDIT_CLIENT_SECRET")
-    or rleb_secrets.REDDIT_CLIENT_SECRET,
-    user_agent=os.environ.get("REDDIT_USER_AGENT") or rleb_secrets.REDDIT_USER_AGENT,
-    username=os.environ.get("REDDIT_USERNAME") or rleb_secrets.REDDIT_USERNAME,
-    password=os.environ.get("REDDIT_PASSWORD") or rleb_secrets.REDDIT_PASSWORD,
+    or config["Reddit"]["REDDIT_CLIENT_SECRET"],
+    user_agent=os.environ.get("REDDIT_USER_AGENT")
+    or config["Reddit"]["REDDIT_USER_AGENT"],
+    username=os.environ.get("REDDIT_USERNAME") or config["Reddit"]["REDDIT_USERNAME"],
+    password=os.environ.get("REDDIT_PASSWORD") or config["Reddit"]["REDDIT_PASSWORD"],
 )
 sub = r.subreddit(target_sub)
-mod_log = praw.models.util.stream_generator(
-                    sub.mod.log,
-                    pause_after=0,
-                    skip_existing=True,
-                    attribute_name="id",
-                )
+mod_log = sub.mod.stream.log(
+    pause_after=0,
+    skip_existing=True,
+)
 
 # Try to fetch moderators, but handle failures gracefully (e.g., in test environments)
 try:
@@ -176,11 +173,12 @@ MODQUEUE_CHECK_INTERVAL = 60  # seconds between modqueue checks (1 minute)
 MODQUEUE_ALERT_COOLDOWN = 2 * 60 * 60  # seconds before re-alerting (2 hours)
 
 # GOOGLE
-GOOGLE_CALENDAR_ID = os.environ.get("CALENDAR_ID") or rleb_secrets.CALENDAR_ID
+GOOGLE_CALENDAR_ID = os.environ.get("CALENDAR_ID") or config["Google"]["CALENDAR_ID"]
 GOOGLE_CREDENTIALS_JSON = (
-    os.environ.get("GOOGLE_CREDENTIALS_JSON") or rleb_secrets.GOOGLE_CREDENTIALS_JSON
+    os.environ.get("GOOGLE_CREDENTIALS_JSON")
+    or config.get("Google", "GOOGLE_CREDENTIALS_JSON", raw=True)
 ).replace("\\\\n", "\\n")
-SHEETS_ID = os.environ.get("SHEETS_ID") or rleb_secrets.SHEETS_ID
+SHEETS_ID = os.environ.get("SHEETS_ID") or config["Google"]["SHEETS_ID"]
 
 weekly_schedule_sheets_range = (
     "Current Week!5:11" if RUNNING_MODE == "production" else "Bot Development!5:11"
@@ -195,35 +193,37 @@ discord_check_direct_messages_enabled = True
 discord_check_new_thread_creation_enabled = True
 discord_check_new_verified_comments_enabled = True
 
-TOKEN = os.environ.get("DISCORD_TOKEN") or rleb_secrets.DISCORD_TOKEN
+TOKEN = os.environ.get("DISCORD_TOKEN") or config["Discord"]["DISCORD_TOKEN"]
 NEW_POSTS_CHANNEL_ID = int(
-    os.environ.get("NEW_POSTS_CHANNEL_ID") or rleb_secrets.NEW_POSTS_CHANNEL_ID
+    os.environ.get("NEW_POSTS_CHANNEL_ID") or config["Discord"]["NEW_POSTS_CHANNEL_ID"]  # type: ignore
 )
 MODMAIL_CHANNEL_ID = int(
-    os.environ.get("MODMAIL_CHANNEL_ID") or rleb_secrets.MODMAIL_CHANNEL_ID
+    os.environ.get("MODMAIL_CHANNEL_ID") or config["Discord"]["MODMAIL_CHANNEL_ID"]  # type: ignore
 )
 BOT_COMMANDS_CHANNEL_ID = int(
-    os.environ.get("BOT_COMMANDS_CHANNEL_ID") or rleb_secrets.BOT_COMMANDS_CHANNEL_ID
+    os.environ.get("BOT_COMMANDS_CHANNEL_ID")
+    or config["Discord"]["BOT_COMMANDS_CHANNEL_ID"]  # type: ignore
 )
 SCHEDULE_CHAT_CHANNEL_ID = int(
-    os.environ.get("SCHEDULE_CHAT_CHANNEL_ID") or rleb_secrets.SCHEDULE_CHAT_CHANNEL_ID
+    os.environ.get("SCHEDULE_CHAT_CHANNEL_ID")
+    or config["Discord"]["SCHEDULE_CHAT_CHANNEL_ID"]  # type: ignore
 )
 ROSTER_NEWS_CHANNEL_ID = int(
-    os.environ.get("ROSTER_NEWS_CHANNEL_ID") or rleb_secrets.ROSTER_NEWS_CHANNEL_ID
+    os.environ.get("ROSTER_NEWS_CHANNEL_ID") or config["Discord"]["ROSTER_NEWS_CHANNEL_ID"]  # type: ignore
 )
 MODLOG_CHANNEL_ID = int(
-    os.environ.get("MODLOG_CHANNEL_ID") or rleb_secrets.MODLOG_CHANNEL_ID
+    os.environ.get("MODLOG_CHANNEL_ID") or config["Discord"]["MODLOG_CHANNEL_ID"]  # type: ignore
 )
 THREAD_CREATION_CHANNEL_ID = int(
     os.environ.get("THREAD_CREATION_CHANNEL_ID")
-    or rleb_secrets.THREAD_CREATION_CHANNEL_ID
+    or config["Discord"]["THREAD_CREATION_CHANNEL_ID"]  # type: ignore
 )
 VERIFIED_COMMENTS_CHANNEL_ID = int(
     os.environ.get("VERIFIED_COMMENTS_CHANNEL_ID")
-    or rleb_secrets.VERIFIED_COMMENTS_CHANNEL_ID
+    or config["Discord"]["VERIFIED_COMMENTS_CHANNEL_ID"]  # type: ignore
 )
 MODERATION_CHANNEL_ID = int(
-    os.environ.get("MODERATION_CHANNEL_ID") or rleb_secrets.MODERATION_CHANNEL_ID
+    os.environ.get("MODERATION_CHANNEL_ID") or config["Discord"]["MODERATION_CHANNEL_ID"]  # type: ignore
 )
 
 verified_needle = "verified"
@@ -265,10 +265,10 @@ hooks = [
 greetings = ["Incoming!", "Why hello there.", "Hola, amigo", "Bonjour, mon ami"]
 success_emojis = ["🥳", "💪", "✅", "🔥", "🚀", "💯", "🌟", "🏆", "🆒"]
 verified_moderators = json.loads(
-    os.environ.get("VERIFIED_MODERATORS") or rleb_secrets.VERIFIED_MODERATORS
+    os.environ.get("VERIFIED_MODERATORS") or config.get("Discord", "VERIFIED_MODERATORS", raw=True)  # type: ignore
 )
 moderator_emails = json.loads(
-    os.environ.get("MODERATOR_EMAILS") or rleb_secrets.MODERATOR_EMAILS
+    os.environ.get("MODERATOR_EMAILS") or config.get("Discord", "MODERATOR_EMAILS", raw=True)  # type: ignore
 )
 
 # Mapping of discord staff usernames to their ids
@@ -357,18 +357,23 @@ MONTHS = [
 DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
 # PASTEBIN
-PASTEBIN_API_KEY = os.environ.get("PASTEBIN_API_KEY") or rleb_secrets.PASTEBIN_API_KEY
+PASTEBIN_API_KEY = (
+    os.environ.get("PASTEBIN_API_KEY") or config["Pastebin"]["PASTEBIN_API_KEY"]
+)
 PASTEBIN_API_USER_KEY = (
-    os.environ.get("PASTEBIN_API_USER_KEY") or rleb_secrets.PASTEBIN_API_USER_KEY
+    os.environ.get("PASTEBIN_API_USER_KEY")
+    or config["Pastebin"]["PASTEBIN_API_USER_KEY"]
 )
 PASTEBIN_USER_NAME = (
-    os.environ.get("PASTEBIN_USER_NAME") or rleb_secrets.PASTEBIN_USER_NAME
+    os.environ.get("PASTEBIN_USER_NAME") or config["Pastebin"]["PASTEBIN_USER_NAME"]
 )
 PASTEBIN_USER_PASS = (
-    os.environ.get("PASTEBIN_USER_PASS") or rleb_secrets.PASTEBIN_USER_PASS
+    os.environ.get("PASTEBIN_USER_PASS") or config["Pastebin"]["PASTEBIN_USER_PASS"]
 )
-PASTEEE_APP_KEY = os.environ.get("PASTEEE_APP_KEY") or rleb_secrets.PASTEEE_APP_KEY
+PASTEEE_APP_KEY = (
+    os.environ.get("PASTEEE_APP_KEY") or config["Pastebin"]["PASTEEE_APP_KEY"]
+)
 
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY") or getattr(
-    rleb_secrets, "ANTHROPIC_API_KEY", None
+    config["LLM"], "ANTHROPIC_API_KEY", None
 )
