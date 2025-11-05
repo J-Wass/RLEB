@@ -105,6 +105,7 @@ class RLEsportsBot(discord.Client):
         self.loop.create_task(self.check_modqueue_length())
         self.loop.create_task(self.process_reddit_inbox())
         self.loop.create_task(self.auto_update_threads())
+        self.loop.create_task(self.check_remindmes())
 
         # Create asyncio tasks for health monitoring and task alerts
         if global_settings.health_enabled:
@@ -534,6 +535,58 @@ class RLEsportsBot(discord.Client):
                 global_settings.last_datetime_crashed["asyncio"] = datetime.now()
 
             await asyncio.sleep(global_settings.discord_async_interval_seconds)
+
+    async def check_remindmes(self):
+        """Check for due reminders and send them."""
+        await asyncio.sleep(10)
+        while True:
+            try:
+                remindmes = Data.singleton().read_remindmes()
+                current_time = time.time()
+
+                for remindme in remindmes:
+                    # Check if reminder is due
+                    if remindme.trigger_timestamp <= current_time:
+                        global_settings.rleb_log_info(
+                            f"[REMINDME]: Triggering reminder {remindme.remindme_id}"
+                        )
+
+                        # Build the message
+                        user_id = global_settings.user_names_to_ids.get(
+                            remindme.discord_username
+                        )
+                        if user_id:
+                            msg = f"**Reminder for <@{user_id}>:** {remindme.message}"
+                        else:
+                            msg = f"**Reminder for {remindme.discord_username}:** {remindme.message}"
+
+                        # Send to channel
+                        try:
+                            channel = self.get_channel(remindme.channel_id)
+                            if channel:
+                                await channel.send(msg)
+                            else:
+                                global_settings.rleb_log_error(
+                                    f"[REMINDME]: Could not find channel {remindme.channel_id} for reminder {remindme.remindme_id}"
+                                )
+                        except Exception as e:
+                            global_settings.rleb_log_error(
+                                f"[REMINDME]: Failed to send reminder {remindme.remindme_id}: {e}"
+                            )
+
+                        # Delete from database
+                        Data.singleton().delete_remindme(remindme.remindme_id)
+
+                global_settings.asyncio_threads_heartbeats["remindme"] = datetime.now()
+            except Exception as e:
+                global_settings.rleb_log_error(
+                    "[DISCORD]: Remindme check failed - {0}".format(e)
+                )
+                global_settings.rleb_log_error(traceback.format_exc())
+                global_settings.thread_crashes["asyncio"] += 1
+                global_settings.last_datetime_crashed["asyncio"] = datetime.now()
+
+            await asyncio.sleep(60)  # Check every 60 seconds
 
     async def auto_update_threads(self):
         """Auto-update Reddit threads with fresh Liquipedia data."""
@@ -1700,14 +1753,14 @@ class RLEsportsBot(discord.Client):
                     )
                     return
 
-                if remindme_id not in global_settings.remindme_timers:
+                # Check if reminder exists in database
+                remindmes = Data.singleton().read_remindmes()
+                if not any(r.remindme_id == remindme_id for r in remindmes):
                     await message.channel.send(
                         f"Couldn't find reminder with id `{remindme_id}`. Use `!remindme list` to view all reminder ids."
                     )
                     return
 
-                global_settings.remindme_timers[remindme_id].cancel()
-                del global_settings.remindme_timers[remindme_id]
                 Data.singleton().delete_remindme(remindme_id)
 
                 await message.channel.send("Deleted reminder.")
@@ -1776,7 +1829,7 @@ class RLEsportsBot(discord.Client):
             remindme: Remindme = Data.singleton().write_remindme(
                 user, reminder_message, total_time, message.channel.id
             )
-            global_settings.schedule_remindme(remindme)
+            # Remindme will be picked up by the check_remindmes() polling loop
             await message.channel.send(
                 random.choice(global_settings.success_emojis)
                 + " reminder set.\nUse `!remindme list` to see all reminders."

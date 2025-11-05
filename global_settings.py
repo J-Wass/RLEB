@@ -54,6 +54,7 @@ asyncio_threads_heartbeats = {
     "modqueue": datetime.now(),
     "inbox": datetime.now(),
     "auto_update": datetime.now(),
+    "remindme": datetime.now(),
     "health": datetime.now(),
     "task_alerts": datetime.now(),
 }
@@ -75,9 +76,6 @@ thread_crashes = {"asyncio": 0, "thread": 0}
 # The last time a thread or asyncio thread crashed and had to be restarted. Used for logging.
 last_datetime_crashed = {"asyncio": None, "thread": None}
 
-# Remindme timers are now managed by asyncio tasks in the Discord bot
-remindme_timers: dict[int, Any] = {}
-
 # Discord client reference for direct communication (set by discord_bridge on startup)
 discord_client = None
 
@@ -91,79 +89,9 @@ auto_update_empties = 0
 auto_update_markdown: Dict[str, str] = {}
 
 
-# Remindme will be managed by asyncio tasks instead of threading.Timer
-
-
 def refresh_remindmes() -> None:
-    """Loads !remindme data from db and schedules them."""
-    remindmes = Data.singleton().read_remindmes()
-    current_time = time.time()
-
-    for remindme in remindmes:
-        # If the reminder has already expired, schedule it to trigger immediately
-        if remindme.trigger_timestamp < current_time:
-            rleb_log_info(
-                f"REMINDME: Scheduling expired reminder {remindme.remindme_id} to trigger immediately"
-            )
-            # Create a copy with trigger time set to now + 5 seconds to give bot time to fully start
-            remindme.trigger_timestamp = int(current_time + 5)
-
-        # Schedule the reminder (either expired or future)
-        schedule_remindme(remindme)
-
-    rleb_log_info(
-        f"REMINDME: Loaded {len(remindmes)} reminders from database on startup"
-    )
-
-
-async def _trigger_remindme(remindme: Remindme) -> None:
-    """Executes a remindme and removes it from the db."""
-    user_id = user_names_to_ids.get(remindme.discord_username)
-    if user_id:
-        msg = f"**Reminder for <@{user_id}>:** {remindme.message}"
-    else:
-        msg = f"**Reminder for {remindme.discord_username}:** {remindme.message}"
-
-    # Send alert directly to Discord channel if client is available
-    if discord_client:
-        try:
-            channel = discord_client.get_channel(remindme.channel_id)
-            if channel:
-                await channel.send(msg)
-        except Exception as e:
-            rleb_log_error(
-                f"REMINDME: Failed to send reminder {remindme.remindme_id}: {e}"
-            )
-
-    Data.singleton().delete_remindme(remindme.remindme_id)
-    if remindme.remindme_id in remindme_timers:
-        del remindme_timers[remindme.remindme_id]
-
-    rleb_log_info(f"REMINDME: Triggered remindme {remindme.remindme_id}")
-
-
-def schedule_remindme(remindme: Remindme) -> None:
-    """Starts a new asyncio task for the reminder and adds it to the remindme_timers."""
-    import asyncio
-    import time
-
-    seconds_remaining = remindme.trigger_timestamp - time.time()
-    delay = max(0, seconds_remaining)
-
-    async def reminder_task() -> None:
-        await asyncio.sleep(delay)
-        await _trigger_remindme(remindme)
-
-    try:
-        loop = asyncio.get_event_loop()
-        task = loop.create_task(reminder_task())
-        remindme_timers[remindme.remindme_id] = task
-        rleb_log_info(
-            f"REMINDME: Created remindme {remindme.remindme_id} due in {delay}s."
-        )
-    except RuntimeError:
-        # No event loop running, this is okay in tests
-        rleb_log_info(f"REMINDME: No event loop for remindme {remindme.remindme_id}.")
+    """No-op: Remindmes are now checked by the check_remindmes() asyncio loop in discord_bridge.py."""
+    pass
 
 
 def refresh_autoupdates() -> bool:

@@ -499,7 +499,7 @@ async def task_alert_check(thread_creation_channel, client):
                             elapsed_time=time_until_alert,
                             channel_id=global_settings.SCHEDULE_CHAT_CHANNEL_ID,
                         )
-                        global_settings.schedule_remindme(update_reminder)
+                        # Remindme will be picked up by the check_remindmes() polling loop
 
                     message = random.choice(global_settings.success_emojis)
                     message += f" Task is scheduled: **{task.event_name}** by {task.event_creator}.\nhttps://sh.reddit.com/mod/RocketLeagueEsports/scheduledposts/"
