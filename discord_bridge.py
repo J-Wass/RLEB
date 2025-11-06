@@ -46,6 +46,16 @@ def is_staff(user: discord.Member) -> bool:
 
 
 class RLEsportsBot(discord.Client):
+    new_post_channel: discord.TextChannel
+    modmail_channel: discord.TextChannel
+    bot_command_channel: discord.TextChannel
+    schedule_chat_channel: discord.TextChannel
+    roster_news_channel: discord.TextChannel
+    verified_comments_channel: discord.TextChannel
+    modlog_channel: discord.TextChannel
+    thread_creation_channel: discord.TextChannel
+    moderation_channel: discord.TextChannel
+
     def __init__(self):
         """Initialize a new instance of RLEsportsBot."""
         super().__init__(intents=discord.Intents.all())
@@ -76,26 +86,70 @@ class RLEsportsBot(discord.Client):
         global_settings.rleb_log_info("[DISCORD]: Logged on as {0}".format(self.user))
 
         # Initialize all channels first
-        self.new_post_channel = self.get_channel(global_settings.NEW_POSTS_CHANNEL_ID)
-        self.modmail_channel = self.get_channel(global_settings.MODMAIL_CHANNEL_ID)
+        self.new_post_channel = self.get_channel(global_settings.NEW_POSTS_CHANNEL_ID)  # type: ignore
+
+        assert isinstance(self.new_post_channel, discord.abc.Messageable), (
+            "New Post channel is not messageable or not found!"
+        )
+
+        self.modmail_channel = self.get_channel(global_settings.MODMAIL_CHANNEL_ID)  # type: ignore
+
+        assert isinstance(self.modmail_channel, discord.abc.Messageable), (
+            "Modmail channel is not messageable or not found!"
+        )
+
         self.bot_command_channel = self.get_channel(
             global_settings.BOT_COMMANDS_CHANNEL_ID
+        )  # type: ignore
+
+        assert isinstance(self.bot_command_channel, discord.abc.Messageable), (
+            "Bot command channel is not messageable or not found!"
         )
+
         self.schedule_chat_channel = self.get_channel(
             global_settings.SCHEDULE_CHAT_CHANNEL_ID
+        )  # type: ignore
+
+        assert isinstance(self.schedule_chat_channel, discord.abc.Messageable), (
+            "Modmail channel is not messageable or not found!"
         )
+
         self.roster_news_channel = self.get_channel(
             global_settings.ROSTER_NEWS_CHANNEL_ID
+        )  # type: ignore
+
+        assert isinstance(self.roster_news_channel, discord.abc.Messageable), (
+            "Modmail channel is not messageable or not found!"
         )
+
         self.verified_comments_channel = self.get_channel(
             global_settings.VERIFIED_COMMENTS_CHANNEL_ID
+        )  # type: ignore
+
+        assert isinstance(self.verified_comments_channel, discord.abc.Messageable), (
+            "Modmail channel is not messageable or not found!"
         )
-        self.modlog_channel = self.get_channel(global_settings.MODLOG_CHANNEL_ID)
+
+        self.modlog_channel = self.get_channel(global_settings.MODLOG_CHANNEL_ID)  # type: ignore
+
+        assert isinstance(self.modlog_channel, discord.abc.Messageable), (
+            "Modmail channel is not messageable or not found!"
+        )
+
         self.thread_creation_channel = self.get_channel(
             global_settings.THREAD_CREATION_CHANNEL_ID
+        )  # type: ignore
+
+        assert isinstance(self.thread_creation_channel, discord.abc.Messageable), (
+            "Modmail channel is not messageable or not found!"
         )
+
         self.moderation_channel = self.get_channel(
             global_settings.MODERATION_CHANNEL_ID
+        )  # type: ignore
+
+        assert isinstance(self.moderation_channel, discord.abc.Messageable), (
+            "Modmail channel is not messageable or not found!"
         )
 
         # Now that channels are initialized, create background tasks
@@ -114,17 +168,17 @@ class RLEsportsBot(discord.Client):
             self.loop.create_task(self.run_task_alerts())
 
         # Create a mapping of discord usernames to discord ids for future use.
-        for m in self.new_post_channel.members:
-            if m.discriminator == "0":
-                global_settings.user_names_to_ids[m.name.lower()] = m.id
+        for m in self.new_post_channel.members:  # type: ignore
+            if m.discriminator == "0":  # type: ignore
+                global_settings.user_names_to_ids[m.name.lower()] = m.id  # type: ignore
             else:
                 global_settings.user_names_to_ids[
-                    m.name.lower() + "#" + m.discriminator
+                    m.name.lower() + "#" + m.discriminator  # type: ignore
                 ] = m.id
 
         # If testing, ping the discord channel.
         if global_settings.RUNNING_MODE != "production":
-            await self.bot_command_channel.send(
+            await self.bot_command_channel.send(  # type: ignore
                 "Bot is online, running in {0} under {1} mode.".format(
                     global_settings.RUNNING_ENVIRONMENT, global_settings.RUNNING_MODE
                 )
@@ -212,9 +266,9 @@ class RLEsportsBot(discord.Client):
                         continue
 
                     if "roster news" in submission.link_flair_text.strip().lower():
-                        await self.roster_news_channel.send(embed=embed)
+                        await self.roster_news_channel.send(embed=embed)  # type: ignore
 
-                    await self.new_post_channel.send(embed=embed)
+                    await self.new_post_channel.send(embed=embed)  # type: ignore
 
                 global_settings.asyncio_threads_heartbeats["submissions"] = (
                     datetime.now()
@@ -223,7 +277,7 @@ class RLEsportsBot(discord.Client):
                 global_settings.rleb_log_error(
                     "[DISCORD]: Submissions asyncio thread failed - {0}".format(e)
                 )
-                await self.bot_command_channel.send(
+                await self.bot_command_channel.send(  # type: ignore
                     "New Submissions asyncio thread encountered error"
                 )
                 global_settings.rleb_log_error(traceback.format_exc())
@@ -287,7 +341,7 @@ class RLEsportsBot(discord.Client):
                     )
                     embed.set_author(name=verified_comments.author.name)
 
-                    await self.verified_comments_channel.send(embed=embed)
+                    await self.verified_comments_channel.send(embed=embed)  # type: ignore
 
                 global_settings.asyncio_threads_heartbeats["verified_comments"] = (
                     datetime.now()
@@ -296,7 +350,7 @@ class RLEsportsBot(discord.Client):
                 global_settings.rleb_log_error(
                     "[DISCORD]: Verified comments asyncio thread failed - {0}".format(e)
                 )
-                await self.bot_command_channel.send(
+                await self.bot_command_channel.send(  # type: ignore
                     "Verified Comments asyncio thread encountered error"
                 )
                 global_settings.rleb_log_error(traceback.format_exc())
@@ -562,12 +616,12 @@ class RLEsportsBot(discord.Client):
 
                         # Send to channel
                         try:
-                            channel = self.get_channel(remindme.channel_id)
+                            channel = self.get_channel(remindme.channel_id)  # type: ignore
                             if not channel:
-                                channel = self.get_channel(self.bot_command_channel)
+                                channel = self.bot_command_channel
 
                             if channel:
-                                await channel.send(msg)
+                                await channel.send(msg)  # type: ignore
                             else:
                                 global_settings.rleb_log_error(
                                     f"[REMINDME]: Could not find channel {remindme.channel_id} for reminder {remindme.remindme_id}"
@@ -812,8 +866,9 @@ class RLEsportsBot(discord.Client):
 
             msg_to_send = ""
             for us in user_statistics:
-                thankfulness = round(us.thanks_given / us.commands_used * 100, 0)
-                msg_to_send += f"{us.discord_username} has used the bot {us.commands_used} times and was only thankful {thankfulness}% of the time\n"
+                if us != None:
+                    thankfulness = round(us.thanks_given / us.commands_used * 100, 0)
+                    msg_to_send += f"{us.discord_username} has used the bot {us.commands_used} times and was only thankful {thankfulness}% of the time\n"
             if msg_to_send == "":
                 await message.channel.send("daz broken :/")
             else:
@@ -1026,7 +1081,7 @@ class RLEsportsBot(discord.Client):
             await message.channel.send(
                 "**Found the following scheduled posts on reddit:**"
             )
-            scheduled_posts = get_scheduled_posts()
+            scheduled_posts = await get_scheduled_posts()
             for s in scheduled_posts:
                 await message.channel.send(s)
 
@@ -1048,7 +1103,7 @@ class RLEsportsBot(discord.Client):
                 response = Data.singleton().yolo_query(sql)
             except ValueError as e:
                 global_settings.rleb_log_info(
-                    f"Illegal sql command: {sql}", str(e), should_flush=True
+                    f"Illegal sql command: {sql}, {str(e)}", should_flush=True
                 )
                 await message.channel.send(f"no")
                 return
@@ -1443,10 +1498,11 @@ class RLEsportsBot(discord.Client):
                     "Couldn't understand that. Expected '!bracket liquipedia-url date-of-the-month'."
                 )
                 return
-            bracket_markdown = await diesel.get_bracket_markdown(url, date_number)
-            await stdout.print_to_channel(
-                message.channel, bracket_markdown, title="Bracket"
-            )
+            bracket_markdown = await diesel.get_bracket_markdown(url, int(date_number))
+            if bracket_markdown != None:
+                await stdout.print_to_channel(
+                    message.channel, bracket_markdown, title="Bracket"
+                )
             await self.add_response(message)
 
         elif discord_message.startswith("!autoupdate") and is_staff(message.author):
@@ -1491,7 +1547,7 @@ class RLEsportsBot(discord.Client):
                     await message.channel.send(
                         "  `!autoupdate [reddit url] [liquipedia url] [tourney system] [options] [day]`"
                     )
-                    asyncio.sleep(1)
+                    await asyncio.sleep(1)
                     await message.channel.send(
                         "    `reddit url` = the url of the already made game thread that needs to be updated"
                     )
@@ -1510,7 +1566,7 @@ class RLEsportsBot(discord.Client):
                     await message.channel.send(
                         "    `day` = the day of the tournament on liquipedia that the post is for"
                     )
-                    asyncio.sleep(1)
+                    await asyncio.sleep(1)
                     await message.channel.send(
                         "**To list running auto updates:** `!autoupdate list`"
                     )
@@ -1579,7 +1635,7 @@ class RLEsportsBot(discord.Client):
                     liqui_url,
                     tourney_system,
                     stringified_options,
-                    day_number,
+                    int(day_number),
                 )
                 global_settings.auto_updates[auto_update.auto_update_id] = auto_update
                 await message.channel.send(
@@ -1618,7 +1674,9 @@ class RLEsportsBot(discord.Client):
                 template = tourney_system
             else:
                 template = f"{tourney_system}-{stringified_options}"
-            markdown = diesel.get_make_thread_markdown_date(url, template, date_number)
+            markdown = diesel.get_make_thread_markdown_date(
+                url, template, int(date_number)
+            )
             await stdout.print_to_channel(
                 message.channel, markdown, title="Thread Markdown"
             )
@@ -1660,7 +1718,9 @@ class RLEsportsBot(discord.Client):
                     "Couldn't understand that. Expected `!schedule liquipedia-url [date of the month]`.\nExample: `!schedule https://liquipedia.net/rocketleague/Rocket_League_Championship_Series/2022-23/Fall/North_America/Cup 12` will get you the schedule for events on the 12th of the current month."
                 )
                 return
-            await diesel.handle_schedule_lookup_date(url, date_number, message.channel)
+            await diesel.handle_schedule_lookup_date(
+                url, int(date_number), message.channel
+            )
             await self.add_response(message)
 
         elif discord_message.startswith("!prizepool") and is_staff(message.author):
@@ -1706,7 +1766,7 @@ class RLEsportsBot(discord.Client):
                     )
                     return
                 await message.channel.send("Creating MVP voting form...")
-                await handle_mvp_form_creation(urls, message.channel)
+                await handle_mvp_form_creation(urls, message.channel)  # type: ignore
             elif option == "results":
                 form_url = tokens[2]
                 await message.channel.send("Generating MVP results...")

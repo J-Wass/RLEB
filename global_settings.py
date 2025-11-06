@@ -71,7 +71,7 @@ thread_timeout = 60 * 15
 thread_crashes = {"asyncio": 0, "thread": 0}
 
 # The last time a thread or asyncio thread crashed and had to be restarted. Used for logging.
-last_datetime_crashed = {"asyncio": None, "thread": None}
+last_datetime_crashed: Dict[str, datetime | None] = {"asyncio": None, "thread": None}
 
 # Discord client reference for direct communication (set by discord_bridge on startup)
 discord_client = None
