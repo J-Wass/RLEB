@@ -820,7 +820,9 @@ class RLEsportsBot(discord.Client):
             if msg_to_send == "":
                 await message.channel.send("daz broken :/")
             else:
-                await message.channel.send(msg_to_send)
+                await stdout.print_to_channel(
+                    message.channel, msg_to_send, title="User Statistics", use_hook=False
+                )
 
         elif discord_message.startswith("!census") and is_staff(message.author):
             if not global_settings.is_discord_mod(message.author):
@@ -1026,20 +1028,24 @@ class RLEsportsBot(discord.Client):
             if not global_settings.is_discord_mod(message.author):
                 return
 
-            await message.channel.send(
-                "**Found the following scheduled posts on reddit:**"
-            )
             scheduled_posts = get_scheduled_posts()
-            for s in scheduled_posts:
-                await message.channel.send(s)
-
-            await message.channel.send(
-                "**Found the following events on the weekly sheet:**"
-            )
             weekly_events = get_weekly_events()
-            for t in weekly_events:
-                await message.channel.send(t)
 
+            output = "**Found the following scheduled posts on reddit:**\n"
+            if scheduled_posts:
+                output += "\n".join(scheduled_posts)
+            else:
+                output += "No scheduled posts found."
+
+            output += "\n\n**Found the following events on the weekly sheet:**\n"
+            if weekly_events:
+                output += "\n".join(weekly_events)
+            else:
+                output += "No weekly events found."
+
+            await stdout.print_to_channel(
+                message.channel, output, title="Weekly Schedule", use_hook=False
+            )
             await self.add_response(message)
 
         elif discord_message.startswith("!sql") and is_staff(message.author):
@@ -1049,13 +1055,20 @@ class RLEsportsBot(discord.Client):
             sql = " ".join(discord_message.split()[1:])
             try:
                 response = Data.singleton().yolo_query(sql)
+                await stdout.print_to_channel(
+                    message.channel, response, title="SQL Query Results", use_hook=False
+                )
             except ValueError as e:
                 global_settings.rleb_log_info(
-                    f"Illegal sql command: {sql}", str(e), should_flush=True
+                    f"SQL query failed: {sql}", str(e), should_flush=True
                 )
-                await message.channel.send(f"no")
+                await stdout.print_to_channel(
+                    message.channel,
+                    f"SQL query failed:\n{str(e)}",
+                    title="SQL Query Error",
+                    use_hook=False,
+                )
                 return
-            await message.channel.send(f"```\n{response}\n```")
 
         elif discord_message.startswith("!logs") and is_staff(message.author):
             if not global_settings.is_discord_mod(message.author):
@@ -1305,7 +1318,9 @@ class RLEsportsBot(discord.Client):
                 return_message = "Found the following aliases:"
                 for long, short in long_to_short_name_map.items():
                     return_message += f"\n{long} -> {short}"
-                await message.channel.send(return_message)
+                await stdout.print_to_channel(
+                    message.channel, return_message, title="Aliases", use_hook=False
+                )
                 await self.add_response(message)
 
             elif operation == "remove":
