@@ -564,7 +564,10 @@ class RLEsportsBot(discord.Client):
                         try:
                             channel = self.get_channel(remindme.channel_id)
                             if not channel:
-                                channel = self.get_channel(self.bot_command_channel)
+                                global_settings.rleb_log_info(
+                                    f"[REMINDME]: Channel {remindme.channel_id} not found for reminder {remindme.remindme_id}, using fallback channel"
+                                )
+                                channel = self.bot_command_channel
 
                             if channel:
                                 await channel.send(msg)
