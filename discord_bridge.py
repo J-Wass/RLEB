@@ -15,7 +15,7 @@ import global_settings
 from liqui import diesel
 import stdout
 from data_bridge import AutoUpdate, Data, Remindme
-from global_settings import sub, user_names_to_ids
+from global_settings import user_names_to_ids
 from liqui.team_lookup import handle_team_lookup
 from liqui.group_lookup import handle_group_lookup
 from census import handle_flair_census, handle_verified_flair_list
@@ -187,41 +187,22 @@ class RLEsportsBot(discord.Client):
             await self.send_meme(self.bot_command_channel)
 
     async def send_meme(self, channel):
-        meme_sub = global_settings.r.subreddit(self.meme_subreddit)
-        if meme_sub.over18:
-            return
+        if not global_settings.reddit_bridge:
+            return False
 
-        randomizer = random.randint(1, 10)
-        count = 0
+        meme_link = await global_settings.reddit_bridge.get_meme(
+            meme_subreddit=self.meme_subreddit
+        )
 
-        tries = 0
-        for meme in meme_sub.top("day"):
-            if tries > 3:
-                await channel.send("Couldn't find a suitable meme :(")
-                break
-            if (
-                meme.over_18
-                or meme.is_video
-                or "gallery" in meme.url
-                or "v.reddit" in meme.url
-            ):
-                tries += 1
-                continue
-
-            # Randomly decide whether or not to take a meme. Makes the algo spicey.
-            if count <= randomizer or tries > 2:
-                count += 1
-                continue
-
-            # If meme is suitable and we hit the randomizer, send it.
-            link = meme.url
-            await channel.send("{0}".format(link))
-            break
+        if meme_link == None:
+            await channel.send("Couldn't find a suitable meme :(")
+            return False
+        else:
+            await channel.send("{0}".format(meme_link))
+            return True
 
     async def check_new_submissions(self):
         """Check Reddit submissions directly and post in 'new posts' discord channel."""
-        from reddit_bridge import stream_new_submissions
-
         # Track already posted submissions to avoid duplicates
         already_posted_submissions: set[str] = set()
         already_posted_submissions_ordered: list[str] = []
@@ -229,10 +210,13 @@ class RLEsportsBot(discord.Client):
         await asyncio.sleep(10)
         while True:
             try:
-                if not global_settings.discord_check_new_submission_enabled:
+                if (
+                    not global_settings.discord_check_new_submission_enabled
+                    or not global_settings.reddit_bridge
+                ):
                     break
 
-                async for submission in stream_new_submissions():
+                async for submission in global_settings.reddit_bridge.get_comments():
                     # Skip if we've already posted this submission
                     submission_id = submission.id
                     if submission_id in already_posted_submissions:
@@ -287,7 +271,6 @@ class RLEsportsBot(discord.Client):
 
     async def check_new_verified_comments(self):
         """Check Reddit verified comments directly and post in discord channel."""
-        from reddit_bridge import stream_verified_comments
 
         # Track already posted verified comments to avoid duplicates
         already_posted_verified_comments: set[str] = set()
@@ -296,10 +279,15 @@ class RLEsportsBot(discord.Client):
         await asyncio.sleep(10)
         while True:
             try:
-                if not global_settings.discord_check_new_verified_comments_enabled:
+                if (
+                    not global_settings.discord_check_new_verified_comments_enabled
+                    or not global_settings.reddit_bridge
+                ):
                     break
 
-                async for verified_comments in stream_verified_comments():
+                async for (
+                    verified_comments
+                ) in global_settings.reddit_bridge.get_comments():
                     # Skip if we've already posted this comment
                     comment_id = verified_comments.id
                     if comment_id in already_posted_verified_comments:
@@ -360,7 +348,6 @@ class RLEsportsBot(discord.Client):
 
     async def check_new_modfeed(self):
         """Check Reddit modmail/modlog directly and post in discord."""
-        from reddit_bridge import stream_modlog, stream_modmail
 
         # Track already posted modlog entries to avoid duplicates
         already_posted_modlog: set[str] = set()
@@ -373,12 +360,18 @@ class RLEsportsBot(discord.Client):
         await asyncio.sleep(10)
         while True:
             try:
-                if not global_settings.discord_check_new_modmail_enabled:
+                if (
+                    not global_settings.discord_check_new_modmail_enabled
+                    or not global_settings.reddit_bridge
+                ):
                     break
 
+                print("Starting Mod Log Check")
+
                 # Mod Log
-                async for item in stream_modlog():
+                async for item in global_settings.reddit_bridge.get_mod_logs():
                     # Skip if we've already posted this modlog entry
+                    print(item.id)
                     modlog_id = item.id
                     if modlog_id in already_posted_modlog:
                         continue
@@ -426,14 +419,16 @@ class RLEsportsBot(discord.Client):
                     embed.description = contents
 
                     # Send everything.
-                    try:
-                        await self.modlog_channel.send(embed=embed)
-                    except discord.HTTPException as e:
-                        # Message has invalid formatting. Just send basic msg.
-                        await self.modlog_channel.send(item.description)
+                    # try:
+                    #     await self.modlog_channel.send(embed=embed)
+                    # except discord.HTTPException as e:
+                    #     # Message has invalid formatting. Just send basic msg.
+                    #     await self.modlog_channel.send(item.description)
+
+                print("Done mod log check")
 
                 # Mod Mail
-                async for conversation in stream_modmail():
+                async for conversation in global_settings.reddit_bridge.get_modmail():
                     # Skip if we've already posted this modmail conversation
                     # Use same dedupe logic as in stream_modmail (id + message count)
                     dedupe_id = f"{conversation.id}:{len(conversation.messages)}"
@@ -506,10 +501,13 @@ class RLEsportsBot(discord.Client):
         await asyncio.sleep(10)
         while True:
             try:
+                if not global_settings.reddit_bridge:
+                    break
+
                 # Count items in modqueue
-                modqueue_count = 0
-                for _ in global_settings.sub.mod.modqueue(limit=None):
-                    modqueue_count += 1
+                modqueue_count = (
+                    await global_settings.reddit_bridge.get_modqueue_count()
+                )
 
                 global_settings.rleb_log_info(
                     f"[DISCORD]: Modqueue check - {modqueue_count} items in queue"
@@ -571,13 +569,13 @@ class RLEsportsBot(discord.Client):
 
     async def process_reddit_inbox(self):
         """Process Reddit inbox for flair requests."""
-        from reddit_bridge import process_inbox
 
         await asyncio.sleep(10)
         while True:
             try:
-                if global_settings.monitor_subreddit_enabled:
-                    await process_inbox()
+                # Needs to be fixed still.
+                # if global_settings.monitor_subreddit_enabled:
+                #     continue
 
                 global_settings.asyncio_threads_heartbeats["inbox"] = datetime.now()
             except Exception as e:
@@ -650,6 +648,9 @@ class RLEsportsBot(discord.Client):
         await asyncio.sleep(10)
         while True:
             try:
+                if not global_settings.reddit_bridge:
+                    break
+
                 auto_updates = global_settings.auto_updates.values()
                 if auto_updates:
                     global_settings.rleb_log_info(
@@ -694,22 +695,12 @@ class RLEsportsBot(discord.Client):
                         # 17oh7u8
                         submission_id = reddit_url.split("/comments/")[1].split("/")[0]
 
-                        # Run blocking PRAW operations in thread pool
-                        def update_reddit():
-                            submission = global_settings.r.submission(id=submission_id)
-                            if not submission:
-                                return False
-                            if submission.selftext == fresh_markdown:
-                                return None
-                            submission.edit(fresh_markdown)
-                            return True
-
-                        result = await asyncio.to_thread(update_reddit)
-
+                        # Update the thread with new results
+                        result = await global_settings.reddit_bridge.update_submission(
+                            submission_id=submission_id, text=fresh_markdown
+                        )
+                        # TODO is this logic correct?
                         if result is False:
-                            global_settings.rleb_log_error(
-                                f"Could not find reddit url to auto update {reddit_url}"
-                            )
                             del global_settings.auto_updates[auto_update.auto_update_id]
                             Data.singleton().delete_auto_update(auto_update)
                         elif result is True:
@@ -878,6 +869,9 @@ class RLEsportsBot(discord.Client):
             if not global_settings.is_discord_mod(message.author):
                 return
 
+            if not global_settings.reddit_bridge:
+                return
+
             global_settings.rleb_log_info("[DISCORD]: Starting flair census.")
             await message.channel.send(
                 "Starting flair census, this may take a minute..."
@@ -898,11 +892,17 @@ class RLEsportsBot(discord.Client):
                     divider = ","
             except Exception:
                 divider = ","
-            await handle_flair_census(sub, amount, message.channel, divider)
+            census_data = await global_settings.reddit_bridge.get_flair_census(
+                amount, divider
+            )
+            await stdout.print_to_channel(message.channel, census_data, "Census")
             await self.add_response(message)
 
         elif discord_message == "!verified" and is_staff(message.author):
             if not global_settings.is_discord_mod(message.author):
+                return
+
+            if not global_settings.reddit_bridge:
                 return
 
             global_settings.rleb_log_info(
@@ -911,11 +911,17 @@ class RLEsportsBot(discord.Client):
             await message.channel.send(
                 "Retrieving all verified flairs, this may take a minute..."
             )
-            await handle_verified_flair_list(sub, message.channel)
+            flair_data = (
+                await global_settings.reddit_bridge.handle_verified_flair_list()
+            )
+            await stdout.print_to_channel(message.channel, flair_data, "Verified Users")
             await self.add_response(message)
 
         elif discord_message.startswith("!migrate") and is_staff(message.author):
             if not global_settings.is_discord_mod(message.author):
+                return
+
+            if not global_settings.reddit_bridge:
                 return
 
             # increase asyncio timeout so it doesn't seem like a crash
@@ -934,11 +940,10 @@ class RLEsportsBot(discord.Client):
                 )
                 global_settings.asyncio_timeout = 60 * 5
                 return
-            count = 0
+
             await message.channel.send("Checking flairs...")
-            for flair in sub.flair(limit=None):
-                if flair["flair_text"] != None and from_flair in flair["flair_text"]:
-                    count += 1
+            count = await global_settings.reddit_bridge.get_flair_count(from_flair)
+
             if from_flair != None and to_flair != None:
                 await message.channel.send(
                     "Type '!confirm migrate' to migrate '{0}' -> '{1}' in the next 2 minutes. This will affect {2} users.".format(
@@ -957,6 +962,9 @@ class RLEsportsBot(discord.Client):
             if not global_settings.is_discord_mod(message.author):
                 return
 
+            if not global_settings.reddit_bridge:
+                return
+
             # increase asyncio timeout so it doesn't seem like a crash
             global_settings.asyncio_timeout = 60 * 15
 
@@ -969,22 +977,10 @@ class RLEsportsBot(discord.Client):
             await message.channel.send(
                 "Starting migration {0} -> {1}.".format(self.from_flair, self.to_flair)
             )
-            for flair in sub.flair(limit=None):
-                if (
-                    flair["flair_text"] != None
-                    and self.from_flair in flair["flair_text"]
-                ):
-                    user = flair["user"]
-                    new_flair = flair["flair_text"].replace(
-                        self.from_flair, self.to_flair
-                    )
-                    global_settings.rleb_log_info(
-                        "[DISCORD]: Setting {0} to {1} (was {2})".format(
-                            user.name, new_flair, flair["flair_text"]
-                        )
-                    )
-                    sub.flair.set(user, text=new_flair, css_class="")
-            await message.channel.send("Flair migration finished.")
+            count = await global_settings.reddit_bridge.migrate_flairs(
+                self.from_flair, self.to_flair
+            )
+            await message.channel.send(f"Migrated {count} users.")
             await self.add_response(message)
 
             # reset asyncio timeout
@@ -1175,7 +1171,7 @@ class RLEsportsBot(discord.Client):
 
             try:
                 # Close Discord connection cleanly so sockets/files are released
-                await self.bot.close()
+                await self.close()
             except Exception:
                 pass
 
@@ -1890,7 +1886,7 @@ class RLEsportsBot(discord.Client):
 
             total_time = seconds_multiplier[last_char] * units
             remindme: Remindme = Data.singleton().write_remindme(
-                user, reminder_message, total_time, message.channel.id
+                user, reminder_message, int(total_time), message.channel.id
             )
             # Remindme will be picked up by the check_remindmes() polling loop
             await message.channel.send(
@@ -1942,12 +1938,10 @@ class RLEsportsBot(discord.Client):
                 pass
 
             original_meme_subreddit = self.meme_subreddit
-            try:
-                global_settings.r.subreddit(self.meme_subreddit)
-                self.meme_subreddit = subreddit
-                await self.send_meme(message.channel)
-            except:
-                await message.channel("That isn't a real place!")
+            self.meme_subreddit = subreddit
+            result = await self.send_meme(message.channel)
+            if result == False:
+                await message.channel("Failed to update mem channel!")
                 self.meme_subreddit = original_meme_subreddit
 
             await self.add_response(message)

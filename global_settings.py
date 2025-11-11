@@ -2,13 +2,14 @@
 import configparser
 import threading
 import time
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 import praw
 import requests
 import json
 from datetime import datetime
 from threading import Lock, Timer
 import os
+from typing import TYPE_CHECKING
 from sys import platform
 import discord
 
@@ -74,7 +75,13 @@ thread_crashes = {"asyncio": 0, "thread": 0}
 last_datetime_crashed: Dict[str, datetime | None] = {"asyncio": None, "thread": None}
 
 # Discord client reference for direct communication (set by discord_bridge on startup)
-discord_client = None
+discord_client: Optional[discord.Client] = None
+
+# Type checking for RedditBridge to avoid circular imports
+if TYPE_CHECKING:
+    from reddit_bridge import RedditBridge
+# Reddit bridge reference for direct communication (set by rleb_core on startup)
+reddit_bridge: Optional["RedditBridge"] = None
 
 # Mapping of auto_update_ids to autoupdates.
 auto_updates: Dict[int, AutoUpdate] = {}
@@ -111,28 +118,6 @@ def refresh_autoupdates() -> bool:
 # REDDIT
 reddit_enabled = True
 target_sub = "rocketleagueesports" if RUNNING_MODE == "production" else "rlcsnewstest"
-r = praw.Reddit(
-    client_id=os.environ.get("REDDIT_CLIENT_ID")
-    or config["Reddit"]["REDDIT_CLIENT_ID"],
-    client_secret=os.environ.get("REDDIT_CLIENT_SECRET")
-    or config["Reddit"]["REDDIT_CLIENT_SECRET"],
-    user_agent=os.environ.get("REDDIT_USER_AGENT")
-    or config["Reddit"]["REDDIT_USER_AGENT"],
-    username=os.environ.get("REDDIT_USERNAME") or config["Reddit"]["REDDIT_USERNAME"],
-    password=os.environ.get("REDDIT_PASSWORD") or config["Reddit"]["REDDIT_PASSWORD"],
-)
-sub = r.subreddit(target_sub)
-mod_log = sub.mod.stream.log(
-    pause_after=0,
-    skip_existing=True,
-)
-
-# Try to fetch moderators, but handle failures gracefully (e.g., in test environments)
-try:
-    moderators = sub.moderator()
-except Exception:
-    # In test environments or when Reddit API is unavailable, use empty list
-    moderators = []
 
 read_new_submissions_enabled = True
 read_new_verified_comments_enabled = True
@@ -150,16 +135,6 @@ allowed_mod_actions = [
     "create_scheduled_post",
     "edit_scheduled_post",
 ]  # list of mod actions which should show up in discord #mod-log channgel
-
-
-def is_mod(username: str) -> bool:
-    """Return true if username belongs to a sub moderator.
-
-    Args:
-        user (str): Queried subreddit username.
-    """
-    return username in list(map(lambda x: x.name, moderators))
-
 
 flair_pattern = r"\:\w+\:"
 number_of_allowed_flairs = 3  # the number of allowed user flairs on the sub
@@ -209,7 +184,8 @@ SCHEDULE_CHAT_CHANNEL_ID = int(
     or config["Discord"]["SCHEDULE_CHAT_CHANNEL_ID"]  # type: ignore
 )
 ROSTER_NEWS_CHANNEL_ID = int(
-    os.environ.get("ROSTER_NEWS_CHANNEL_ID") or config["Discord"]["ROSTER_NEWS_CHANNEL_ID"]  # type: ignore
+    os.environ.get("ROSTER_NEWS_CHANNEL_ID")
+    or config["Discord"]["ROSTER_NEWS_CHANNEL_ID"]  # type: ignore
 )
 MODLOG_CHANNEL_ID = int(
     os.environ.get("MODLOG_CHANNEL_ID") or config["Discord"]["MODLOG_CHANNEL_ID"]  # type: ignore
@@ -223,7 +199,8 @@ VERIFIED_COMMENTS_CHANNEL_ID = int(
     or config["Discord"]["VERIFIED_COMMENTS_CHANNEL_ID"]  # type: ignore
 )
 MODERATION_CHANNEL_ID = int(
-    os.environ.get("MODERATION_CHANNEL_ID") or config["Discord"]["MODERATION_CHANNEL_ID"]  # type: ignore
+    os.environ.get("MODERATION_CHANNEL_ID")
+    or config["Discord"]["MODERATION_CHANNEL_ID"]  # type: ignore
 )
 
 verified_needle = "verified"
@@ -265,10 +242,12 @@ hooks = [
 greetings = ["Incoming!", "Why hello there.", "Hola, amigo", "Bonjour, mon ami"]
 success_emojis = ["🥳", "💪", "✅", "🔥", "🚀", "💯", "🌟", "🏆", "🆒"]
 verified_moderators = json.loads(
-    os.environ.get("VERIFIED_MODERATORS") or config.get("Discord", "VERIFIED_MODERATORS", raw=True)  # type: ignore
+    os.environ.get("VERIFIED_MODERATORS")
+    or config.get("Discord", "VERIFIED_MODERATORS", raw=True)  # type: ignore
 )
 moderator_emails = json.loads(
-    os.environ.get("MODERATOR_EMAILS") or config.get("Discord", "MODERATOR_EMAILS", raw=True)  # type: ignore
+    os.environ.get("MODERATOR_EMAILS")
+    or config.get("Discord", "MODERATOR_EMAILS", raw=True)  # type: ignore
 )
 
 # Mapping of discord staff usernames to their ids
