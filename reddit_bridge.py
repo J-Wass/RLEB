@@ -181,6 +181,7 @@ async def process_inbox():
 async def stream_modlog():
     """Stream mod log entries. Async generator that yields modlog entries."""
     try:
+
         def get_modlog():
             logs_to_yield = []
             try:

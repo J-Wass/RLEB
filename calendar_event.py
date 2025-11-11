@@ -64,8 +64,8 @@ class CalendarEvent:
             self.title = self.rawtext
             if "<a" in self.description:
                 # Parse HTML to extract plain text from anchor tag (and any nested tags)
-                soup = BeautifulSoup(self.description, 'lxml')
-                anchor = soup.find('a')
+                soup = BeautifulSoup(self.description, "lxml")
+                anchor = soup.find("a")
                 if anchor:
                     self.link = anchor.get_text(strip=True)
                 else:
