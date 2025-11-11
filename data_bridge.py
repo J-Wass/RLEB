@@ -268,7 +268,7 @@ class Data(DataStub):
             error_msg = f"Database error: {e.pgerror if e.pgerror else str(e)}"
             if e.pgcode:
                 error_msg += f"\nError code: {e.pgcode}"
-            if hasattr(e, 'diag') and e.diag:
+            if hasattr(e, "diag") and e.diag:
                 if e.diag.message_primary:
                     error_msg += f"\nDetails: {e.diag.message_primary}"
                 if e.diag.message_detail:
@@ -276,7 +276,9 @@ class Data(DataStub):
             raise ValueError(error_msg) from e
         except Exception as e:
             # Catch any other unexpected errors
-            raise ValueError(f"Unexpected error executing query: {type(e).__name__}: {str(e)}") from e
+            raise ValueError(
+                f"Unexpected error executing query: {type(e).__name__}: {str(e)}"
+            ) from e
 
     def get_db_tables(self) -> int:
         with self.postgres_connection() as db:

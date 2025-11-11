@@ -124,11 +124,11 @@ r = praw.Reddit(
 )
 sub = r.subreddit(target_sub)
 mod_log = praw.models.util.stream_generator(
-                    sub.mod.log,
-                    pause_after=0,
-                    skip_existing=True,
-                    attribute_name="id",
-                )
+    sub.mod.log,
+    pause_after=0,
+    skip_existing=True,
+    attribute_name="id",
+)
 
 # Try to fetch moderators, but handle failures gracefully (e.g., in test environments)
 try:

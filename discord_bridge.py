@@ -821,7 +821,10 @@ class RLEsportsBot(discord.Client):
                 await message.channel.send("daz broken :/")
             else:
                 await stdout.print_to_channel(
-                    message.channel, msg_to_send, title="User Statistics", use_hook=False
+                    message.channel,
+                    msg_to_send,
+                    title="User Statistics",
+                    use_hook=False,
                 )
 
         elif discord_message.startswith("!census") and is_staff(message.author):
