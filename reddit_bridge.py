@@ -52,7 +52,7 @@ class RedditBridge:
         self.subreddit = self.reddit.subreddit(subreddit_name)
         self.mod_log = self.subreddit.mod.stream.log(
             pause_after=0,
-            skip_existing=False,
+            skip_existing=True,
         )
 
         self.submission_stream = self.subreddit.stream.submissions(
@@ -94,7 +94,6 @@ class RedditBridge:
         """Async generator that yields verified comments."""
         while True:
             if len(self.comments) > 0:
-                print("Yielding something")
                 yield self.comments.pop(0)
             else:
                 break
@@ -137,8 +136,30 @@ class RedditBridge:
 
     async def get_modqueue_count(self):
         modqueue_count = 0
-        for item in self.subreddit.mod.modqueue():
-            modqueue_count += 1
+        try:
+            for item in self.subreddit.mod.modqueue():
+                modqueue_count += 1
+        except prawcore.exceptions.TooManyRequests as e:
+            global_settings.rleb_log_error(
+                f"[REDDIT]: get_modqueue_count() -> {str(e)}"
+            )
+            await asyncio.sleep(60 * 11)
+        except prawcore.exceptions.ServerError as e:
+            global_settings.rleb_log_error(
+                f"[REDDIT]: get_modqueue_count() -> {str(e)}"
+            )
+            await asyncio.sleep(10)  # Reddit server borked, try again
+            pass
+        except prawcore.exceptions.RequestException as e:
+            global_settings.rleb_log_error(
+                f"[REDDIT]: get_modqueue_count() -> {str(e)}"
+            )
+            await asyncio.sleep(60)  # timeout error, just wait awhile and try again
+        except Exception as e:
+            global_settings.rleb_log_error(f"[REDDIT]: get_modqueue_count - {str(e)}")
+            global_settings.rleb_log_error(traceback.format_exc())
+            global_settings.thread_crashes["asyncio"] += 1
+            global_settings.last_datetime_crashed["asyncio"] = datetime.now()
         return modqueue_count
 
     async def stream_new_submissions(self):
@@ -150,19 +171,32 @@ class RedditBridge:
                     if submission is None:
                         break
                     self.submissions.append(submission)
-            except AssertionError as e:
-                if "429" in str(e):
-                    await asyncio.sleep(60 * 11)
-                    global_settings.rleb_log_error(
-                        f"[REDDIT]: stream_new_submissions() -> {str(e)}"
-                    )
+
+            except prawcore.exceptions.TooManyRequests as e:
+                global_settings.rleb_log_error(
+                    f"[REDDIT]: stream_new_submissions() -> {str(e)}"
+                )
+                await asyncio.sleep(60 * 11)
             except prawcore.exceptions.ServerError as e:
-                pass  # Reddit server borked, try again
+                self.submission_stream = self.subreddit.stream.submissions(
+                    pause_after=0, skip_existing=True
+                )
+                global_settings.rleb_log_error(
+                    f"[REDDIT]: stream_new_submissions() -> {str(e)}"
+                )
+                await asyncio.sleep(10)  # Reddit server borked, try again
+                pass
             except prawcore.exceptions.RequestException as e:
+                global_settings.rleb_log_error(
+                    f"[REDDIT]: stream_new_submissions() -> {str(e)}"
+                )
                 await asyncio.sleep(60)  # timeout error, just wait awhile and try again
             except Exception as e:
+                self.submission_stream = self.subreddit.stream.submissions(
+                    pause_after=0, skip_existing=True
+                )
                 global_settings.rleb_log_error(
-                    "[REDDIT]: Streaming new submissions failed - {0}".format(e)
+                    f"[REDDIT]: Streaming new submissions failed - {str(e)}"
                 )
                 global_settings.rleb_log_error(traceback.format_exc())
                 global_settings.thread_crashes["asyncio"] += 1
@@ -172,7 +206,6 @@ class RedditBridge:
     async def stream_verified_comments(self):
         """Stream verified comments. Updates self.comments when a new verified comment is found."""
         while True:
-            print("STREAMING VERIFIED COMMENTS")
             try:
                 for comment in self.comment_stream:
                     if comment is None:
@@ -192,24 +225,35 @@ class RedditBridge:
                             self.comments.append(comment)
                             break
 
-            except AssertionError as e:
-                if "429" in str(e):
-                    await asyncio.sleep(60 * 11)
-                    global_settings.rleb_log_error(
-                        f"[REDDIT]: stream_verified_comments() -> {str(e)}"
-                    )
+            except prawcore.exceptions.TooManyRequests as e:
+                global_settings.rleb_log_error(
+                    f"[REDDIT]: stream_verified_comments() -> {str(e)}"
+                )
+                await asyncio.sleep(60 * 11)
             except prawcore.exceptions.ServerError as e:
-                pass  # Reddit server borked, try again
+                self.comment_stream = self.subreddit.stream.comments(
+                    pause_after=0, skip_existing=True
+                )
+                global_settings.rleb_log_error(
+                    f"[REDDIT]: stream_verified_comments() -> {str(e)}"
+                )
+                await asyncio.sleep(10)  # Reddit server borked, try again
+                pass
             except prawcore.exceptions.RequestException as e:
+                global_settings.rleb_log_error(
+                    f"[REDDIT]: stream_verified_comments() -> {str(e)}"
+                )
                 await asyncio.sleep(60)  # timeout error, just wait awhile and try again
             except Exception as e:
+                self.comment_stream = self.subreddit.stream.comments(
+                    pause_after=0, skip_existing=True
+                )
                 global_settings.rleb_log_error(
-                    "[REDDIT]: Streaming verified comments failed - {0}".format(e)
+                    f"[REDDIT]: Streaming new verified comments failed - {str(e)}"
                 )
                 global_settings.rleb_log_error(traceback.format_exc())
                 global_settings.thread_crashes["asyncio"] += 1
                 global_settings.last_datetime_crashed["asyncio"] = datetime.now()
-            print("DONE STREAMING VERIFIED COMMENTS")
             await asyncio.sleep(10)
 
     async def process_inbox(self):
@@ -230,19 +274,25 @@ class RedditBridge:
 
                     # Mark message as read now that we have processed it.
                     self.reddit.inbox.mark_read([unread_message])
-            except AssertionError as e:
-                if "429" in str(e):
-                    await asyncio.sleep(60 * 11)
-                    global_settings.rleb_log_error(
-                        f"[REDDIT]: process_inbox() -> {str(e)}"
-                    )
+            except prawcore.exceptions.TooManyRequests as e:
+                global_settings.rleb_log_error(f"[REDDIT]: process_inbox() -> {str(e)}")
+                await asyncio.sleep(60 * 11)
             except prawcore.exceptions.ServerError as e:
-                pass  # Reddit server borked, wait an interval and try again
+                self.inbox_stream = self.reddit.inbox.stream(
+                    pause_after=0, skip_existing=True
+                )
+                global_settings.rleb_log_error(f"[REDDIT]: process_inbox() -> {str(e)}")
+                await asyncio.sleep(10)  # Reddit server borked, try again
+                pass
             except prawcore.exceptions.RequestException as e:
+                global_settings.rleb_log_error(f"[REDDIT]: process_inbox() -> {str(e)}")
                 await asyncio.sleep(60)  # timeout error, just wait awhile and try again
             except Exception as e:
+                self.inbox_stream = self.reddit.inbox.stream(
+                    pause_after=0, skip_existing=True
+                )
                 global_settings.rleb_log_error(
-                    "[REDDIT]: Processing inbox failed - {0}".format(e)
+                    f"[REDDIT]: Streaming Inbox failed - {str(e)}"
                 )
                 global_settings.rleb_log_error(traceback.format_exc())
                 global_settings.thread_crashes["asyncio"] += 1
@@ -268,19 +318,27 @@ class RedditBridge:
                         continue
                     self.mod_logs.append(log)
 
-            except AssertionError as e:
-                if "429" in str(e):
-                    await asyncio.sleep(60 * 11)
-                    global_settings.rleb_log_error(
-                        f"[REDDIT]: stream_modlog() -> {str(e)}"
-                    )
+            except prawcore.exceptions.TooManyRequests as e:
+                global_settings.rleb_log_error(f"[REDDIT]: stream_modlog() -> {str(e)}")
+                await asyncio.sleep(60 * 11)
             except prawcore.exceptions.ServerError as e:
-                pass  # Reddit server borked, wait an interval and try again
+                self.mod_log = self.subreddit.mod.stream.log(
+                    pause_after=0,
+                    skip_existing=True,
+                )
+                global_settings.rleb_log_error(f"[REDDIT]: stream_modlog() -> {str(e)}")
+                await asyncio.sleep(10)  # Reddit server borked, try again
+                pass
             except prawcore.exceptions.RequestException as e:
+                global_settings.rleb_log_error(f"[REDDIT]: stream_modlog() -> {str(e)}")
                 await asyncio.sleep(60)  # timeout error, just wait awhile and try again
             except Exception as e:
+                self.mod_log = self.subreddit.mod.stream.log(
+                    pause_after=0,
+                    skip_existing=True,
+                )
                 global_settings.rleb_log_error(
-                    "[REDDIT]: Streaming modlog failed - {0}".format(e)
+                    f"[REDDIT]: Streaming Mod Log failed - {str(e)}"
                 )
                 global_settings.rleb_log_error(traceback.format_exc())
                 global_settings.thread_crashes["asyncio"] += 1
@@ -359,19 +417,27 @@ class RedditBridge:
                         continue
 
                     self.conversations.append(conversation)
-            except AssertionError as e:  # rate limit
-                if "429" in str(e):
-                    await asyncio.sleep(60 * 11)
-                    global_settings.rleb_log_error(
-                        f"[REDDIT]: stream_modmail() -> {str(e)}"
-                    )
+            except prawcore.exceptions.TooManyRequests as e:
+                global_settings.rleb_log_error(
+                    f"[REDDIT]: stream_modmail() -> {str(e)}"
+                )
+                await asyncio.sleep(60 * 11)
             except prawcore.exceptions.ServerError as e:
-                pass  # Reddit server borked, wait an interval and try again
+                self.modmail_stream = self.subreddit.modmail.conversations(state="new")
+                global_settings.rleb_log_error(
+                    f"[REDDIT]: stream_modmail() -> {str(e)}"
+                )
+                await asyncio.sleep(10)  # Reddit server borked, try again
+                pass
             except prawcore.exceptions.RequestException as e:
+                global_settings.rleb_log_error(
+                    f"[REDDIT]: stream_modmail() -> {str(e)}"
+                )
                 await asyncio.sleep(60)  # timeout error, just wait awhile and try again
             except Exception as e:
+                self.modmail_stream = self.subreddit.modmail.conversations(state="new")
                 global_settings.rleb_log_error(
-                    "[REDDIT]: Streaming modmail failed - {0}".format(e)
+                    f"[REDDIT]: Streaming modmail failed - {str(e)}"
                 )
                 global_settings.rleb_log_error(traceback.format_exc())
                 global_settings.thread_crashes["asyncio"] += 1
@@ -387,7 +453,7 @@ class RedditBridge:
         count = 0
 
         tries = 0
-        for meme in meme_sub.top("day"):
+        for meme in meme_sub.top(time_filter="day"):
             if tries > 3:
                 return None
             if (
@@ -554,7 +620,7 @@ class RedditBridge:
 
             if first_n_flairs != flairs:
                 message = f"\"{body}\" wasn't formatted correctly!\n\nMake sure that you are using {global_settings.number_of_allowed_flairs} or less flairs and that your flairs are spelled correctly.\n\nSee all allowed flairs: https://www.reddit.com/r/RocketLeagueEsports/wiki/flairs#wiki_how_do_i_get_2_user_flairs.3F \n\n(I'm a bot. Contact modmail to get in touch with a real person: https://reddit.com/message/compose?to=/r/RocketLeagueEsports)"
-                user.message("Error with flair request", message)
+                user.message(subject="Error with flair request", message=message)
             else:
                 final_flair_text = " ".join(first_n_flairs)
                 self.subreddit.flair.set(user, text=final_flair_text, css_class="")

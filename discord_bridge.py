@@ -18,7 +18,6 @@ from data_bridge import AutoUpdate, Data, Remindme
 from global_settings import user_names_to_ids
 from liqui.team_lookup import handle_team_lookup
 from liqui.group_lookup import handle_group_lookup
-from census import handle_flair_census, handle_verified_flair_list
 from calendar_event import handle_calendar_lookup
 from tasks import handle_task_lookup, get_scheduled_posts, get_weekly_events
 from liqui.swiss_lookup import handle_swiss_lookup
