@@ -1,10 +1,9 @@
 import asyncio
-import prawcore
-import praw
+import asyncprawcore as prawcore
+import asyncpraw
 import traceback
 import random
 import re
-import threading
 from data_bridge import Data
 from datetime import datetime, timezone
 
@@ -42,14 +41,17 @@ class RedditBridge:
         subreddit_name: str,
     ):
         rleb_log_info("[REDDIT]: RedditBridge initialized.")
-        self.reddit = praw.Reddit(
+        self.reddit = asyncpraw.Reddit(
             client_id=client_id,
             client_secret=client_secret,
             user_agent=user_agent,
             username=username,
             password=password,
         )
-        self.subreddit = self.reddit.subreddit(subreddit_name)
+        self.subreddit_name = subreddit_name
+
+    async def start(self):
+        self.subreddit = await self.reddit.subreddit(self.subreddit_name)
         self.mod_log = self.subreddit.mod.stream.log(
             pause_after=0,
             skip_existing=True,
@@ -70,25 +72,13 @@ class RedditBridge:
         self.conversations = []
         self.moderators = []
 
-        thread = threading.Thread(target=self._start_event_loops, daemon=True)
-        thread.start()
-
-    def _start_event_loops(self):
-        rleb_log_info("[REDDIT]: Setting up loops.")
-
-        self.event_loop = asyncio.new_event_loop()
+        self.event_loop = asyncio.get_event_loop()
 
         self.event_loop.create_task(self.stream_new_submissions())
         self.event_loop.create_task(self.stream_verified_comments())
         self.event_loop.create_task(self.process_inbox())
         self.event_loop.create_task(self.stream_modlog())
         self.event_loop.create_task(self.stream_modmail())
-
-        rleb_log_info("[REDDIT]: Loops done.")
-
-        self.event_loop.run_forever()
-
-        rleb_log_info("[REDDIT]: Done.")
 
     async def get_comments(self):
         """Async generator that yields verified comments."""
@@ -137,7 +127,7 @@ class RedditBridge:
     async def get_modqueue_count(self):
         modqueue_count = 0
         try:
-            for item in self.subreddit.mod.modqueue():
+            async for item in self.subreddit.mod.modqueue():
                 modqueue_count += 1
         except prawcore.exceptions.TooManyRequests as e:
             global_settings.rleb_log_error(
@@ -167,7 +157,7 @@ class RedditBridge:
         while True:
             try:
                 # This will check for any new submissions and add them to self.submissions
-                for submission in self.submission_stream:
+                async for submission in self.submission_stream:
                     if submission is None:
                         break
                     self.submissions.append(submission)
@@ -207,7 +197,7 @@ class RedditBridge:
         """Stream verified comments. Updates self.comments when a new verified comment is found."""
         while True:
             try:
-                for comment in self.comment_stream:
+                async for comment in self.comment_stream:
                     if comment is None:
                         break
 
@@ -260,7 +250,7 @@ class RedditBridge:
         """Process inbox messages, handling flair requests."""
         while True:
             try:
-                for unread_message in self.inbox_stream:
+                async for unread_message in self.inbox_stream:
                     if unread_message is None:
                         break
 
@@ -270,10 +260,10 @@ class RedditBridge:
                     # if message is a flair request
                     subject = unread_message.subject.lower().replace(" ", "")
                     if subject in multiflair_request_keys:
-                        self.handle_flair_request(user, body)
+                        await self.handle_flair_request(user, body)
 
                     # Mark message as read now that we have processed it.
-                    self.reddit.inbox.mark_read([unread_message])
+                    await self.reddit.inbox.mark_read([unread_message])
             except prawcore.exceptions.TooManyRequests as e:
                 global_settings.rleb_log_error(f"[REDDIT]: process_inbox() -> {str(e)}")
                 await asyncio.sleep(60 * 11)
@@ -303,7 +293,7 @@ class RedditBridge:
         """Stream mod log entries. Async generator that yields modlog entries."""
         while True:
             try:
-                for log in self.mod_log:
+                async for log in self.mod_log:
                     if log is None:
                         break
 
@@ -352,7 +342,7 @@ class RedditBridge:
                 # Within-batch deduplication (only for this single batch)
                 seen_in_batch: set[str] = set()
                 seen_in_batch_ordered: list[str] = []
-                for conversation in self.modmail_stream:
+                async for conversation in self.modmail_stream:
                     if not conversation or not isinstance(
                         conversation, ModmailConversation
                     ):
@@ -394,7 +384,7 @@ class RedditBridge:
                     # Handle multiflairs from subreddit.
                     subject = conversation.subject
                     if subject.lower().replace(" ", "") in multiflair_request_keys:
-                        self.handle_flair_request(
+                        await self.handle_flair_request(
                             conversation.authors[0],
                             conversation.messages[-1].body_markdown,
                         )
@@ -445,7 +435,7 @@ class RedditBridge:
             await asyncio.sleep(10)
 
     async def get_meme(self, meme_subreddit: str):
-        meme_sub = self.reddit.subreddit(meme_subreddit)
+        meme_sub = await self.reddit.subreddit(meme_subreddit)
         if meme_sub.over18:
             return
 
@@ -453,7 +443,7 @@ class RedditBridge:
         count = 0
 
         tries = 0
-        for meme in meme_sub.top(time_filter="day"):
+        async for meme in meme_sub.top(time_filter="day"):
             if tries > 3:
                 return None
             if (
@@ -548,7 +538,7 @@ class RedditBridge:
 
     async def get_flair_count(self, flair_text) -> int:
         count = 0
-        for flair in self.subreddit.flair(limit=None):
+        async for flair in self.subreddit.flair(limit=None):
             if flair["flair_text"] == flair_text:
                 count += 1
         return count
@@ -567,7 +557,7 @@ class RedditBridge:
 
     async def update_submission(self, submission_id, text):
         try:
-            submission = self.reddit.submission(submission_id)
+            submission = await self.reddit.submission(submission_id)
             if submission == None:
                 global_settings.rleb_log_error(
                     f"[REDDIT]: Submission {submission_id} not found"
@@ -578,7 +568,7 @@ class RedditBridge:
                     f"[REDDIT]: Submission {submission_id} is already up to date"
                 )
                 return False
-            submission.edit(text)
+            await submission.edit(text)
             return True
         except prawcore.exceptions.TooManyRequests as e:
             global_settings.rleb_log_error(f"[REDDIT]: update_submission() -> {str(e)}")
@@ -596,8 +586,8 @@ class RedditBridge:
             global_settings.thread_crashes["asyncio"] += 1
             global_settings.last_datetime_crashed["asyncio"] = datetime.now()
 
-    def handle_flair_request(
-        self, user: praw.reddit.models.Redditor, body: str
+    async def handle_flair_request(
+        self, user: asyncpraw.reddit.models.Redditor, body: str
     ) -> None:
         """Read, verify, and act of dualflair messages.
 
@@ -636,7 +626,7 @@ class RedditBridge:
 
             if first_n_flairs != flairs:
                 message = f"\"{body}\" wasn't formatted correctly!\n\nMake sure that you are using {global_settings.number_of_allowed_flairs} or less flairs and that your flairs are spelled correctly.\n\nSee all allowed flairs: https://www.reddit.com/r/RocketLeagueEsports/wiki/flairs#wiki_how_do_i_get_2_user_flairs.3F \n\n(I'm a bot. Contact modmail to get in touch with a real person: https://reddit.com/message/compose?to=/r/RocketLeagueEsports)"
-                user.message(subject="Error with flair request", message=message)
+                await user.message(subject="Error with flair request", message=message)
             else:
                 final_flair_text = " ".join(first_n_flairs)
                 self.subreddit.flair.set(user, text=final_flair_text, css_class="")
@@ -647,3 +637,27 @@ class RedditBridge:
                         user.name, final_flair_text
                     )
                 )
+
+    async def get_from_modlog(self, action: str, limit: int):
+        try:
+            logs = []
+            async for log in self.subreddit.mod.log(action=action, limit=limit):
+                logs.append(log)
+            return logs
+        except prawcore.exceptions.TooManyRequests as e:
+            global_settings.rleb_log_error(f"[REDDIT]: get_from_modlog() -> {str(e)}")
+            await asyncio.sleep(60 * 11)
+        except prawcore.exceptions.ServerError as e:
+            global_settings.rleb_log_error(f"[REDDIT]: get_from_modlog() -> {str(e)}")
+            await asyncio.sleep(10)  # Reddit server borked, try again
+            pass
+        except prawcore.exceptions.RequestException as e:
+            global_settings.rleb_log_error(f"[REDDIT]: get_from_modlog()) -> {str(e)}")
+            await asyncio.sleep(60)  # timeout error, just wait awhile and try again
+        except Exception as e:
+            global_settings.rleb_log_error(f"[REDDIT]: epdate_submission - {str(e)}")
+            global_settings.rleb_log_error(traceback.format_exc())
+            global_settings.thread_crashes["asyncio"] += 1
+            global_settings.last_datetime_crashed["asyncio"] = datetime.now()
+        finally:
+            return logs

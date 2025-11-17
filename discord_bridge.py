@@ -12,6 +12,7 @@ import math
 
 import health_check
 import global_settings
+from reddit_bridge import RedditBridge
 from liqui import diesel
 import stdout
 from data_bridge import AutoUpdate, Data, Remindme
@@ -83,6 +84,28 @@ class RLEsportsBot(discord.Client):
     async def on_ready(self):
         """Indicate bot has joined the discord and start background tasks."""
         global_settings.rleb_log_info("[DISCORD]: Logged on as {0}".format(self.user))
+
+        # Initialize RedditBridge and store it in global_settings
+        global_settings.reddit_bridge = RedditBridge(
+            client_id=os.environ.get("REDDIT_CLIENT_ID")
+            or global_settings.config["Reddit"]["REDDIT_CLIENT_ID"],
+            client_secret=os.environ.get("REDDIT_CLIENT_SECRET")
+            or global_settings.config["Reddit"]["REDDIT_CLIENT_SECRET"],
+            user_agent=os.environ.get("REDDIT_USER_AGENT")
+            or global_settings.config["Reddit"]["REDDIT_USER_AGENT"],
+            username=os.environ.get("REDDIT_USERNAME")
+            or global_settings.config["Reddit"]["REDDIT_USERNAME"],
+            password=os.environ.get("REDDIT_PASSWORD")
+            or global_settings.config["Reddit"]["REDDIT_PASSWORD"],
+            subreddit_name=global_settings.target_sub,
+        )
+
+        # start background tasts for reddit bridge
+        await global_settings.reddit_bridge.start()
+
+        global_settings.rleb_log_info(
+            f"[REDDIT]: Finished Reddit Startup for {global_settings.reddit_bridge.subreddit_name}"
+        )
 
         # Initialize all channels first
         self.new_post_channel = self.get_channel(global_settings.NEW_POSTS_CHANNEL_ID)  # type: ignore
@@ -1907,7 +1930,7 @@ class RLEsportsBot(discord.Client):
             user = message.author.name.lower() + "#" + message.author.discriminator
             if discrim == "0":
                 user = message.author.name.lower()
-            extra = None
+            extra = ""
             try:
                 user = tokens[1]
                 extra = tokens[2]

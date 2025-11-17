@@ -3,7 +3,6 @@ import os
 import discord_bridge
 import global_settings
 from global_settings import rleb_log_info
-from reddit_bridge import RedditBridge
 
 
 def start() -> None:
@@ -14,21 +13,6 @@ def start() -> None:
         "Starting RLEB. Running under {0} in {1} mode.".format(
             global_settings.RUNNING_ENVIRONMENT, global_settings.RUNNING_MODE
         )
-    )
-
-    # Initialize RedditBridge and store it in global_settings
-    global_settings.reddit_bridge = RedditBridge(
-        client_id=os.environ.get("REDDIT_CLIENT_ID")
-        or global_settings.config["Reddit"]["REDDIT_CLIENT_ID"],
-        client_secret=os.environ.get("REDDIT_CLIENT_SECRET")
-        or global_settings.config["Reddit"]["REDDIT_CLIENT_SECRET"],
-        user_agent=os.environ.get("REDDIT_USER_AGENT")
-        or global_settings.config["Reddit"]["REDDIT_USER_AGENT"],
-        username=os.environ.get("REDDIT_USERNAME")
-        or global_settings.config["Reddit"]["REDDIT_USERNAME"],
-        password=os.environ.get("REDDIT_PASSWORD")
-        or global_settings.config["Reddit"]["REDDIT_PASSWORD"],
-        subreddit_name=global_settings.target_sub,
     )
 
     # Load remindmes and autoupdates from database

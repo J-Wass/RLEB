@@ -67,7 +67,7 @@ async def tasks_for_user(tasks: list[Task], user: str) -> list[Task]:
 async def send_tasks(
     user: str,
     tasks: list[Task],
-    client: discord.ClientUser,
+    client: discord.Client,
     channel: discord.TextChannel,
 ) -> None:
     """DMs a user (discord name) all of their tasks."""
@@ -100,7 +100,7 @@ async def send_tasks(
 
 
 async def broadcast_tasks(
-    tasks: list[Task], client: discord.ClientUser, channel: discord.TextChannel
+    tasks: list[Task], client: discord.Client, channel: discord.TextChannel
 ) -> None:
     """Broadcasts the tasks to each user."""
 
@@ -193,9 +193,9 @@ def get_tasks(warning_callback=None) -> list[Task]:
 
 async def handle_task_lookup(
     channel: discord.TextChannel,
-    client: discord.ClientUser,
+    client: discord.Client,
     user: str = "all",
-    extra: str = None,
+    extra: str = "",
 ) -> None:
     """
     Looks up tasks in the google calendar for the provided user.
@@ -235,10 +235,10 @@ async def handle_task_lookup(
 
     except Exception as e:
         global_settings.rleb_log_info("Couldn't find tasks :(")
-        global_settings.rleb_log_info(e)
+        global_settings.rleb_log_info(str(e))
         global_settings.rleb_log_error(traceback.format_exc())
         await channel.send("Couldn't find tasks :(")
-        await channel.send(e)
+        await channel.send(str(e))
         await channel.send(traceback.format_exc())
 
 
@@ -276,20 +276,22 @@ class Event:
 
 
 async def get_scheduled_posts(
-    already_warned_scheduled_posts: list[int] = None,
+    already_warned_scheduled_posts: list[int] = [],
     days_ago: int = 5,
     thread_creation_channel=None,
 ) -> list[Event]:
     """Returns a list of scheduled posts from the sub starting `days_ago`, ignoring posts already in already_warned_scheduled_posts."""
     scheduled_posts = []
 
-    # Fetch logs in a thread to avoid blocking
-    def fetch_logs():
-        return list(
-            global_settings.sub.mod.log(action="create_scheduled_post", limit=20)
+    if not global_settings.reddit_bridge:
+        global_settings.rleb_log_error(
+            "[DISCORD] Reddit not initilized during get_scheduled_posts"
         )
+        return scheduled_posts
 
-    logs = await asyncio.to_thread(fetch_logs)
+    logs = await global_settings.reddit_bridge.get_from_modlog(
+        action="create_scheduled_post", limit=20
+    )
 
     for log in logs:
         if already_warned_scheduled_posts and log.id in already_warned_scheduled_posts:
@@ -327,7 +329,7 @@ async def get_scheduled_posts(
                 )
                 already_warned_scheduled_posts.append(log.id)
                 Data.singleton().write_already_warned_scheduled_post(
-                    log.id, datetime.now().timestamp()
+                    log.id, int(datetime.now().timestamp())
                 )
             global_settings.rleb_log_error(
                 f"Failed to handle get_scheduled_posts: {str(e)}"
@@ -371,14 +373,14 @@ async def task_alert_check(thread_creation_channel, client):
     one_week_ago_seconds_since_epoch = datetime.now().timestamp() - 7 * 86400
     already_warned_scheduled_posts = (
         Data.singleton().read_already_warned_scheduled_posts(
-            one_week_ago_seconds_since_epoch
+            int(one_week_ago_seconds_since_epoch)
         )
     )
 
     # List of scheduled post ids have already been confirmed to be scheduled.
     already_confirmed_scheduled_posts = (
         Data.singleton().read_already_confirmed_scheduled_posts(
-            one_week_ago_seconds_since_epoch
+            int(one_week_ago_seconds_since_epoch)
         )
     )
 
