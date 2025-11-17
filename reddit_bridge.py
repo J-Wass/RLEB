@@ -566,19 +566,35 @@ class RedditBridge:
                 self.subreddit.flair.set(user, text=new_flair, css_class="")
 
     async def update_submission(self, submission_id, text):
-        submission = self.reddit.submission(submission_id)
-        if submission == None:
-            global_settings.rleb_log_error(
-                f"[REDDIT]: Submission {submission_id} not found"
-            )
-            return False
-        if submission.selftext == text:
-            global_settings.rleb_log_info(
-                f"[REDDIT]: Submission {submission_id} is already up to date"
-            )
-            return False
-        submission.edit(text)
-        return True
+        try:
+            submission = self.reddit.submission(submission_id)
+            if submission == None:
+                global_settings.rleb_log_error(
+                    f"[REDDIT]: Submission {submission_id} not found"
+                )
+                return False
+            if submission.selftext == text:
+                global_settings.rleb_log_info(
+                    f"[REDDIT]: Submission {submission_id} is already up to date"
+                )
+                return False
+            submission.edit(text)
+            return True
+        except prawcore.exceptions.TooManyRequests as e:
+            global_settings.rleb_log_error(f"[REDDIT]: update_submission() -> {str(e)}")
+            await asyncio.sleep(60 * 11)
+        except prawcore.exceptions.ServerError as e:
+            global_settings.rleb_log_error(f"[REDDIT]: update_submission() -> {str(e)}")
+            await asyncio.sleep(10)  # Reddit server borked, try again
+            pass
+        except prawcore.exceptions.RequestException as e:
+            global_settings.rleb_log_error(f"[REDDIT]: update_submission) -> {str(e)}")
+            await asyncio.sleep(60)  # timeout error, just wait awhile and try again
+        except Exception as e:
+            global_settings.rleb_log_error(f"[REDDIT]: epdate_submission - {str(e)}")
+            global_settings.rleb_log_error(traceback.format_exc())
+            global_settings.thread_crashes["asyncio"] += 1
+            global_settings.last_datetime_crashed["asyncio"] = datetime.now()
 
     def handle_flair_request(
         self, user: praw.reddit.models.Redditor, body: str
