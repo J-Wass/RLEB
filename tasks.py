@@ -508,7 +508,7 @@ async def task_alert_check(thread_creation_channel, client):
                     await thread_creation_channel.send(message)
                     already_confirmed_scheduled_posts.append(scheduled_post.id)
                     Data.singleton().write_already_warned_confirmed_post(
-                        scheduled_post.id, datetime.now().timestamp()
+                        scheduled_post.id, int(datetime.now().timestamp())
                     )
 
         # Warn for each unscheduled task.

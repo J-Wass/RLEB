@@ -9,7 +9,8 @@ from datetime import datetime, timezone
 
 import global_settings
 from global_settings import rleb_log_info
-from praw.models import ModmailConversation
+from asyncpraw.models import ModmailConversation
+from pprint import pprint
 
 # keys that trigger multiflair request, from modmail or u/RLMatchThreads's inbox. The keys should be lowercase and stripped of whitespace.
 multiflair_request_keys = [
@@ -41,6 +42,7 @@ class RedditBridge:
         subreddit_name: str,
     ):
         rleb_log_info("[REDDIT]: RedditBridge initialized.")
+        # Create new async Praw instance
         self.reddit = asyncpraw.Reddit(
             client_id=client_id,
             client_secret=client_secret,
@@ -48,29 +50,43 @@ class RedditBridge:
             username=username,
             password=password,
         )
+        # Store our subreddit name
         self.subreddit_name = subreddit_name
 
+    # When called, it will create all async streaming tasks and add them to the event loop.
     async def start(self):
+        # We are required to await the subreddit before using it in future calls.
         self.subreddit = await self.reddit.subreddit(self.subreddit_name)
+
+        await self.subreddit.load()
+
+        # Streams all new mod log entries
         self.mod_log = self.subreddit.mod.stream.log(
             pause_after=0,
             skip_existing=True,
         )
-
+        # Streams all new submissions from the subreddit.
         self.submission_stream = self.subreddit.stream.submissions(
             pause_after=0, skip_existing=True
         )
+        # Streams all new comments from the subreddit
         self.comment_stream = self.subreddit.stream.comments(
             pause_after=0, skip_existing=True
         )
+        # Streams all new inbox messages
         self.inbox_stream = self.reddit.inbox.stream(pause_after=0, skip_existing=True)
-        self.modmail_stream = self.subreddit.modmail.conversations(state="new")
+        # Streams all new modmail entries
+        self.modmail_stream = self.subreddit.mod.stream.modmail_conversations(
+            pause_after=0, skip_existing=True
+        )
 
         self.comments = []
         self.submissions = []
         self.mod_logs = []
         self.conversations = []
         self.moderators = []
+
+        await self.get_moderators()
 
         self.event_loop = asyncio.get_event_loop()
 
@@ -114,7 +130,9 @@ class RedditBridge:
 
     async def get_moderators(self):
         """Populates self.moderators with the latest list of subreddit moderators"""
-        self.moderators = self.subreddit.moderators()
+        self.moderators = []
+        async for moderator in self.subreddit.moderator:
+            self.moderators.append(moderator)
 
     def is_mod(self, username: str) -> bool:
         """Return true if username belongs to a sub moderator.
@@ -125,6 +143,7 @@ class RedditBridge:
         return username in list(map(lambda x: x.name, self.moderators))
 
     async def get_modqueue_count(self):
+        """Returns the number of items currently in the modqueue"""
         modqueue_count = 0
         try:
             async for item in self.subreddit.mod.modqueue():
@@ -246,6 +265,7 @@ class RedditBridge:
                 global_settings.last_datetime_crashed["asyncio"] = datetime.now()
             await asyncio.sleep(10)
 
+    # TODO refactor
     async def process_inbox(self):
         """Process inbox messages, handling flair requests."""
         while True:
@@ -334,61 +354,49 @@ class RedditBridge:
                 global_settings.last_datetime_crashed["asyncio"] = datetime.now()
             await asyncio.sleep(10)
 
+    # TODO refactor
     async def stream_modmail(self):
         """Stream modmail conversations. Async generator that yields modmail conversations."""
         while True:
             try:
                 # Within-batch deduplication (only for this single batch)
-                seen_in_batch: set[str] = set()
-                seen_in_batch_ordered: list[str] = []
                 async for conversation in self.modmail_stream:
-                    if not conversation or not isinstance(
-                        conversation, ModmailConversation
-                    ):
-                        continue
-
-                    # only find modmails from 5m ago
-                    last_updated = datetime.fromisoformat(conversation.last_updated)
-                    if (
-                        abs((datetime.now(timezone.utc) - last_updated).total_seconds())
-                        > 60 * 5
-                    ):
-                        continue
-
-                    # Deduplicate within this batch
-                    dedupe_id = f"{conversation.id}:{len(conversation.messages)}"
-                    if dedupe_id in seen_in_batch:
-                        continue
-                    seen_in_batch.add(dedupe_id)
-                    seen_in_batch_ordered.append(dedupe_id)
-
-                    # Bound cache size: if above 100, dump the first 50 to not have the set grow unbounded
-                    if len(seen_in_batch_ordered) >= 100:
-                        for convo_to_delete in seen_in_batch_ordered[:50]:
-                            seen_in_batch.remove(convo_to_delete)
-                        seen_in_batch_ordered = seen_in_batch_ordered[50:]
-                        global_settings.rleb_log_info(
-                            "[REDDIT]: Modmail - Clearing modmail convo cache within batch"
-                        )
-
-                    # mark as read
-                    full_convo = self.subreddit.modmail(conversation.id)
-                    full_convo.read()
-                    conversation.read()
+                    if conversation == None:
+                        break
 
                     global_settings.rleb_log_info(
-                        "[REDDIT]: Modmail - {0}".format(dedupe_id)
+                        f"[REDDIT]: Modmail - {conversation.id}"
                     )
 
                     # Handle multiflairs from subreddit.
                     subject = conversation.subject
                     if subject.lower().replace(" ", "") in multiflair_request_keys:
-                        await self.handle_flair_request(
+                        # Fetch full information from server
+                        await conversation.load()
+
+                        shouldSkip = False
+                        # Check to see if we have already responded to this message.
+                        for message in conversation.messages:
+                            # Check if we have responded to this message.
+                            if message.author == "RLMatchThreads":
+                                # Archive the message since the bot won't try to do anything with it.
+                                await conversation.archive()
+                                global_settings.rleb_log_info(
+                                    f"[REDDIT] Skipping triflair conversation - {conversation.id}"
+                                )
+                                shouldSkip = True
+                                break
+                        if shouldSkip:
+                            continue
+                        result = await self.handle_flair_request(
                             conversation.authors[0],
                             conversation.messages[-1].body_markdown,
                         )
-                        if getattr(full_convo, "state", None) != "archived":
-                            full_convo.archive()
+                        # If we got an error, leave it alone so it can be tried again later.
+                        if result["Message"] == "Reddit Error":
+                            continue
+                        await conversation.reply(result["Message"])
+                        await conversation.archive()
                         continue
 
                     # Filter modmail from removal reasons.
@@ -537,6 +545,7 @@ class RedditBridge:
         return response
 
     async def get_flair_count(self, flair_text) -> int:
+        """Returns a count of users with specified flair text"""
         count = 0
         async for flair in self.subreddit.flair(limit=None):
             if flair["flair_text"] == flair_text:
@@ -544,6 +553,7 @@ class RedditBridge:
         return count
 
     async def migrate_flairs(self, from_flair, to_flair):
+        """Will change all users whose flair is from_flair to to_flair"""
         count = 0
         async for flair in self.subreddit.flair(limit=None):
             if flair["flair_text"] != None and from_flair in flair["flair_text"]:
@@ -558,6 +568,7 @@ class RedditBridge:
         return count
 
     async def update_submission(self, submission_id, text):
+        """Updates a submission with new text"""
         try:
             submission = await self.reddit.submission(submission_id)
             if submission == None:
@@ -590,11 +601,10 @@ class RedditBridge:
 
     async def handle_flair_request(
         self, user: asyncpraw.reddit.models.Redditor, body: str
-    ) -> None:
-        """Read, verify, and act of dualflair messages.
+    ):
+        """Read, verify, and act of triflair messages.
 
         Args:
-            sub (praw.models.Subreddit): Subreddit to change user flairs in.
             user (praw.models.Redditor): Redditor requesting flair change.
             body (str): Text of user-sent message.
         """
@@ -604,43 +614,100 @@ class RedditBridge:
             rleb_log_info(
                 "REDDIT: Set mod flair for {0} to {1}".format(user.name, body)
             )
+            result = {
+                "Succeeded": True,
+                "Message": f"I have successfully set your flairs to {body}",
+            }
+            return result
         else:
-            dualflairs = Data.singleton().read_triflairs()
-            if dualflairs:
-                allowed = list(map(lambda x: x[0], dualflairs))
-
-            # break string into :emoji: tokens
-            flairs = re.findall(global_settings.flair_pattern, body)
-            seen: set[str] = set()
-            flairs = [f for f in flairs if not (f in seen or seen.add(f))]  # type: ignore[func-returns-value]
-
-            # only get allowed emoji tokens
-            allowed_flairs = [f for f in flairs if f in allowed]
-
-            # take the first n flairs (n = # of allowed flairs)
-            first_n_flairs = allowed_flairs[: global_settings.number_of_allowed_flairs]
-
-            rleb_log_info(
-                "\nREDDIT: Flair request for u/{0}: {1}".format(user.name, body)
-            )
-            rleb_log_info("REDDIT: Requesting: {0}".format(",".join(flairs)))
-            rleb_log_info("REDDIT: Allowing: {0}".format(",".join(allowed_flairs)))
-
-            if first_n_flairs != flairs:
-                message = f"\"{body}\" wasn't formatted correctly!\n\nMake sure that you are using {global_settings.number_of_allowed_flairs} or less flairs and that your flairs are spelled correctly.\n\nSee all allowed flairs: https://www.reddit.com/r/RocketLeagueEsports/wiki/flairs#wiki_how_do_i_get_2_user_flairs.3F \n\n(I'm a bot. Contact modmail to get in touch with a real person: https://reddit.com/message/compose?to=/r/RocketLeagueEsports)"
-                await user.message(subject="Error with flair request", message=message)
+            triflairs = Data.singleton().read_triflairs()
+            if triflairs:
+                allowed = list(map(lambda x: x[0], triflairs))
             else:
-                final_flair_text = " ".join(first_n_flairs)
-                await self.subreddit.flair.set(
-                    user, text=final_flair_text, css_class=""
+                allowed = []
+
+            # Creates a set based upon regex pattern matching.
+            requested_flairs = set(re.findall(global_settings.flair_pattern, body))
+            # Creates a set for allowed flairs
+            request_allowed = {f for f in requested_flairs if f in allowed}
+            # Crease a set for flairs that are not allowed.
+            request_not_allowed = {f for f in requested_flairs if f not in allowed}
+
+            rleb_log_info(f"REDDIT: Flair request for u/{user.name}: {body}")
+            rleb_log_info(f"REDDIT: Requested Flairs: {','.join(requested_flairs)}")
+            rleb_log_info(f"REDDIT: Allowed Flairs: {','.join(request_allowed)}")
+            rleb_log_info(
+                f"REDDIT: Not allowed Flairs: {','.join(request_not_allowed)}"
+            )
+
+            result = {"Succeeded": True, "Message": ""}
+
+            if len(requested_flairs) == 0:
+                result["Succeeded"] = False
+                result["Message"] = (
+                    f'"{body}" wasn\'t formatted correctly!\n\nMake sure that you are using the correct format from the wiki: https://www.reddit.com/r/RocketLeagueEsports/wiki/flairs\n\nPlease send a new message after fixing the error.'
+                )
+            elif len(requested_flairs) > global_settings.number_of_allowed_flairs:
+                result["Succeeded"] = False
+                result["Message"] = (
+                    f"I detected {len(requested_flairs)} flairs in this request, the current limit is {global_settings.number_of_allowed_flairs}!\n\nPlease send a new message after fixing the error."
+                )
+            elif len(request_not_allowed) > 0:
+                result["Succeeded"] = False
+                result["Message"] = (
+                    f"The following flairs are not allowed: {','.join(request_not_allowed)}\n\nPlease send a new message after fixing the error."
+                )
+            else:
+                rleb_log_info(
+                    f"REDDIT: Setting flair for {user.name} to {' '.join(request_allowed)}"
+                )
+                try:
+                    await self.subreddit.flair.set(
+                        redditor=user, text=" ".join(request_allowed), css_class=""
+                    )
+                except prawcore.exceptions.TooManyRequests as e:
+                    global_settings.rleb_log_error(
+                        f"[REDDIT]: get_from_modlog() -> {str(e)}"
+                    )
+                    await asyncio.sleep(60 * 11)
+                    result["Succeeded"] = False
+                    result["Message"] = "Reddit Error"
+                except prawcore.exceptions.ServerError as e:
+                    global_settings.rleb_log_error(
+                        f"[REDDIT]: get_from_modlog() -> {str(e)}"
+                    )
+                    await asyncio.sleep(10)
+                    result["Succeeded"] = False
+                    result["Message"] = "Reddit Error"
+                except prawcore.exceptions.RequestException as e:
+                    global_settings.rleb_log_error(
+                        f"[REDDIT]: get_from_modlog()) -> {str(e)}"
+                    )
+                    await asyncio.sleep(
+                        60
+                    )  # timeout error, just wait awhile and try again
+                    result["Succeeded"] = False
+                    result["Message"] = "Reddit Error"
+                except Exception as e:
+                    global_settings.rleb_log_error(
+                        f"[REDDIT]: epdate_submission - {str(e)}"
+                    )
+                    global_settings.rleb_log_error(traceback.format_exc())
+                    global_settings.thread_crashes["asyncio"] += 1
+                    global_settings.last_datetime_crashed["asyncio"] = datetime.now()
+                    result["Succeeded"] = False
+                    result["Message"] = "Reddit Error"
+                else:
+                    result["Message"] = (
+                        f"I have successfully set your flairs to {','.join(request_allowed)}"
+                    )
+
+            if result["Message"] != "Reddit Error":
+                result["Message"] += (
+                    "\n\n(I'm a bot. Contact modmail to get in touch with a real person: https://reddit.com/message/compose?to=/r/RocketLeagueEsports"
                 )
 
-                rleb_log_info("REDDIT: Taking: {0}".format(",".join(first_n_flairs)))
-                rleb_log_info(
-                    "REDDIT: Set flair for {0} to {1}".format(
-                        user.name, final_flair_text
-                    )
-                )
+            return result
 
     async def get_from_modlog(self, action: str, limit: int):
         try:

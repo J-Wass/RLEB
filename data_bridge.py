@@ -177,9 +177,9 @@ class Data(DataStub):
     @classmethod
     def singleton(cls) -> "DataStub":
         if cls._singleton is None:
-            data_mode = os.environ.get("DATA_MODE") or getattr(
-                global_settings.config["PostgreSQL"], "DATA_MODE", "stubbed"
-            )
+            data_mode = os.environ.get("DATA_MODE") or global_settings.config[
+                "General"
+            ].get("DATA_MODE", "stubbed")
 
             if data_mode == "real":
                 # Use real PostgreSQL database

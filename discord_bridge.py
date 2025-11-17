@@ -1135,7 +1135,7 @@ class RLEsportsBot(discord.Client):
                 )
             except ValueError as e:
                 global_settings.rleb_log_info(
-                    f"SQL query failed: {sql}", str(e), should_flush=True
+                    f"SQL query failed: {sql}, str(e)", should_flush=True
                 )
                 await stdout.print_to_channel(
                     message.channel,
