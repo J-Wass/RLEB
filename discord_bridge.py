@@ -388,13 +388,11 @@ class RLEsportsBot(discord.Client):
                 ):
                     break
 
-                print("Starting Mod Log Check")
-
                 # Mod Log
                 async for item in global_settings.reddit_bridge.get_mod_logs():
                     # Skip if we've already posted this modlog entry
-                    print(item.id)
                     modlog_id = item.id
+
                     if modlog_id in already_posted_modlog:
                         continue
 
@@ -441,13 +439,11 @@ class RLEsportsBot(discord.Client):
                     embed.description = contents
 
                     # Send everything.
-                    # try:
-                    #     await self.modlog_channel.send(embed=embed)
-                    # except discord.HTTPException as e:
-                    #     # Message has invalid formatting. Just send basic msg.
-                    #     await self.modlog_channel.send(item.description)
-
-                print("Done mod log check")
+                    try:
+                        await self.modlog_channel.send(embed=embed)
+                    except discord.HTTPException as e:
+                        # Message has invalid formatting. Just send basic msg.
+                        await self.modlog_channel.send(item.description)
 
                 # Mod Mail
                 async for conversation in global_settings.reddit_bridge.get_modmail():
@@ -808,6 +804,7 @@ class RLEsportsBot(discord.Client):
 
         # force local builds to use !debug command before any commands
         discord_message = message.content
+
         if global_settings.RUNNING_MODE == "local":
             if "!debug" not in discord_message:
                 return
@@ -976,9 +973,7 @@ class RLEsportsBot(discord.Client):
 
             if from_flair != None and to_flair != None:
                 await message.channel.send(
-                    "Type '!confirm migrate' to migrate '{0}' -> '{1}' in the next 2 minutes. This will affect {2} users.".format(
-                        from_flair, to_flair, count
-                    )
+                    f"Type '!confirm migrate' to migrate '{from_flair}' -> '{to_flair}' in the next 2 minutes. This will affect {count} users."
                 )
                 self.to_flair = to_flair
                 self.from_flair = from_flair
@@ -1005,7 +1000,7 @@ class RLEsportsBot(discord.Client):
                 global_settings.asyncio_timeout = 60 * 5
                 return
             await message.channel.send(
-                "Starting migration {0} -> {1}.".format(self.from_flair, self.to_flair)
+                f"Starting migration {self.from_flair} -> {self.to_flair}."
             )
             count = await global_settings.reddit_bridge.migrate_flairs(
                 self.from_flair, self.to_flair
@@ -1027,8 +1022,12 @@ class RLEsportsBot(discord.Client):
             for flair in flair_list:
                 all_flairs += flair
                 all_flairs += "\n"
-            await message.channel.send(all_flairs)
-            await self.add_response(message)
+            if all_flairs == "":
+                await message.channel.send("No flairs found.")
+                await self.add_response(message)
+            else:
+                await message.channel.send(all_flairs)
+                await self.add_response(message)
 
         elif discord_message.startswith("!triflairs remove") and is_staff(
             message.author

@@ -201,7 +201,7 @@ class RedditBridge:
                     if comment is None:
                         break
 
-                    for flair in self.subreddit.flair(comment.author):
+                    async for flair in self.subreddit.flair(comment.author):
                         if (
                             (not flair)
                             or ("flair_text" not in flair)
@@ -296,7 +296,6 @@ class RedditBridge:
                 async for log in self.mod_log:
                     if log is None:
                         break
-
                     # only accept logs that have an appropriate mod & action
                     if log.mod != None and (
                         log.mod in global_settings.filtered_mod_log
@@ -482,7 +481,7 @@ class RedditBridge:
         global_settings.asyncio_timeout = 60 * 15
 
         all_flairs = {}
-        for flair in self.subreddit.flair(limit=None):
+        async for flair in self.subreddit.flair(limit=None):
             if flair["flair_text"] != None:
                 tokens = flair["flair_text"].split()
                 for token in tokens:
@@ -490,6 +489,7 @@ class RedditBridge:
                         all_flairs[token] = 1
                     else:
                         all_flairs[token] += 1
+
         sorted_census = sorted(all_flairs.items(), key=lambda x: x[1])
         sorted_census.reverse()
         amount = min(amount, len(sorted_census))
@@ -517,7 +517,7 @@ class RedditBridge:
         global_settings.asyncio_timeout = 60 * 15
 
         verified_users = []
-        for flair in self.subreddit.flair(limit=None):
+        async for flair in self.subreddit.flair(limit=None):
             if (not flair) or ("flair_text" not in flair) or (not flair["flair_text"]):
                 continue
 
@@ -544,16 +544,18 @@ class RedditBridge:
         return count
 
     async def migrate_flairs(self, from_flair, to_flair):
-        for flair in self.subreddit.flair(limit=None):
+        count = 0
+        async for flair in self.subreddit.flair(limit=None):
             if flair["flair_text"] != None and from_flair in flair["flair_text"]:
                 user = flair["user"]
                 new_flair = flair["flair_text"].replace(from_flair, to_flair)
                 global_settings.rleb_log_info(
-                    "[DISCORD]: Setting {0} to {1} (was {2})".format(
-                        user.name, new_flair, flair["flair_text"]
-                    )
+                    f"[DISCORD]: Setting {user.name} to {new_flair} (was {flair['flair_text']})"
                 )
-                self.subreddit.flair.set(user, text=new_flair, css_class="")
+
+                await self.subreddit.flair.set(user, text=new_flair, css_class="")
+                count += 1
+        return count
 
     async def update_submission(self, submission_id, text):
         try:
@@ -581,7 +583,7 @@ class RedditBridge:
             global_settings.rleb_log_error(f"[REDDIT]: update_submission) -> {str(e)}")
             await asyncio.sleep(60)  # timeout error, just wait awhile and try again
         except Exception as e:
-            global_settings.rleb_log_error(f"[REDDIT]: epdate_submission - {str(e)}")
+            global_settings.rleb_log_error(f"[REDDIT]: update_submission - {str(e)}")
             global_settings.rleb_log_error(traceback.format_exc())
             global_settings.thread_crashes["asyncio"] += 1
             global_settings.last_datetime_crashed["asyncio"] = datetime.now()
@@ -598,7 +600,7 @@ class RedditBridge:
         """
         # mods can set it to anything so they can add text such as "moderator" to flair
         if user.name in list(map(lambda x: x.name, self.moderators)):
-            self.subreddit.flair.set(user, text=body, css_class="")
+            await self.subreddit.flair.set(user, text=body, css_class="")
             rleb_log_info(
                 "REDDIT: Set mod flair for {0} to {1}".format(user.name, body)
             )
@@ -629,7 +631,9 @@ class RedditBridge:
                 await user.message(subject="Error with flair request", message=message)
             else:
                 final_flair_text = " ".join(first_n_flairs)
-                self.subreddit.flair.set(user, text=final_flair_text, css_class="")
+                await self.subreddit.flair.set(
+                    user, text=final_flair_text, css_class=""
+                )
 
                 rleb_log_info("REDDIT: Taking: {0}".format(",".join(first_n_flairs)))
                 rleb_log_info(

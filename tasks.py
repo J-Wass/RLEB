@@ -426,12 +426,12 @@ async def task_alert_check(thread_creation_channel, client):
             )
 
             # Check if either task raised an exception
-            if isinstance(tasks, Exception):
+            if isinstance(tasks, BaseException):
                 global_settings.rleb_log_error(
                     f"TASK CHECK: Error fetching weekly events: {tasks}"
                 )
                 tasks = None
-            if isinstance(new_scheduled_posts, Exception):
+            if isinstance(new_scheduled_posts, BaseException):
                 global_settings.rleb_log_error(
                     f"TASK CHECK: Error fetching scheduled posts: {new_scheduled_posts}"
                 )

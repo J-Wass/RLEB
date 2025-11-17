@@ -3,7 +3,7 @@ certifi==2022.12.7
 chardet==3.0.4
 idna==2.8
 asyncpraw==7.8.1
-asyncprawcore==3.0.2
+asyncprawcore==2.4.0
 requests==2.25.1
 six==1.15.0
 update-checker==0.16
