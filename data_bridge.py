@@ -253,15 +253,32 @@ class Data(DataStub):
         for cmd in blocked_commands:
             if cmd in sql_upper:
                 raise ValueError(
-                    f"SQL command '{cmd}' is not allowed in yolo_query. Only SELECT queries are permitted."
+                    f"SQL command '{cmd}' is not allowed. Only SELECT queries are permitted."
                 )
 
-        with self.postgres_connection() as db:
-            cursor = db.cursor()
-            cursor.execute("SET TRANSACTION READ ONLY;")
-            cursor.execute(sql)
-            response = cursor.fetchall()
-            return "\n".join([str(r) for r in response])
+        try:
+            with self.postgres_connection() as db:
+                cursor = db.cursor()
+                cursor.execute("SET TRANSACTION READ ONLY;")
+                cursor.execute(sql)
+                response = cursor.fetchall()
+                return "\n".join([str(r) for r in response])
+        except psycopg2.Error as e:
+            # Provide detailed database error information
+            error_msg = f"Database error: {e.pgerror if e.pgerror else str(e)}"
+            if e.pgcode:
+                error_msg += f"\nError code: {e.pgcode}"
+            if hasattr(e, "diag") and e.diag:
+                if e.diag.message_primary:
+                    error_msg += f"\nDetails: {e.diag.message_primary}"
+                if e.diag.message_detail:
+                    error_msg += f"\n{e.diag.message_detail}"
+            raise ValueError(error_msg) from e
+        except Exception as e:
+            # Catch any other unexpected errors
+            raise ValueError(
+                f"Unexpected error executing query: {type(e).__name__}: {str(e)}"
+            ) from e
 
     def get_db_tables(self) -> int:
         with self.postgres_connection() as db:

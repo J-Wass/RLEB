@@ -8,6 +8,7 @@ import json
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 import discord
+from bs4 import BeautifulSoup
 
 import global_settings
 import stdout
@@ -38,6 +39,11 @@ Events prefixed with ⚽ will have an **Event Thread** posted by mods.  Anyone c
 # Sidebar Schedule
 
 If you are on the official **Reddit App**, you will find the schedule under the "**About**" tab. If you are browsing the **Desktop** version,  you can find the schedule on the sidebar of the [**sh.reddit**](https://sh.reddit.com/r/RocketLeagueEsports/) version of this subreddit. Alternatively you can use our [**Google Calendar**](https://www.reddit.com/r/RocketLeagueEsports/wiki/calendar) which is used to feed the schedule.
+
+# Moderator Applications
+
+Subreddit Moderation applications are now open permanently! [Find out more and apply today](https://www.reddit.com/r/RocketLeagueEsports/comments/1nzo0mt/love_rrocketleagueesports_take_advantage_of_a_new/).
+
 """
 
 
@@ -57,10 +63,13 @@ class CalendarEvent:
         else:
             self.title = self.rawtext
             if "<a" in self.description:
-                if "<span" in self.description:
-                    self.link = self.description.split("<span>")[1].split("</span>")[0]
+                # Parse HTML to extract plain text from anchor tag (and any nested tags)
+                soup = BeautifulSoup(self.description, "lxml")
+                anchor = soup.find("a")
+                if anchor:
+                    self.link = anchor.get_text(strip=True)
                 else:
-                    self.link = self.description.split(">")[1].split("<")[0]
+                    self.link = self.description
             else:
                 self.link = self.description
 
@@ -84,7 +93,7 @@ class CalendarEvent:
         self.month_name = global_settings.MONTHS[self.et_datetime.month - 1]
 
     def __repr__(self):
-        return f" {self.title} {self.link} {self.bracket_link} {self.et_datetime} {self.cet_datetime} {self.aet_datetime} {self.day_name} {self.month_name} {self.day_number}"
+        return f"CalendarEvent: {self.title} {self.link} {self.bracket_link} {self.et_datetime} {self.cet_datetime} {self.aet_datetime} {self.day_name} {self.month_name} {self.day_number}"
 
 
 def timestring(datetime, relative_datetime, offset_hours=0):
@@ -102,6 +111,7 @@ def timestring(datetime, relative_datetime, offset_hours=0):
 def formatted_calendar_events(
     calendar_events: List[CalendarEvent], formatter: str
 ) -> str:
+    print(calendar_events)
     if formatter == "reddit":
         return reddit_formatted_calendar_events(calendar_events)
     elif formatter == "sheets":
@@ -244,6 +254,9 @@ async def handle_calendar_lookup(
             description = event_item.get(
                 "description", "https://www.reddit.com/r/RocketLeagueEsports"
             )
+            print("event item", event_item)
+            print("descr", description)
+            print("rawtext", rawtext)
             calendar_event = CalendarEvent(
                 rawtext, start_timestamp, stream, description
             )
