@@ -16,7 +16,7 @@ from threading import Thread
 import asyncio
 
 
-class TestDiscord(RLEBAsyncTestCase):
+class TestDiscord(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         await super().asyncSetUp()
 
