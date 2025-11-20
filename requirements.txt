@@ -5,11 +5,11 @@ idna==2.8
 asyncpraw==7.8.1
 asyncprawcore==2.4.0
 requests==2.25.1
-six==1.15.0
+six==1.17.0
 urllib3==1.26.5
 websocket-client==0.56.0
 discord.py==2.6.4
-psycopg2-binary==2.9.6
+psycopg2-binary==2.9.11
 google==3.0.0
 google-api-core==1.24.1
 google-api-python-client==1.12.8

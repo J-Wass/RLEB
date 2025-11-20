@@ -125,7 +125,7 @@ class TestRedditBridge(unittest.IsolatedAsyncioTestCase):
             else:
                 yield {"flair_text": "random fan"}
 
-        self.bridge.subreddit.flair = mock_flair_gen
+        self.bridge.subreddit.flair = mock_flair_gen  # type: ignore
 
         async def mock_stream_gen():
             yield comment_verified
@@ -174,7 +174,7 @@ class TestRedditBridge(unittest.IsolatedAsyncioTestCase):
         )
 
         # Verify message marked as read
-        self.bridge.reddit.inbox.mark_read.assert_called_once()
+        self.bridge.reddit.inbox.mark_read.assert_called_once()  # type: ignore
 
         task.cancel()
 

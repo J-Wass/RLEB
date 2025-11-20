@@ -627,11 +627,13 @@ class RedditBridge:
                 allowed = []
 
             # Creates a set based upon regex pattern matching.
-            requested_flairs = set(re.findall(global_settings.flair_pattern, body))
+            all_flairs = re.findall(global_settings.flair_pattern, body)
+            requested_flairs = list(dict.fromkeys(all_flairs))
+
             # Creates a set for allowed flairs
-            request_allowed = {f for f in requested_flairs if f in allowed}
+            request_allowed = [f for f in requested_flairs if f in allowed]
             # Crease a set for flairs that are not allowed.
-            request_not_allowed = {f for f in requested_flairs if f not in allowed}
+            request_not_allowed = [f for f in requested_flairs if f not in allowed]
 
             rleb_log_info(f"REDDIT: Flair request for u/{user.name}: {body}")
             rleb_log_info(f"REDDIT: Requested Flairs: {','.join(requested_flairs)}")

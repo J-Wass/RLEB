@@ -3,8 +3,6 @@ import configparser
 import threading
 import time
 from typing import Dict, Any, Optional
-import praw
-import requests
 import json
 from datetime import datetime
 from threading import Lock, Timer
