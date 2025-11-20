@@ -75,6 +75,8 @@ class TestDiscord(RLEBAsyncTestCase):
         self.mock_embedded_object = mock.Mock(autospec=discord.Embed)
         self.mock_embed.return_value = self.mock_embedded_object
 
+        global_settings.reddit_bridge = mock.AsyncMock()
+
         # Build a mock reddit submission.
         mock_submission = mock.Mock()
         mock_submission.id = "submission_id"
@@ -106,6 +108,8 @@ class TestDiscord(RLEBAsyncTestCase):
         self.mock_embedded_object = mock.Mock(autospec=discord.Embed)
         self.mock_embed.return_value = self.mock_embedded_object
 
+        global_settings.reddit_bridge = mock.AsyncMock()
+
         # Build a mock reddit comment.
         mock_comment = mock.Mock()
         mock_comment.body = "test comment from verified user"
@@ -135,6 +139,8 @@ class TestDiscord(RLEBAsyncTestCase):
 
         self.mock_embedded_object = mock.Mock(autospec=discord.Embed)
         self.mock_embed.return_value = self.mock_embedded_object
+
+        global_settings.reddit_bridge = mock.AsyncMock()
 
         # Build a mock reddit modmail.
         mock_author = mock.Mock()
@@ -192,6 +198,8 @@ class TestDiscord(RLEBAsyncTestCase):
         self.mock_embedded_object = mock.Mock(autospec=discord.Embed)
         self.mock_embed.return_value = self.mock_embedded_object
 
+        global_settings.reddit_bridge = mock.AsyncMock()
+
         # Build a mock reddit modlog.
         mock_modlog = mock.Mock()
         mock_modlog.id = "title"
@@ -243,6 +251,8 @@ class TestDiscord(RLEBAsyncTestCase):
 
         self.mock_embedded_object = mock.Mock(autospec=discord.Embed)
         self.mock_embed.return_value = self.mock_embedded_object
+
+        global_settings.reddit_bridge = mock.AsyncMock()
 
         # Build a mock reddit submission.
         mock_submission = mock.Mock()
