@@ -25,30 +25,30 @@ class TestAutoUpdater(RLEBTestCase):
 
         # Patch global settings
         self.heartbeats_patch = patch.object(
-            global_settings, 'threads_heartbeats', self.mock_threads_heartbeats
+            global_settings, "threads_heartbeats", self.mock_threads_heartbeats
         ).start()
 
         self.auto_updates_patch = patch.object(
-            global_settings, 'auto_updates', self.mock_auto_updates
+            global_settings, "auto_updates", self.mock_auto_updates
         ).start()
 
         self.markdown_patch = patch.object(
-            global_settings, 'auto_update_markdown', self.mock_auto_update_markdown
+            global_settings, "auto_update_markdown", self.mock_auto_update_markdown
         ).start()
 
-        # Mock reddit
-        self.mock_r = Mock()
-        self.r_patch = patch.object(global_settings, 'r', self.mock_r).start()
+        # # Mock reddit
+        # self.mock_r = Mock()
+        # self.r_patch = patch.object(global_settings, 'r', self.mock_r).start()
 
         # Mock logging
-        self.log_info_patch = patch.object(global_settings, 'rleb_log_info').start()
-        self.log_error_patch = patch.object(global_settings, 'rleb_log_error').start()
+        self.log_info_patch = patch.object(global_settings, "rleb_log_info").start()
+        self.log_error_patch = patch.object(global_settings, "rleb_log_error").start()
 
         # Mock diesel
-        self.diesel_patch = patch('autoupdater.diesel').start()
+        self.diesel_patch = patch("autoupdater.diesel").start()
 
         # Mock time.sleep to avoid waiting in tests
-        self.sleep_patch = patch('autoupdater.time.sleep').start()
+        self.sleep_patch = patch("autoupdater.time.sleep").start()
 
         self.addCleanup(patch.stopall)
 
@@ -81,7 +81,7 @@ class TestAutoUpdater(RLEBTestCase):
             thread_type="bracket",
             thread_options="",
             seconds_since_epoch=int(time.time()),
-            day_number=1
+            day_number=1,
         )
 
         self.mock_auto_updates[1] = mock_auto_update
@@ -115,7 +115,7 @@ class TestAutoUpdater(RLEBTestCase):
         # Verify markdown was cached
         self.assertEqual(
             self.mock_auto_update_markdown["https://liquipedia.net/rocketleague/Test"],
-            fresh_markdown
+            fresh_markdown,
         )
 
     def test_auto_update_skips_when_markdown_unchanged(self):
@@ -133,7 +133,7 @@ class TestAutoUpdater(RLEBTestCase):
             thread_type="bracket",
             thread_options="",
             seconds_since_epoch=int(time.time()),
-            day_number=1
+            day_number=1,
         )
 
         self.mock_auto_updates[1] = mock_auto_update
@@ -160,7 +160,7 @@ class TestAutoUpdater(RLEBTestCase):
             thread_type="swiss",
             thread_options="header=true,footer=false",
             seconds_since_epoch=int(time.time()),
-            day_number=2
+            day_number=2,
         )
 
         self.mock_auto_updates[1] = mock_auto_update
@@ -183,7 +183,7 @@ class TestAutoUpdater(RLEBTestCase):
         self.diesel_patch.get_make_thread_markdown.assert_called_once_with(
             "https://liquipedia.net/rocketleague/Test",
             "swiss-footer=false-header=true",  # Sorted alphabetically
-            2
+            2,
         )
 
     def test_auto_update_handles_reddit_not_found(self):
@@ -199,7 +199,7 @@ class TestAutoUpdater(RLEBTestCase):
             thread_type="bracket",
             thread_options="none",
             seconds_since_epoch=int(time.time()),
-            day_number=1
+            day_number=1,
         )
 
         self.mock_auto_updates[1] = mock_auto_update
@@ -231,7 +231,7 @@ class TestAutoUpdater(RLEBTestCase):
             thread_type="bracket",
             thread_options="",
             seconds_since_epoch=int(time.time()),
-            day_number=1
+            day_number=1,
         )
 
         self.mock_auto_updates[1] = mock_auto_update
@@ -247,9 +247,12 @@ class TestAutoUpdater(RLEBTestCase):
 
         # Run one iteration
         iteration_count = [0]
+
         def stop_after_rate_limit_sleep(seconds):
             iteration_count[0] += 1
-            if iteration_count[0] == 2:  # After rate limit sleep (60*11) and loop sleep (60)
+            if (
+                iteration_count[0] == 2
+            ):  # After rate limit sleep (60*11) and loop sleep (60)
                 raise StopIteration()
 
         self.sleep_patch.side_effect = stop_after_rate_limit_sleep
@@ -271,7 +274,7 @@ class TestAutoUpdater(RLEBTestCase):
             thread_type="bracket",
             thread_options="",
             seconds_since_epoch=int(time.time()),
-            day_number=1
+            day_number=1,
         )
 
         self.mock_auto_updates[1] = mock_auto_update
@@ -304,7 +307,7 @@ class TestAutoUpdater(RLEBTestCase):
             thread_type="bracket",
             thread_options="none",  # Use "none" to avoid template issues
             seconds_since_epoch=int(time.time()),
-            day_number=1
+            day_number=1,
         )
 
         self.mock_auto_updates[1] = mock_auto_update
@@ -322,6 +325,7 @@ class TestAutoUpdater(RLEBTestCase):
 
         # Run one iteration
         iteration_count = [0]
+
         def stop_after_timeout_sleep(seconds):
             iteration_count[0] += 1
             if iteration_count[0] == 2:  # After timeout sleep (60) and loop sleep (60)
@@ -346,7 +350,7 @@ class TestAutoUpdater(RLEBTestCase):
             thread_type="bracket",
             thread_options="",
             seconds_since_epoch=int(time.time()),
-            day_number=1
+            day_number=1,
         )
 
         self.mock_auto_updates[1] = mock_auto_update

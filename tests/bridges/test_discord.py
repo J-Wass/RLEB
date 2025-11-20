@@ -21,14 +21,15 @@ class TestDiscord(RLEBAsyncTestCase):
         await super().asyncSetUp()
 
         # Mock asyncio.sleep to speed up tests (discord_bridge has 10-second startup delays for some tasks while the bot connects to discord)
-        self.original_sleep = __import__('asyncio').sleep
+        self.original_sleep = __import__("asyncio").sleep
+
         async def mock_sleep(delay):
             if delay >= 1:  # Mock long sleeps (startup delays)
                 await self.original_sleep(0.001)  # Near-instant
             else:
                 await self.original_sleep(delay)  # Keep short sleeps as-is
 
-        self.sleep_patcher = patch('asyncio.sleep', new=mock_sleep)
+        self.sleep_patcher = patch("asyncio.sleep", new=mock_sleep)
         self.sleep_patcher.start()
         self.addCleanup(self.sleep_patcher.stop)
 
@@ -63,6 +64,9 @@ class TestDiscord(RLEBAsyncTestCase):
         # Speed up tests by reducing sleep times
         global_settings.discord_async_interval_seconds = 0.01
 
+        # Manually create a mock reddit_bridge, since on_ready() is not called in tests.
+        global_settings.reddit_bridge = mock.AsyncMock()
+
     async def test_reads_new_submissions(self):
         # Build a mock embed.
         self.mock_embed = patch("discord.Embed").start()
@@ -73,25 +77,26 @@ class TestDiscord(RLEBAsyncTestCase):
 
         # Build a mock reddit submission.
         mock_submission = mock.Mock()
+        mock_submission.id = "submission_id"
         mock_submission.title = "title"
         mock_submission.permalink = "/r/permalink"
         mock_submission.author.name = "author"
         mock_submission.link_flair_text = "general"
 
-        # Mock the async generator to yield our test submission then stop
-        async def mock_stream_submissions():
+        async def mock_get_submissions():
             yield mock_submission
             # After yielding once, disable to break the while loop
             global_settings.discord_check_new_submission_enabled = False
 
-        with patch("reddit_bridge.stream_new_submissions", new=mock_stream_submissions):
-            global_settings.discord_check_new_submission_enabled = True
+        global_settings.reddit_bridge.get_submissions = mock_get_submissions
+        global_settings.discord_check_new_submission_enabled = True
 
-            await self.discord_client.check_new_submissions()
-            self.discord_client.new_post_channel.send.assert_awaited_once_with(
-                embed=self.mock_embedded_object
-            )
-            self.discord_client.roster_news_channel.assert_not_awaited()
+        await self.discord_client.check_new_submissions()
+
+        self.discord_client.new_post_channel.send.assert_awaited_once_with(
+            embed=self.mock_embedded_object
+        )
+        self.discord_client.roster_news_channel.assert_not_awaited()
 
     async def test_reads_new_verified_coments(self):
         # Build a mock embed.
@@ -113,14 +118,15 @@ class TestDiscord(RLEBAsyncTestCase):
             # After yielding once, disable to break the while loop
             global_settings.discord_check_new_verified_comments_enabled = False
 
-        with patch("reddit_bridge.stream_verified_comments", new=mock_stream_verified_comments):
-            global_settings.discord_check_new_verified_comments_enabled = True
+        global_settings.reddit_bridge.get_comments = mock_stream_verified_comments
 
-            await self.discord_client.check_new_verified_comments()
-            self.discord_client.verified_comments_channel.send.assert_awaited_once_with(
-                embed=self.mock_embedded_object
-            )
-            self.discord_client.roster_news_channel.assert_not_awaited()
+        global_settings.discord_check_new_verified_comments_enabled = True
+
+        await self.discord_client.check_new_verified_comments()
+        self.discord_client.verified_comments_channel.send.assert_awaited_once_with(
+            embed=self.mock_embedded_object
+        )
+        self.discord_client.roster_news_channel.assert_not_awaited()
 
     async def test_reads_new_modmail(self):
         # Build a mock embed.
@@ -154,28 +160,29 @@ class TestDiscord(RLEBAsyncTestCase):
             # After yielding once, disable to break the while loop
             global_settings.discord_check_new_modmail_enabled = False
 
-        with patch("reddit_bridge.stream_modlog", new=mock_stream_modlog):
-            with patch("reddit_bridge.stream_modmail", new=mock_stream_modmail):
-                global_settings.discord_check_new_modmail_enabled = True
+        global_settings.reddit_bridge.get_mod_logs = mock_stream_modlog
+        global_settings.reddit_bridge.get_modmail = mock_stream_modmail
 
-                await self.discord_client.check_new_modfeed()
+        global_settings.discord_check_new_modmail_enabled = True
 
-                self.mock_embed.assert_called_with(
-                    title="Created: 'modmail subject'",
-                    url="https://mod.reddit.com/mail/all",
-                    color=0x2644CE,
-                )
-                self.mock_embedded_object.set_author.assert_called_with(name="author")
-                self.assertEqual(
-                    self.mock_embedded_object.description,
-                    f"modmail body\n--------------------------------------------------------",
-                )
+        await self.discord_client.check_new_modfeed()
 
-                self.discord_client.modmail_channel.send.assert_has_awaits(
-                    [
-                        call(embed=self.mock_embedded_object),
-                    ]
-                )
+        self.mock_embed.assert_called_with(
+            title="Created: 'modmail subject'",
+            url="https://mod.reddit.com/mail/all",
+            color=0x2644CE,
+        )
+        self.mock_embedded_object.set_author.assert_called_with(name="author")
+        self.assertEqual(
+            self.mock_embedded_object.description,
+            f"modmail body\n--------------------------------------------------------",
+        )
+
+        self.discord_client.modmail_channel.send.assert_has_awaits(
+            [
+                call(embed=self.mock_embedded_object),
+            ]
+        )
 
     async def test_reads_new_modlogs(self):
         # Build a mock embed.
@@ -205,29 +212,29 @@ class TestDiscord(RLEBAsyncTestCase):
             return
             yield  # Make this a generator
 
-        with patch("reddit_bridge.stream_modlog", new=mock_stream_modlog):
-            with patch("reddit_bridge.stream_modmail", new=mock_stream_modmail):
-                global_settings.discord_check_new_modmail_enabled = True
+        global_settings.reddit_bridge.get_mod_logs = mock_stream_modlog
+        global_settings.reddit_bridge.get_modmail = mock_stream_modmail
 
-                await self.discord_client.check_new_modfeed()
+        global_settings.discord_check_new_modmail_enabled = True
 
-                self.mock_embed.assert_called_with(
-                    title="Approvecomment",
-                    url="https://www.reddit.com/r/RocketLeagueEsports/about/log/",
-                    color=2507982,
-                )
-                self.mock_embedded_object.set_author.assert_called_with(name="mod")
+        await self.discord_client.check_new_modfeed()
 
-                self.assertEqual(
-                    self.mock_embedded_object.description,
-                    "**Title**: title\n**User**: author\n**Description**: description\n**Extra Details**: details\n--------------------------------------------------------",
-                )
-                self.discord_client.modlog_channel.send.assert_has_awaits(
-                    [
-                        call(embed=self.mock_embedded_object),
-                    ]
-                )
+        self.mock_embed.assert_called_with(
+            title="Approvecomment",
+            url="https://www.reddit.com/r/RocketLeagueEsports/about/log/",
+            color=2507982,
+        )
+        self.mock_embedded_object.set_author.assert_called_with(name="mod")
 
+        self.assertEqual(
+            self.mock_embedded_object.description,
+            "**Title**: title\n**User**: author\n**Description**: description\n**Extra Details**: details\n--------------------------------------------------------",
+        )
+        self.discord_client.modlog_channel.send.assert_has_awaits(
+            [
+                call(embed=self.mock_embedded_object),
+            ]
+        )
 
     async def test_reads_new_roster_change_submission(self):
         # Build a mock embed.
@@ -240,6 +247,7 @@ class TestDiscord(RLEBAsyncTestCase):
         # Build a mock reddit submission.
         mock_submission = mock.Mock()
         mock_submission.title = "title"
+        mock_submission.id = "submission_id"
         mock_submission.permalink = "/r/permalink"
         mock_submission.author.name = "author"
         mock_submission.link_flair_text = "roster news"
@@ -250,16 +258,16 @@ class TestDiscord(RLEBAsyncTestCase):
             # After yielding once, disable to break the while loop
             global_settings.discord_check_new_submission_enabled = False
 
-        with patch("reddit_bridge.stream_new_submissions", new=mock_stream_submissions):
-            global_settings.discord_check_new_submission_enabled = True
+        global_settings.reddit_bridge.get_submissions = mock_stream_submissions
+        global_settings.discord_check_new_submission_enabled = True
 
-            await self.discord_client.check_new_submissions()
-            self.discord_client.new_post_channel.send.assert_awaited_once_with(
-                embed=self.mock_embedded_object
-            )
-            self.discord_client.roster_news_channel.send.assert_awaited_once_with(
-                embed=self.mock_embedded_object
-            )
+        await self.discord_client.check_new_submissions()
+        self.discord_client.new_post_channel.send.assert_awaited_once_with(
+            embed=self.mock_embedded_object
+        )
+        self.discord_client.roster_news_channel.send.assert_awaited_once_with(
+            embed=self.mock_embedded_object
+        )
 
 
 if __name__ == "__main__":

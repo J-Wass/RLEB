@@ -74,27 +74,24 @@ class TestDiscordCommands(RLEBAsyncTestCase):
         global_settings.discord_async_interval_seconds = 1
         global_settings.user_names_to_ids = {"test_mod#1": 567}
 
+        # Manually create a mock reddit_bridge, since on_ready() is not called in tests.
+        global_settings.reddit_bridge = mock.AsyncMock()
 
-    @mock.patch("discord_bridge.handle_flair_census")
-    async def test_census(self, mock_rleb_census):
-
+    @mock.patch("global_settings.reddit_bridge.get_flair_census")
+    async def test_census(self, mock_get_flair_census):
         # Users can't use census
         await self._send_message("!census 5 ,", from_staff_user=False)
-        mock_rleb_census.assert_not_awaited()
-        mock_rleb_census.reset_mock()
+        mock_get_flair_census.assert_not_awaited()
+        mock_get_flair_census.reset_mock()
 
         # Mod can use census
         await self._send_message("!census 5 ,", from_staff_user=True)
-        mock_rleb_census.assert_awaited_once_with(
-            global_settings.sub, 5, self.mock_channel, ","
-        )
-        mock_rleb_census.reset_mock()
+        mock_get_flair_census.assert_awaited_once_with(5, ",")
+        mock_get_flair_census.reset_mock()
 
         # Census works without optional divider
         await self._send_message("!census 10", from_staff_user=True)
-        mock_rleb_census.assert_awaited_once_with(
-            global_settings.sub, 10, self.mock_channel, ","
-        )
+        mock_get_flair_census.assert_awaited_once_with(10, ",")
 
     async def test_triflairs(self):
         # sending emoji instead of ":flair:"
@@ -245,7 +242,7 @@ class TestDiscordCommands(RLEBAsyncTestCase):
     async def test_bracket(self, mock_handle_bracket_lookup):
         # Happy path.
         await self._send_message("!bracket url 1", from_staff_user=True)
-        mock_handle_bracket_lookup.assert_awaited_with("url", "1")
+        mock_handle_bracket_lookup.assert_awaited_with("url", 1)
         mock_handle_bracket_lookup.reset_mock()
 
         # No url.

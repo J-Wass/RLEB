@@ -238,7 +238,7 @@ class RLEsportsBot(discord.Client):
                 ):
                     break
 
-                async for submission in global_settings.reddit_bridge.get_comments():
+                async for submission in global_settings.reddit_bridge.get_submissions():
                     # Skip if we've already posted this submission
                     submission_id = submission.id
                     if submission_id in already_posted_submissions:
