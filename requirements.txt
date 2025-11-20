@@ -6,7 +6,6 @@ asyncpraw==7.8.1
 asyncprawcore==2.4.0
 requests==2.25.1
 six==1.15.0
-update-checker==0.16
 urllib3==1.26.5
 websocket-client==0.56.0
 discord.py==2.6.4
