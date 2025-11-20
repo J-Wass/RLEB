@@ -95,6 +95,14 @@ class TestData(unittest.TestCase):
     def setUp(self):
         Data._singleton = None
         Data._cache = {}
+        self.original_data_mode = os.environ.get("DATA_MODE")
+
+    def tearDown(self):
+        Data._singleton = None
+        if self.original_data_mode:
+            os.environ["DATA_MODE"] = self.original_data_mode
+        elif "DATA_MODE" in os.environ:
+            del os.environ["DATA_MODE"]
 
     @patch.dict(os.environ, {"DATA_MODE": "stubbed"})
     def test_singleton_returns_data_stub_when_stubbed(self):

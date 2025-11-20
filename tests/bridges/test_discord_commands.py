@@ -4,7 +4,7 @@ from threading import Thread
 import time
 import discord
 from data_bridge import Data, Remindme
-from tests.common.rleb_async_test_case import RLEBAsyncTestCase
+import unittest
 from unittest.mock import MagicMock
 import unittest.mock as mock
 import sys
@@ -13,7 +13,7 @@ import os
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 
 
-class TestDiscordCommands(RLEBAsyncTestCase):
+class TestDiscordCommands(unittest.IsolatedAsyncioTestCase):
     async def _send_message(self, message: str, from_staff_user: bool = False) -> None:
         """Sends a message to discord chat, triggering bot response.
 
@@ -76,6 +76,12 @@ class TestDiscordCommands(RLEBAsyncTestCase):
 
         # Manually create a mock reddit_bridge, since on_ready() is not called in tests.
         global_settings.reddit_bridge = mock.AsyncMock()
+
+    async def asyncTearDown(self):
+        """Resets the Data singleton after tests."""
+        from data_bridge import Data
+
+        Data._singleton = None
 
     @mock.patch("global_settings.reddit_bridge.get_flair_census")
     async def test_census(self, mock_get_flair_census):
