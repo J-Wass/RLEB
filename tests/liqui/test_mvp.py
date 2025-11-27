@@ -44,7 +44,7 @@ class TestMVPCandidates(unittest.TestCase):
         self.assertIn("Joyo", repr_str)
 
 
-class TestMVPFormCreation(unittest.TestCase):
+class TestMVPFormCreation(unittest.IsolatedAsyncioTestCase):
     """Test cases for MVP form creation functionality."""
 
     def setUp(self):

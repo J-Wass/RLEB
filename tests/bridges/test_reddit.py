@@ -19,8 +19,10 @@ class TestRedditBridge(unittest.IsolatedAsyncioTestCase):
         self.mock_error = patch("global_settings.rleb_log_error").start()
 
         # Mock the Data singleton used in handle_flair_request
-        self.mock_data_cls = patch("reddit_bridge.Data").start()
-        self.mock_data_instance = self.mock_data_cls.singleton.return_value
+        self.mock_data_instance = MagicMock()
+        self.mock_singleton = patch(
+            "data_bridge.Data.singleton", return_value=self.mock_data_instance
+        ).start()
 
         # Mock asyncpraw.Reddit
         self.mock_reddit_cls = patch("reddit_bridge.asyncpraw.Reddit").start()

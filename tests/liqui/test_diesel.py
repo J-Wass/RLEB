@@ -11,6 +11,10 @@ import discord
 
 from liqui import diesel
 from liqui.liqui_utils import string_to_base64
+
+from data_bridge import Data
+
+from ..common import common_utils
 import requests
 
 
@@ -18,8 +22,13 @@ class TestDiesel(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         await super().asyncSetUp()
 
-        # Mock aliases
-        self.data_stub.read_all_aliases.return_value = {
+        # Mock the Data singleton and its methods.
+        self.mock_data_instance = mock.MagicMock()
+        self.mock_singleton = patch(
+            "data_bridge.Data.singleton", return_value=self.mock_data_instance
+        ).start()
+        self.addCleanup(self.mock_singleton.stop)
+        self.mock_data_instance.read_all_aliases.return_value = {
             "Team_Envy": "NV",
             "NRG_Esports": "NRG",
         }
