@@ -351,6 +351,6 @@ PASTEEE_APP_KEY = (
     os.environ.get("PASTEEE_APP_KEY") or config["Pastebin"]["PASTEEE_APP_KEY"]
 )
 
-ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY") or getattr(
-    config["LLM"], "ANTHROPIC_API_KEY", None
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY") or config.get(
+    "LLM", "ANTHROPIC_API_KEY", fallback="None"
 )
