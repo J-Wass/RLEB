@@ -3,14 +3,14 @@ import queue
 from threading import Thread
 import time
 import discord
-from data_bridge import Data, Remindme
+from data_bridge import Data, Remindme, DataStub
 import unittest
 from unittest.mock import MagicMock
 import unittest.mock as mock
 import sys
 import os
 
-sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
 
 
 class TestDiscordCommands(unittest.IsolatedAsyncioTestCase):
@@ -40,6 +40,10 @@ class TestDiscordCommands(unittest.IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self):
         await super().asyncSetUp()
+
+        self.data_stub = mock.patch(
+            "data_bridge.Data.singleton", return_value=DataStub.singleton()
+        ).start()
 
         # Import discord_bridge after setUp is done so that rleb_settings loads with mocks/patches.
         global global_settings
@@ -82,6 +86,7 @@ class TestDiscordCommands(unittest.IsolatedAsyncioTestCase):
         from data_bridge import Data
 
         Data._singleton = None
+        self.data_stub.stop()
 
     @mock.patch("global_settings.reddit_bridge.get_flair_census")
     async def test_census(self, mock_get_flair_census):
