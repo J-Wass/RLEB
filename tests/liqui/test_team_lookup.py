@@ -9,6 +9,7 @@ from unittest.mock import patch, AsyncMock
 
 
 from ..common import common_utils
+from data_bridge import Data
 
 import requests
 import discord
@@ -17,6 +18,11 @@ import discord
 class TestTeamLookup(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         await super().asyncSetUp()
+
+        self.data_stub = AsyncMock(spec=Data)
+        self.mock_data = patch(
+            "data_bridge.Data.singleton", return_value=self.data_stub
+        ).start()
 
         self.stub_network()
 

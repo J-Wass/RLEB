@@ -51,7 +51,7 @@ jobs:
       PASTEBIN_USER_NAME : "fake_pastebin_username"
       PASTEBIN_USER_PASS : "fake_pastebin_password"
       PASTEEE_APP_KEY : "fake_pasteee_app_key"
-      DATA_MODE : 'real'
+      DATA_MODE : 'stubbed'
 
       # Google
       CALENDAR_ID : "fake_calendar_id"
