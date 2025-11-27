@@ -8,8 +8,6 @@ import unittest
 import unittest.mock as mock
 from unittest.mock import patch
 
-from tests.common.rleb_async_test_case import RLEBAsyncTestCase
-
 import requests
 import discord
 
@@ -21,7 +19,7 @@ class MockRequest:
         self.content = content
 
 
-class TestTeamLookup(RLEBAsyncTestCase):
+class TestTeamLookup(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         await super().asyncSetUp()
 

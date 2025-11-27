@@ -82,7 +82,7 @@ class TestCalendar(unittest.IsolatedAsyncioTestCase):
             )
 
 
-class TestCalendarNoMarkup(RLEBAsyncTestCase):
+class TestCalendarNoMarkup(unittest.IsolatedAsyncioTestCase):
     """Same as TestCalendar, but tests calendar titles without reddit markup"""
 
     async def asyncSetUp(self):

@@ -8,7 +8,6 @@ import unittest
 import unittest.mock as mock
 from unittest.mock import patch
 
-from tests.common.rleb_async_test_case import RLEBAsyncTestCase
 
 import requests
 import discord
@@ -21,7 +20,7 @@ class MockRequest:
         self.content = content
 
 
-class TestGroupLookup(RLEBAsyncTestCase):
+class TestGroupLookup(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         await super().asyncSetUp()
 
@@ -46,7 +45,6 @@ class TestGroupLookup(RLEBAsyncTestCase):
             )
 
     async def test_group_lookup_fails(self):
-
         # Mock the liquipedia page to return nothing.
         def mock_liquipedia(args=[]):
             return None

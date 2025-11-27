@@ -6,12 +6,11 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 
 import unittest
 from unittest.mock import Mock
-from tests.common.rleb_test_case import RLEBTestCase
 
 import discord
 
 
-class TestVerifiedModerators(RLEBTestCase):
+class TestVerifiedModerators(unittest.TestCase):
     def setUp(self):
         super().setUp()
 

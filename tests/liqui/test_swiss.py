@@ -10,12 +10,11 @@ import unittest
 import unittest.mock as mock
 from unittest.mock import patch
 
-from tests.common.rleb_async_test_case import RLEBAsyncTestCase
 
 import discord
 
 
-class TestSwissLookup(RLEBAsyncTestCase):
+class TestSwissLookup(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         await super().asyncSetUp()
 
