@@ -3,17 +3,14 @@ import time
 from typing import Optional, Any
 import psycopg2
 import os
+import configparser
 from dataclasses import dataclass
 
-# This is bad code, don't tell anyone I wrote this.
-try:
-    import rleb_secrets
-except Exception as e:
-
-    class rleb_secrets:  # type: ignore[no-redef]
-        pass
-
-    print("rleb_secrets.py not found, using keys in environment settings.")
+config = configparser.ConfigParser(interpolation=None)
+if os.path.exists("rleb_secrets.ini"):
+    config.read("rleb_secrets.ini")
+else:
+    config.read("rleb_secrets_sample.ini")
 
 
 @dataclass
@@ -31,7 +28,7 @@ class Remindme:
     discord_username: str
     message: str
     trigger_timestamp: int
-    channel_id: str
+    channel_id: int
 
 
 @dataclass
@@ -120,7 +117,7 @@ class DataStub(object):
         )
 
     def write_remindme(
-        self, user: str, message: str, elapsed_time: int, channel_id: str
+        self, user: str, message: str, elapsed_time: int, channel_id: int
     ) -> Remindme:
         return Remindme(-1, user, message, int(time.time()) + elapsed_time, channel_id)
 
@@ -186,8 +183,8 @@ class Data(DataStub):
     @classmethod
     def singleton(cls) -> "DataStub":
         if cls._singleton is None:
-            data_mode = os.environ.get("DATA_MODE") or getattr(
-                rleb_secrets, "DATA_MODE", "stubbed"
+            data_mode = os.environ.get("DATA_MODE") or config["General"].get(
+                "DATA_MODE", "stubbed"
             )
 
             if data_mode == "real":
@@ -206,11 +203,12 @@ class Data(DataStub):
     def postgres_connection(self) -> Any:
         """Returns the postgresSQL connection."""
         connection = psycopg2.connect(
-            dbname=os.environ.get("DB_NAME") or rleb_secrets.DB_NAME,
-            host=os.environ.get("DB_HOST") or rleb_secrets.DB_HOST,
-            user=os.environ.get("DB_USER") or rleb_secrets.DB_USER,
-            port=os.environ.get("DB_PORT") or rleb_secrets.DB_PORT,
-            password=os.environ.get("DB_PASSWORD") or rleb_secrets.DB_PASSWORD,
+            dbname=os.environ.get("DB_NAME") or config["PostgreSQL"]["DB_NAME"],
+            host=os.environ.get("DB_HOST") or config["PostgreSQL"]["DB_HOST"],
+            user=os.environ.get("DB_USER") or config["PostgreSQL"]["DB_USER"],
+            port=os.environ.get("DB_PORT") or config["PostgreSQL"]["DB_PORT"],
+            password=os.environ.get("DB_PASSWORD")
+            or config["PostgreSQL"]["DB_PASSWORD"],
         )
         return connection
 
@@ -473,7 +471,7 @@ class Data(DataStub):
         )
 
     def write_remindme(
-        self, user: str, message: str, elapsed_time: int, channel_id: str
+        self, user: str, message: str, elapsed_time: int, channel_id: int
     ) -> Remindme:
         """Adds a remindme notification to the database."""
         target_timestamp = int(elapsed_time + time.time())

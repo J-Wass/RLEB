@@ -76,8 +76,8 @@ class DataStubWithSampleData(DataStub):
         self._auto_updates = {
             1: AutoUpdate(
                 1,
-                "https://reddit.com/r/RocketLeagueEsports/comments/sample1",
-                "https://liquipedia.net/rocketleague/RLCS/2024-25/Major_1",
+                "https://reddit.com/r/RLCSnewsTest/comments/1p7qg37/auto_update_test_1/",
+                "https://liquipedia.net/rocketleague/Rocket_League_Championship_Series/2025/Birmingham_Major",
                 "swiss",
                 "header=true",
                 current_time - 3600,
@@ -85,8 +85,8 @@ class DataStubWithSampleData(DataStub):
             ),
             2: AutoUpdate(
                 2,
-                "https://reddit.com/r/RocketLeagueEsports/comments/sample2",
-                "https://liquipedia.net/rocketleague/RLCS/2024-25/Major_1",
+                "https://old.reddit.com/r/RLCSnewsTest/comments/1p7qgou/auto_update_test_2/",
+                "https://liquipedia.net/rocketleague/Rocket_League_Championship_Series/2025/Raleigh_Major",
                 "bracket",
                 "",
                 current_time - 7200,

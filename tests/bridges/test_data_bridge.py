@@ -53,7 +53,9 @@ class TestDataStub(unittest.TestCase):
         self.assertIsNone(stub.read_auto_update_from_reddit_thread("url"))
         self.assertEqual(stub.read_all_auto_updates(), [])
 
-        auto_update = stub.write_auto_update("reddit_url", "liqui_url", "swiss", "none", 1)
+        auto_update = stub.write_auto_update(
+            "reddit_url", "liqui_url", "swiss", "none", 1
+        )
         self.assertIsInstance(auto_update, AutoUpdate)
         self.assertEqual(auto_update.auto_update_id, -1)
 
@@ -91,23 +93,19 @@ class TestDataStub(unittest.TestCase):
 
 class TestData(unittest.TestCase):
     def setUp(self):
-        # Patch rleb_secrets for all tests to avoid AttributeError in CI
-        # In CI, rleb_secrets is a dict, not a module, so accessing .DATA_MODE fails
-        self.secrets_patcher = patch("data_bridge.rleb_secrets")
-        self.mock_secrets = self.secrets_patcher.start()
-        self.mock_secrets.DATA_MODE = "real"
-        self.mock_secrets.DB_NAME = "test_db"
-        self.mock_secrets.DB_HOST = "test_host"
-        self.mock_secrets.DB_USER = "test_user"
-        self.mock_secrets.DB_PORT = "5432"
-        self.mock_secrets.DB_PASSWORD = "test_pass"
+        Data._singleton = None
+        Data._cache = {}
+        self.original_data_mode = os.environ.get("DATA_MODE")
 
     def tearDown(self):
-        self.secrets_patcher.stop()
+        Data._singleton = None
+        if self.original_data_mode:
+            os.environ["DATA_MODE"] = self.original_data_mode
+        elif "DATA_MODE" in os.environ:
+            del os.environ["DATA_MODE"]
 
     @patch.dict(os.environ, {"DATA_MODE": "stubbed"})
     def test_singleton_returns_data_stub_when_stubbed(self):
-        self.mock_secrets.DATA_MODE = "stubbed"
         Data._singleton = None
         instance = Data.singleton()
         self.assertIsInstance(instance, DataStub)
@@ -118,23 +116,29 @@ class TestData(unittest.TestCase):
 
     @patch.dict(os.environ, {"DATA_MODE": "real"})
     def test_singleton_returns_data_when_real(self):
-        self.mock_secrets.DATA_MODE = "real"
-        Data._singleton = None
-        instance = Data.singleton()
-        self.assertIsInstance(instance, Data)
+        # We patch config reading to avoid needing real ini files
+        with patch("configparser.ConfigParser.read"):
+            instance = Data.singleton()
+            self.assertIsInstance(instance, Data)
 
     @patch("data_bridge.psycopg2.connect")
-    @patch.dict(os.environ, {"DATA_MODE": "real", "DB_NAME": "test", "DB_HOST": "localhost", "DB_USER": "user", "DB_PORT": "5432", "DB_PASSWORD": "pass"})
+    @patch.dict(
+        os.environ,
+        {
+            "DATA_MODE": "real",
+            "DB_NAME": "test",
+            "DB_HOST": "localhost",
+            "DB_USER": "user",
+            "DB_PORT": "5432",
+            "DB_PASSWORD": "pass",
+        },
+    )
     def test_postgres_connection_uses_env_vars(self, mock_connect):
         Data._singleton = None
         data = Data.singleton()
-        data.postgres_connection()
+        data.postgres_connection()  # type: ignore
         mock_connect.assert_called_once_with(
-            dbname="test",
-            host="localhost",
-            user="user",
-            port="5432",
-            password="pass"
+            dbname="test", host="localhost", user="user", port="5432", password="pass"
         )
 
     @patch("data_bridge.psycopg2.connect")
@@ -145,7 +149,7 @@ class TestData(unittest.TestCase):
         # - Local: uses rleb_secrets if env vars not set
         Data._singleton = None
         data = Data.singleton()
-        data.postgres_connection()
+        data.postgres_connection()  # type: ignore
 
         # Just verify it was called, don't care about specific values
         # since they differ between local (rleb_secrets) and CI (env vars)
@@ -302,8 +306,8 @@ class TestData(unittest.TestCase):
         stat = data.read_user_statistics("user1")
 
         self.assertIsInstance(stat, UserStatistics)
-        self.assertEqual(stat.discord_username, "user1")
-        self.assertEqual(stat.commands_used, 10)
+        self.assertEqual(stat.discord_username, "user1")  # type: ignore
+        self.assertEqual(stat.commands_used, 10)  # type: ignore
 
     @patch("data_bridge.psycopg2.connect")
     @patch.dict(os.environ, {"DATA_MODE": "real"})
@@ -400,7 +404,15 @@ class TestData(unittest.TestCase):
     @patch.dict(os.environ, {"DATA_MODE": "real"})
     def test_read_auto_update_from_id_found(self, mock_connect):
         mock_cursor = Mock()
-        mock_cursor.fetchone.return_value = (1, "reddit_url", "liqui_url", "swiss", "none", 12345, 1)
+        mock_cursor.fetchone.return_value = (
+            1,
+            "reddit_url",
+            "liqui_url",
+            "swiss",
+            "none",
+            12345,
+            1,
+        )
         mock_conn = Mock()
         mock_conn.cursor.return_value = mock_cursor
         mock_conn.__enter__ = Mock(return_value=mock_conn)
@@ -412,7 +424,7 @@ class TestData(unittest.TestCase):
         auto_update = data.read_auto_update_from_id(1)
 
         self.assertIsInstance(auto_update, AutoUpdate)
-        self.assertEqual(auto_update.auto_update_id, 1)
+        self.assertEqual(auto_update.auto_update_id, 1)  # type: ignore
 
     @patch("data_bridge.psycopg2.connect")
     @patch.dict(os.environ, {"DATA_MODE": "real"})
@@ -435,7 +447,15 @@ class TestData(unittest.TestCase):
     @patch.dict(os.environ, {"DATA_MODE": "real"})
     def test_read_auto_update_from_reddit_thread(self, mock_connect):
         mock_cursor = Mock()
-        mock_cursor.fetchone.return_value = (1, "reddit_url", "liqui_url", "swiss", "none", 12345, 1)
+        mock_cursor.fetchone.return_value = (
+            1,
+            "reddit_url",
+            "liqui_url",
+            "swiss",
+            "none",
+            12345,
+            1,
+        )
         mock_conn = Mock()
         mock_conn.cursor.return_value = mock_cursor
         mock_conn.__enter__ = Mock(return_value=mock_conn)
@@ -454,7 +474,7 @@ class TestData(unittest.TestCase):
         mock_cursor = Mock()
         mock_cursor.fetchall.return_value = [
             (1, "url1", "liqui1", "swiss", "none", 12345, 1),
-            (2, "url2", "liqui2", "bracket", "none", 12346, 2)
+            (2, "url2", "liqui2", "bracket", "none", 12346, 2),
         ]
         mock_conn = Mock()
         mock_conn.cursor.return_value = mock_cursor
@@ -501,7 +521,9 @@ class TestData(unittest.TestCase):
 
         Data._singleton = None
         data = Data.singleton()
-        auto_update = data.write_auto_update("reddit_url", "liqui_url#anchor", "swiss", "none", 1)
+        auto_update = data.write_auto_update(
+            "reddit_url", "liqui_url#anchor", "swiss", "none", 1
+        )
 
         self.assertIsInstance(auto_update, AutoUpdate)
         self.assertEqual(auto_update.auto_update_id, 99)
@@ -550,7 +572,7 @@ class TestData(unittest.TestCase):
         mock_cursor = Mock()
         mock_cursor.fetchall.return_value = [
             (1, "user1", "msg1", 12345, 1500.0),
-            (2, "user2", "msg2", 67890, 2000.0)
+            (2, "user2", "msg2", 67890, 2000.0),
         ]
         mock_conn = Mock()
         mock_conn.cursor.return_value = mock_cursor

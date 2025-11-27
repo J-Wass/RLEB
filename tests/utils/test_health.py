@@ -7,7 +7,7 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 import unittest
 import unittest.mock as mock
 from unittest.mock import patch
-from tests.common.rleb_async_test_case import RLEBAsyncTestCase
+
 
 from threading import Thread
 from queue import Queue
@@ -18,7 +18,7 @@ def instantly_crash():
     pass
 
 
-class TestHealth(RLEBAsyncTestCase):
+class TestHealth(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         await super().asyncSetUp()
 
@@ -72,7 +72,6 @@ class TestHealth(RLEBAsyncTestCase):
         mock_alert_channel.send.assert_awaited_with(
             "submissions asyncio thread has stopped responding! (2 crashes)"
         )
-
 
 
 if __name__ == "__main__":

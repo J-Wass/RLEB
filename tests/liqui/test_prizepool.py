@@ -1,34 +1,38 @@
 """Tests for liqui/prizepool_lookup.py"""
 
+import sys
+import os
+
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
+
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 from bs4 import BeautifulSoup
 
-from tests.common.rleb_async_test_case import RLEBAsyncTestCase
 from liqui import prizepool_lookup
 import global_settings
 
 
-class TestPrizepoolLookup(RLEBAsyncTestCase):
+class TestPrizepoolLookup(unittest.IsolatedAsyncioTestCase):
     """Test cases for prizepool lookup functionality."""
 
     def setUp(self):
         super().setUp()
 
         # Mock diesel
-        self.diesel_patch = patch('liqui.prizepool_lookup.diesel').start()
+        self.diesel_patch = patch("liqui.prizepool_lookup.diesel").start()
 
         # Mock liqui_utils
-        self.liqui_utils_patch = patch('liqui.prizepool_lookup.liqui_utils').start()
+        self.liqui_utils_patch = patch("liqui.prizepool_lookup.liqui_utils").start()
 
         # Mock stdout
         self.print_to_channel_patch = patch(
-            'liqui.prizepool_lookup.print_to_channel'
+            "liqui.prizepool_lookup.print_to_channel"
         ).start()
 
         # Mock global_settings logging
-        self.log_info_patch = patch.object(global_settings, 'rleb_log_info').start()
-        self.log_error_patch = patch.object(global_settings, 'rleb_log_error').start()
+        self.log_info_patch = patch.object(global_settings, "rleb_log_info").start()
+        self.log_error_patch = patch.object(global_settings, "rleb_log_error").start()
 
         self.addCleanup(patch.stopall)
 
@@ -39,7 +43,9 @@ class TestPrizepoolLookup(RLEBAsyncTestCase):
 
         # Mock successful Diesel response
         diesel_markdown = "# Prizepool\n\n| Place | Prize | Team |\n|---|---|---|\n| 1st | $100k | G2 |"
-        self.diesel_patch.get_prizepool_markdown = AsyncMock(return_value=diesel_markdown)
+        self.diesel_patch.get_prizepool_markdown = AsyncMock(
+            return_value=diesel_markdown
+        )
 
         await prizepool_lookup.handle_prizepool_lookup(liquipedia_url, channel)
 
@@ -95,10 +101,14 @@ class TestPrizepoolLookup(RLEBAsyncTestCase):
         await prizepool_lookup.handle_prizepool_lookup(liquipedia_url, channel)
 
         # Verify fallback message was sent
-        channel.send.assert_any_call("Failed to build bracket table from Diesel. Trying RLEB...")
+        channel.send.assert_any_call(
+            "Failed to build bracket table from Diesel. Trying RLEB..."
+        )
 
         # Verify RLEB parsing was used
-        self.liqui_utils_patch.get_page_html_from_url.assert_called_once_with(liquipedia_url)
+        self.liqui_utils_patch.get_page_html_from_url.assert_called_once_with(
+            liquipedia_url
+        )
 
         # Verify markdown was printed
         self.print_to_channel_patch.assert_called_once()
@@ -279,7 +289,9 @@ class TestPrizepoolLookup(RLEBAsyncTestCase):
 
         # Mock page loading error
         error_message = "Failed to load page"
-        self.liqui_utils_patch.get_page_html_from_url.side_effect = Exception(error_message)
+        self.liqui_utils_patch.get_page_html_from_url.side_effect = Exception(
+            error_message
+        )
 
         # Note: The actual code has a bug where it doesn't return after catching the exception,
         # causing it to try to parse None. We'll test that the error handling code is reached.
@@ -287,7 +299,9 @@ class TestPrizepoolLookup(RLEBAsyncTestCase):
             await prizepool_lookup.handle_prizepool_lookup(liquipedia_url, channel)
 
         # Verify error was sent to channel
-        channel.send.assert_any_call(f"Couldn't load {liquipedia_url}!\nError: {error_message}")
+        channel.send.assert_any_call(
+            f"Couldn't load {liquipedia_url}!\nError: {error_message}"
+        )
 
         # Verify error was logged
         self.log_info_patch.assert_any_call(

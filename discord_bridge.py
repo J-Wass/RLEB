@@ -12,13 +12,13 @@ import math
 
 import health_check
 import global_settings
+from reddit_bridge import RedditBridge
 from liqui import diesel
 import stdout
 from data_bridge import AutoUpdate, Data, Remindme
-from global_settings import sub, user_names_to_ids
+from global_settings import user_names_to_ids
 from liqui.team_lookup import handle_team_lookup
 from liqui.group_lookup import handle_group_lookup
-from census import handle_flair_census, handle_verified_flair_list
 from calendar_event import handle_calendar_lookup
 from tasks import handle_task_lookup, get_scheduled_posts, get_weekly_events
 from liqui.swiss_lookup import handle_swiss_lookup
@@ -46,6 +46,16 @@ def is_staff(user: discord.Member) -> bool:
 
 
 class RLEsportsBot(discord.Client):
+    new_post_channel: discord.TextChannel
+    modmail_channel: discord.TextChannel
+    bot_command_channel: discord.TextChannel
+    schedule_chat_channel: discord.TextChannel
+    roster_news_channel: discord.TextChannel
+    verified_comments_channel: discord.TextChannel
+    modlog_channel: discord.TextChannel
+    thread_creation_channel: discord.TextChannel
+    moderation_channel: discord.TextChannel
+
     def __init__(self):
         """Initialize a new instance of RLEsportsBot."""
         super().__init__(intents=discord.Intents.all())
@@ -75,27 +85,93 @@ class RLEsportsBot(discord.Client):
         """Indicate bot has joined the discord and start background tasks."""
         global_settings.rleb_log_info("[DISCORD]: Logged on as {0}".format(self.user))
 
+        # Initialize RedditBridge and store it in global_settings
+        global_settings.reddit_bridge = RedditBridge(
+            client_id=os.environ.get("REDDIT_CLIENT_ID")
+            or global_settings.config["Reddit"]["REDDIT_CLIENT_ID"],
+            client_secret=os.environ.get("REDDIT_CLIENT_SECRET")
+            or global_settings.config["Reddit"]["REDDIT_CLIENT_SECRET"],
+            user_agent=os.environ.get("REDDIT_USER_AGENT")
+            or global_settings.config["Reddit"]["REDDIT_USER_AGENT"],
+            username=os.environ.get("REDDIT_USERNAME")
+            or global_settings.config["Reddit"]["REDDIT_USERNAME"],
+            password=os.environ.get("REDDIT_PASSWORD")
+            or global_settings.config["Reddit"]["REDDIT_PASSWORD"],
+            subreddit_name=global_settings.target_sub,
+        )
+
+        # start background tasts for reddit bridge
+        await global_settings.reddit_bridge.start()
+
+        global_settings.rleb_log_info(
+            f"[REDDIT]: Finished Reddit Startup for {global_settings.reddit_bridge.subreddit_name}"
+        )
+
         # Initialize all channels first
-        self.new_post_channel = self.get_channel(global_settings.NEW_POSTS_CHANNEL_ID)
-        self.modmail_channel = self.get_channel(global_settings.MODMAIL_CHANNEL_ID)
+        self.new_post_channel = self.get_channel(global_settings.NEW_POSTS_CHANNEL_ID)  # type: ignore
+
+        assert isinstance(self.new_post_channel, discord.abc.Messageable), (
+            "New Post channel is not messageable or not found!"
+        )
+
+        self.modmail_channel = self.get_channel(global_settings.MODMAIL_CHANNEL_ID)  # type: ignore
+
+        assert isinstance(self.modmail_channel, discord.abc.Messageable), (
+            "Modmail channel is not messageable or not found!"
+        )
+
         self.bot_command_channel = self.get_channel(
             global_settings.BOT_COMMANDS_CHANNEL_ID
+        )  # type: ignore
+
+        assert isinstance(self.bot_command_channel, discord.abc.Messageable), (
+            "Bot command channel is not messageable or not found!"
         )
+
         self.schedule_chat_channel = self.get_channel(
             global_settings.SCHEDULE_CHAT_CHANNEL_ID
+        )  # type: ignore
+
+        assert isinstance(self.schedule_chat_channel, discord.abc.Messageable), (
+            "Modmail channel is not messageable or not found!"
         )
+
         self.roster_news_channel = self.get_channel(
             global_settings.ROSTER_NEWS_CHANNEL_ID
+        )  # type: ignore
+
+        assert isinstance(self.roster_news_channel, discord.abc.Messageable), (
+            "Modmail channel is not messageable or not found!"
         )
+
         self.verified_comments_channel = self.get_channel(
             global_settings.VERIFIED_COMMENTS_CHANNEL_ID
+        )  # type: ignore
+
+        assert isinstance(self.verified_comments_channel, discord.abc.Messageable), (
+            "Modmail channel is not messageable or not found!"
         )
-        self.modlog_channel = self.get_channel(global_settings.MODLOG_CHANNEL_ID)
+
+        self.modlog_channel = self.get_channel(global_settings.MODLOG_CHANNEL_ID)  # type: ignore
+
+        assert isinstance(self.modlog_channel, discord.abc.Messageable), (
+            "Modmail channel is not messageable or not found!"
+        )
+
         self.thread_creation_channel = self.get_channel(
             global_settings.THREAD_CREATION_CHANNEL_ID
+        )  # type: ignore
+
+        assert isinstance(self.thread_creation_channel, discord.abc.Messageable), (
+            "Modmail channel is not messageable or not found!"
         )
+
         self.moderation_channel = self.get_channel(
             global_settings.MODERATION_CHANNEL_ID
+        )  # type: ignore
+
+        assert isinstance(self.moderation_channel, discord.abc.Messageable), (
+            "Modmail channel is not messageable or not found!"
         )
 
         # Now that channels are initialized, create background tasks
@@ -114,17 +190,17 @@ class RLEsportsBot(discord.Client):
             self.loop.create_task(self.run_task_alerts())
 
         # Create a mapping of discord usernames to discord ids for future use.
-        for m in self.new_post_channel.members:
-            if m.discriminator == "0":
-                global_settings.user_names_to_ids[m.name.lower()] = m.id
+        for m in self.new_post_channel.members:  # type: ignore
+            if m.discriminator == "0":  # type: ignore
+                global_settings.user_names_to_ids[m.name.lower()] = m.id  # type: ignore
             else:
                 global_settings.user_names_to_ids[
-                    m.name.lower() + "#" + m.discriminator
+                    m.name.lower() + "#" + m.discriminator  # type: ignore
                 ] = m.id
 
         # If testing, ping the discord channel.
         if global_settings.RUNNING_MODE != "production":
-            await self.bot_command_channel.send(
+            await self.bot_command_channel.send(  # type: ignore
                 "Bot is online, running in {0} under {1} mode.".format(
                     global_settings.RUNNING_ENVIRONMENT, global_settings.RUNNING_MODE
                 )
@@ -133,41 +209,22 @@ class RLEsportsBot(discord.Client):
             await self.send_meme(self.bot_command_channel)
 
     async def send_meme(self, channel):
-        meme_sub = global_settings.r.subreddit(self.meme_subreddit)
-        if meme_sub.over18:
-            return
+        if not global_settings.reddit_bridge:
+            return False
 
-        randomizer = random.randint(1, 10)
-        count = 0
+        meme_link = await global_settings.reddit_bridge.get_meme(
+            meme_subreddit=self.meme_subreddit
+        )
 
-        tries = 0
-        for meme in meme_sub.top("day"):
-            if tries > 3:
-                await channel.send("Couldn't find a suitable meme :(")
-                break
-            if (
-                meme.over_18
-                or meme.is_video
-                or "gallery" in meme.url
-                or "v.reddit" in meme.url
-            ):
-                tries += 1
-                continue
-
-            # Randomly decide whether or not to take a meme. Makes the algo spicey.
-            if count <= randomizer or tries > 2:
-                count += 1
-                continue
-
-            # If meme is suitable and we hit the randomizer, send it.
-            link = meme.url
-            await channel.send("{0}".format(link))
-            break
+        if meme_link == None:
+            await channel.send("Couldn't find a suitable meme :(")
+            return False
+        else:
+            await channel.send("{0}".format(meme_link))
+            return True
 
     async def check_new_submissions(self):
         """Check Reddit submissions directly and post in 'new posts' discord channel."""
-        from reddit_bridge import stream_new_submissions
-
         # Track already posted submissions to avoid duplicates
         already_posted_submissions: set[str] = set()
         already_posted_submissions_ordered: list[str] = []
@@ -175,10 +232,13 @@ class RLEsportsBot(discord.Client):
         await asyncio.sleep(10)
         while True:
             try:
-                if not global_settings.discord_check_new_submission_enabled:
+                if (
+                    not global_settings.discord_check_new_submission_enabled
+                    or not global_settings.reddit_bridge
+                ):
                     break
 
-                async for submission in stream_new_submissions():
+                async for submission in global_settings.reddit_bridge.get_submissions():
                     # Skip if we've already posted this submission
                     submission_id = submission.id
                     if submission_id in already_posted_submissions:
@@ -212,9 +272,9 @@ class RLEsportsBot(discord.Client):
                         continue
 
                     if "roster news" in submission.link_flair_text.strip().lower():
-                        await self.roster_news_channel.send(embed=embed)
+                        await self.roster_news_channel.send(embed=embed)  # type: ignore
 
-                    await self.new_post_channel.send(embed=embed)
+                    await self.new_post_channel.send(embed=embed)  # type: ignore
 
                 global_settings.asyncio_threads_heartbeats["submissions"] = (
                     datetime.now()
@@ -223,7 +283,7 @@ class RLEsportsBot(discord.Client):
                 global_settings.rleb_log_error(
                     "[DISCORD]: Submissions asyncio thread failed - {0}".format(e)
                 )
-                await self.bot_command_channel.send(
+                await self.bot_command_channel.send(  # type: ignore
                     "New Submissions asyncio thread encountered error"
                 )
                 global_settings.rleb_log_error(traceback.format_exc())
@@ -233,7 +293,6 @@ class RLEsportsBot(discord.Client):
 
     async def check_new_verified_comments(self):
         """Check Reddit verified comments directly and post in discord channel."""
-        from reddit_bridge import stream_verified_comments
 
         # Track already posted verified comments to avoid duplicates
         already_posted_verified_comments: set[str] = set()
@@ -242,10 +301,15 @@ class RLEsportsBot(discord.Client):
         await asyncio.sleep(10)
         while True:
             try:
-                if not global_settings.discord_check_new_verified_comments_enabled:
+                if (
+                    not global_settings.discord_check_new_verified_comments_enabled
+                    or not global_settings.reddit_bridge
+                ):
                     break
 
-                async for verified_comments in stream_verified_comments():
+                async for (
+                    verified_comments
+                ) in global_settings.reddit_bridge.get_comments():
                     # Skip if we've already posted this comment
                     comment_id = verified_comments.id
                     if comment_id in already_posted_verified_comments:
@@ -287,7 +351,7 @@ class RLEsportsBot(discord.Client):
                     )
                     embed.set_author(name=verified_comments.author.name)
 
-                    await self.verified_comments_channel.send(embed=embed)
+                    await self.verified_comments_channel.send(embed=embed)  # type: ignore
 
                 global_settings.asyncio_threads_heartbeats["verified_comments"] = (
                     datetime.now()
@@ -296,7 +360,7 @@ class RLEsportsBot(discord.Client):
                 global_settings.rleb_log_error(
                     "[DISCORD]: Verified comments asyncio thread failed - {0}".format(e)
                 )
-                await self.bot_command_channel.send(
+                await self.bot_command_channel.send(  # type: ignore
                     "Verified Comments asyncio thread encountered error"
                 )
                 global_settings.rleb_log_error(traceback.format_exc())
@@ -306,7 +370,6 @@ class RLEsportsBot(discord.Client):
 
     async def check_new_modfeed(self):
         """Check Reddit modmail/modlog directly and post in discord."""
-        from reddit_bridge import stream_modlog, stream_modmail
 
         # Track already posted modlog entries to avoid duplicates
         already_posted_modlog: set[str] = set()
@@ -319,13 +382,17 @@ class RLEsportsBot(discord.Client):
         await asyncio.sleep(10)
         while True:
             try:
-                if not global_settings.discord_check_new_modmail_enabled:
+                if (
+                    not global_settings.discord_check_new_modmail_enabled
+                    or not global_settings.reddit_bridge
+                ):
                     break
 
                 # Mod Log
-                async for item in stream_modlog():
+                async for item in global_settings.reddit_bridge.get_mod_logs():
                     # Skip if we've already posted this modlog entry
                     modlog_id = item.id
+
                     if modlog_id in already_posted_modlog:
                         continue
 
@@ -379,7 +446,7 @@ class RLEsportsBot(discord.Client):
                         await self.modlog_channel.send(item.description)
 
                 # Mod Mail
-                async for conversation in stream_modmail():
+                async for conversation in global_settings.reddit_bridge.get_modmail():
                     # Skip if we've already posted this modmail conversation
                     # Use same dedupe logic as in stream_modmail (id + message count)
                     dedupe_id = f"{conversation.id}:{len(conversation.messages)}"
@@ -452,10 +519,13 @@ class RLEsportsBot(discord.Client):
         await asyncio.sleep(10)
         while True:
             try:
+                if not global_settings.reddit_bridge:
+                    break
+
                 # Count items in modqueue
-                modqueue_count = 0
-                for _ in global_settings.sub.mod.modqueue(limit=None):
-                    modqueue_count += 1
+                modqueue_count = (
+                    await global_settings.reddit_bridge.get_modqueue_count()
+                )
 
                 global_settings.rleb_log_info(
                     f"[DISCORD]: Modqueue check - {modqueue_count} items in queue"
@@ -517,13 +587,13 @@ class RLEsportsBot(discord.Client):
 
     async def process_reddit_inbox(self):
         """Process Reddit inbox for flair requests."""
-        from reddit_bridge import process_inbox
 
         await asyncio.sleep(10)
         while True:
             try:
-                if global_settings.monitor_subreddit_enabled:
-                    await process_inbox()
+                # Needs to be fixed still.
+                # if global_settings.monitor_subreddit_enabled:
+                #     continue
 
                 global_settings.asyncio_threads_heartbeats["inbox"] = datetime.now()
             except Exception as e:
@@ -562,7 +632,7 @@ class RLEsportsBot(discord.Client):
 
                         # Send to channel
                         try:
-                            channel = self.get_channel(remindme.channel_id)
+                            channel = self.get_channel(remindme.channel_id)  # type: ignore
                             if not channel:
                                 global_settings.rleb_log_info(
                                     f"[REMINDME]: Channel {remindme.channel_id} not found for reminder {remindme.remindme_id}, using fallback channel"
@@ -570,7 +640,7 @@ class RLEsportsBot(discord.Client):
                                 channel = self.bot_command_channel
 
                             if channel:
-                                await channel.send(msg)
+                                await channel.send(msg)  # type: ignore
                             else:
                                 global_settings.rleb_log_error(
                                     f"[REMINDME]: Could not find channel {remindme.channel_id} for reminder {remindme.remindme_id}"
@@ -599,6 +669,9 @@ class RLEsportsBot(discord.Client):
         await asyncio.sleep(10)
         while True:
             try:
+                if not global_settings.reddit_bridge:
+                    break
+
                 auto_updates = global_settings.auto_updates.values()
                 if auto_updates:
                     global_settings.rleb_log_info(
@@ -612,13 +685,13 @@ class RLEsportsBot(discord.Client):
 
                         options = auto_update.thread_options
                         tourney_system = auto_update.thread_type
-                        stringified_options = "-".join(
-                            sorted(options.lower().split(","))
-                        )
-                        if stringified_options == "none":
-                            template = tourney_system
-                        else:
+                        if "," in options:
+                            stringified_options = "-".join(
+                                sorted(options.lower().split(","))
+                            )
                             template = f"{tourney_system}-{stringified_options}"
+                        else:
+                            template = tourney_system
 
                         # Run blocking diesel call in thread pool
                         fresh_markdown = await asyncio.to_thread(
@@ -643,22 +716,13 @@ class RLEsportsBot(discord.Client):
                         # 17oh7u8
                         submission_id = reddit_url.split("/comments/")[1].split("/")[0]
 
-                        # Run blocking PRAW operations in thread pool
-                        def update_reddit():
-                            submission = global_settings.r.submission(id=submission_id)
-                            if not submission:
-                                return False
-                            if submission.selftext == fresh_markdown:
-                                return None
-                            submission.edit(fresh_markdown)
-                            return True
-
-                        result = await asyncio.to_thread(update_reddit)
-
+                        # Update the thread with new results
+                        result = await global_settings.reddit_bridge.update_submission(
+                            submission_id=submission_id, text=fresh_markdown
+                        )
+                        # TODO is this logic correct?
+                        # Future fix, this will resize the dictionary while we are looping.
                         if result is False:
-                            global_settings.rleb_log_error(
-                                f"Could not find reddit url to auto update {reddit_url}"
-                            )
                             del global_settings.auto_updates[auto_update.auto_update_id]
                             Data.singleton().delete_auto_update(auto_update)
                         elif result is True:
@@ -741,10 +805,15 @@ class RLEsportsBot(discord.Client):
 
         # force local builds to use !debug command before any commands
         discord_message = message.content
+
         if global_settings.RUNNING_MODE == "local":
             if "!debug" not in discord_message:
                 return
             discord_message = discord_message.replace("!debug ", "")
+        else:
+            # If we are running in production, we can stop processing debug messages.
+            if "!debug" in discord_message:
+                return
 
         if str(message.channel) == "voting":
             global_settings.rleb_log_info(
@@ -815,8 +884,9 @@ class RLEsportsBot(discord.Client):
 
             msg_to_send = ""
             for us in user_statistics:
-                thankfulness = round(us.thanks_given / us.commands_used * 100, 0)
-                msg_to_send += f"{us.discord_username} has used the bot {us.commands_used} times and was only thankful {thankfulness}% of the time\n"
+                if us != None:
+                    thankfulness = round(us.thanks_given / us.commands_used * 100, 0)
+                    msg_to_send += f"{us.discord_username} has used the bot {us.commands_used} times and was only thankful {thankfulness}% of the time\n"
             if msg_to_send == "":
                 await message.channel.send("daz broken :/")
             else:
@@ -829,6 +899,9 @@ class RLEsportsBot(discord.Client):
 
         elif discord_message.startswith("!census") and is_staff(message.author):
             if not global_settings.is_discord_mod(message.author):
+                return
+
+            if not global_settings.reddit_bridge:
                 return
 
             global_settings.rleb_log_info("[DISCORD]: Starting flair census.")
@@ -851,11 +924,17 @@ class RLEsportsBot(discord.Client):
                     divider = ","
             except Exception:
                 divider = ","
-            await handle_flair_census(sub, amount, message.channel, divider)
+            census_data = await global_settings.reddit_bridge.get_flair_census(
+                amount, divider
+            )
+            await stdout.print_to_channel(message.channel, census_data, "Census")
             await self.add_response(message)
 
         elif discord_message == "!verified" and is_staff(message.author):
             if not global_settings.is_discord_mod(message.author):
+                return
+
+            if not global_settings.reddit_bridge:
                 return
 
             global_settings.rleb_log_info(
@@ -864,11 +943,17 @@ class RLEsportsBot(discord.Client):
             await message.channel.send(
                 "Retrieving all verified flairs, this may take a minute..."
             )
-            await handle_verified_flair_list(sub, message.channel)
+            flair_data = (
+                await global_settings.reddit_bridge.handle_verified_flair_list()
+            )
+            await stdout.print_to_channel(message.channel, flair_data, "Verified Users")
             await self.add_response(message)
 
         elif discord_message.startswith("!migrate") and is_staff(message.author):
             if not global_settings.is_discord_mod(message.author):
+                return
+
+            if not global_settings.reddit_bridge:
                 return
 
             # increase asyncio timeout so it doesn't seem like a crash
@@ -887,16 +972,13 @@ class RLEsportsBot(discord.Client):
                 )
                 global_settings.asyncio_timeout = 60 * 5
                 return
-            count = 0
+
             await message.channel.send("Checking flairs...")
-            for flair in sub.flair(limit=None):
-                if flair["flair_text"] != None and from_flair in flair["flair_text"]:
-                    count += 1
+            count = await global_settings.reddit_bridge.get_flair_count(from_flair)
+
             if from_flair != None and to_flair != None:
                 await message.channel.send(
-                    "Type '!confirm migrate' to migrate '{0}' -> '{1}' in the next 2 minutes. This will affect {2} users.".format(
-                        from_flair, to_flair, count
-                    )
+                    f"Type '!confirm migrate' to migrate '{from_flair}' -> '{to_flair}' in the next 2 minutes. This will affect {count} users."
                 )
                 self.to_flair = to_flair
                 self.from_flair = from_flair
@@ -910,6 +992,9 @@ class RLEsportsBot(discord.Client):
             if not global_settings.is_discord_mod(message.author):
                 return
 
+            if not global_settings.reddit_bridge:
+                return
+
             # increase asyncio timeout so it doesn't seem like a crash
             global_settings.asyncio_timeout = 60 * 15
 
@@ -920,24 +1005,12 @@ class RLEsportsBot(discord.Client):
                 global_settings.asyncio_timeout = 60 * 5
                 return
             await message.channel.send(
-                "Starting migration {0} -> {1}.".format(self.from_flair, self.to_flair)
+                f"Starting migration {self.from_flair} -> {self.to_flair}."
             )
-            for flair in sub.flair(limit=None):
-                if (
-                    flair["flair_text"] != None
-                    and self.from_flair in flair["flair_text"]
-                ):
-                    user = flair["user"]
-                    new_flair = flair["flair_text"].replace(
-                        self.from_flair, self.to_flair
-                    )
-                    global_settings.rleb_log_info(
-                        "[DISCORD]: Setting {0} to {1} (was {2})".format(
-                            user.name, new_flair, flair["flair_text"]
-                        )
-                    )
-                    sub.flair.set(user, text=new_flair, css_class="")
-            await message.channel.send("Flair migration finished.")
+            count = await global_settings.reddit_bridge.migrate_flairs(
+                self.from_flair, self.to_flair
+            )
+            await message.channel.send(f"Migrated {count} users.")
             await self.add_response(message)
 
             # reset asyncio timeout
@@ -954,8 +1027,12 @@ class RLEsportsBot(discord.Client):
             for flair in flair_list:
                 all_flairs += flair
                 all_flairs += "\n"
-            await message.channel.send(all_flairs)
-            await self.add_response(message)
+            if all_flairs == "":
+                await message.channel.send("No flairs found.")
+                await self.add_response(message)
+            else:
+                await message.channel.send(all_flairs)
+                await self.add_response(message)
 
         elif discord_message.startswith("!triflairs remove") and is_staff(
             message.author
@@ -1031,18 +1108,20 @@ class RLEsportsBot(discord.Client):
             if not global_settings.is_discord_mod(message.author):
                 return
 
-            scheduled_posts = get_scheduled_posts()
+            scheduled_posts = await get_scheduled_posts()
             weekly_events = get_weekly_events()
 
             output = "**Found the following scheduled posts on reddit:**\n"
             if scheduled_posts:
-                output += "\n".join(scheduled_posts)
+                for event in scheduled_posts:
+                    output += f"{event}\n"
             else:
                 output += "No scheduled posts found."
 
             output += "\n\n**Found the following events on the weekly sheet:**\n"
             if weekly_events:
-                output += "\n".join(weekly_events)
+                for event in weekly_events:
+                    output += f"{event}\n"
             else:
                 output += "No weekly events found."
 
@@ -1063,7 +1142,7 @@ class RLEsportsBot(discord.Client):
                 )
             except ValueError as e:
                 global_settings.rleb_log_info(
-                    f"SQL query failed: {sql}", str(e), should_flush=True
+                    f"SQL query failed: {sql}, str(e)", should_flush=True
                 )
                 await stdout.print_to_channel(
                     message.channel,
@@ -1139,7 +1218,7 @@ class RLEsportsBot(discord.Client):
 
             try:
                 # Close Discord connection cleanly so sockets/files are released
-                await self.bot.close()
+                await self.close()
             except Exception:
                 pass
 
@@ -1264,9 +1343,7 @@ class RLEsportsBot(discord.Client):
                     "To search on liquipedia, use '!search <thing>'"
                 )
                 return
-            url = "https://liquipedia.net/rocketleague/index.php?search={0}".format(
-                target
-            )
+            url = f"https://liquipedia.net/rocketleague/index.php?search={target}"
             embed = discord.Embed(
                 title=target, url=url, color=random.choice(global_settings.colors)
             )
@@ -1464,10 +1541,11 @@ class RLEsportsBot(discord.Client):
                     "Couldn't understand that. Expected '!bracket liquipedia-url date-of-the-month'."
                 )
                 return
-            bracket_markdown = await diesel.get_bracket_markdown(url, date_number)
-            await stdout.print_to_channel(
-                message.channel, bracket_markdown, title="Bracket"
-            )
+            bracket_markdown = await diesel.get_bracket_markdown(url, int(date_number))
+            if bracket_markdown != None:
+                await stdout.print_to_channel(
+                    message.channel, bracket_markdown, title="Bracket"
+                )
             await self.add_response(message)
 
         elif discord_message.startswith("!autoupdate") and is_staff(message.author):
@@ -1512,7 +1590,7 @@ class RLEsportsBot(discord.Client):
                     await message.channel.send(
                         "  `!autoupdate [reddit url] [liquipedia url] [tourney system] [options] [day]`"
                     )
-                    asyncio.sleep(1)
+                    await asyncio.sleep(1)
                     await message.channel.send(
                         "    `reddit url` = the url of the already made game thread that needs to be updated"
                     )
@@ -1531,7 +1609,7 @@ class RLEsportsBot(discord.Client):
                     await message.channel.send(
                         "    `day` = the day of the tournament on liquipedia that the post is for"
                     )
-                    asyncio.sleep(1)
+                    await asyncio.sleep(1)
                     await message.channel.send(
                         "**To list running auto updates:** `!autoupdate list`"
                     )
@@ -1600,7 +1678,7 @@ class RLEsportsBot(discord.Client):
                     liqui_url,
                     tourney_system,
                     stringified_options,
-                    day_number,
+                    int(day_number),
                 )
                 global_settings.auto_updates[auto_update.auto_update_id] = auto_update
                 await message.channel.send(
@@ -1639,7 +1717,9 @@ class RLEsportsBot(discord.Client):
                 template = tourney_system
             else:
                 template = f"{tourney_system}-{stringified_options}"
-            markdown = diesel.get_make_thread_markdown_date(url, template, date_number)
+            markdown = diesel.get_make_thread_markdown_date(
+                url, template, int(date_number)
+            )
             await stdout.print_to_channel(
                 message.channel, markdown, title="Thread Markdown"
             )
@@ -1681,7 +1761,9 @@ class RLEsportsBot(discord.Client):
                     "Couldn't understand that. Expected `!schedule liquipedia-url [date of the month]`.\nExample: `!schedule https://liquipedia.net/rocketleague/Rocket_League_Championship_Series/2022-23/Fall/North_America/Cup 12` will get you the schedule for events on the 12th of the current month."
                 )
                 return
-            await diesel.handle_schedule_lookup_date(url, date_number, message.channel)
+            await diesel.handle_schedule_lookup_date(
+                url, int(date_number), message.channel
+            )
             await self.add_response(message)
 
         elif discord_message.startswith("!prizepool") and is_staff(message.author):
@@ -1727,7 +1809,7 @@ class RLEsportsBot(discord.Client):
                     )
                     return
                 await message.channel.send("Creating MVP voting form...")
-                await handle_mvp_form_creation(urls, message.channel)
+                await handle_mvp_form_creation(urls, message.channel)  # type: ignore
             elif option == "results":
                 form_url = tokens[2]
                 await message.channel.send("Generating MVP results...")
@@ -1851,7 +1933,7 @@ class RLEsportsBot(discord.Client):
 
             total_time = seconds_multiplier[last_char] * units
             remindme: Remindme = Data.singleton().write_remindme(
-                user, reminder_message, total_time, message.channel.id
+                user, reminder_message, int(total_time), message.channel.id
             )
             # Remindme will be picked up by the check_remindmes() polling loop
             await message.channel.send(
@@ -1873,7 +1955,7 @@ class RLEsportsBot(discord.Client):
             user = message.author.name.lower() + "#" + message.author.discriminator
             if discrim == "0":
                 user = message.author.name.lower()
-            extra = None
+            extra = ""
             try:
                 user = tokens[1]
                 extra = tokens[2]
@@ -1903,12 +1985,10 @@ class RLEsportsBot(discord.Client):
                 pass
 
             original_meme_subreddit = self.meme_subreddit
-            try:
-                global_settings.r.subreddit(self.meme_subreddit)
-                self.meme_subreddit = subreddit
-                await self.send_meme(message.channel)
-            except:
-                await message.channel("That isn't a real place!")
+            self.meme_subreddit = subreddit
+            result = await self.send_meme(message.channel)
+            if result == False:
+                await message.channel.send("Failed to update mem channel!")
                 self.meme_subreddit = original_meme_subreddit
 
             await self.add_response(message)

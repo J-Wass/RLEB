@@ -1,26 +1,65 @@
 # coding: utf-8
 
-# Dumb hack to be able to access source code files on both windows and linux
 import discord
-from tests.common.rleb_async_test_case import RLEBAsyncTestCase
-from unittest.mock import patch
+from unittest.mock import patch, AsyncMock
 import unittest.mock as mock
 import unittest
 import sys
 import os
+from ..common import common_utils
+import requests
 
-sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
+
+from data_bridge import Data
 
 
-class TestBracketLookup(RLEBAsyncTestCase):
+class TestBracketLookup(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         await super().asyncSetUp()
+
+        self.data_stub = AsyncMock(spec=Data)
+        self.mock_data = patch(
+            "data_bridge.Data.singleton", return_value=self.data_stub
+        ).start()
+
+        self.stub_network()
 
         # Import rleb_bracket_lookup after setUp is done so that rleb_settings loads with mocks/patches.
         global stdout
         global bracket_lookup
         import stdout
         from liqui import bracket_lookup
+
+    def stub_network(self):
+        self.network_map = common_utils.common_proxies
+        self.forced_status_code = 200
+        # Cache file contents to avoid repeated I/O
+        self._file_cache = {}
+
+        def mock_request(url=None, headers=None, data=None, json=None, args=[]):
+            if url is None:
+                return
+
+            local_file_proxy = self.network_map.get(url)
+
+            if local_file_proxy:
+                # Use cache if available
+                if local_file_proxy not in self._file_cache:
+                    with open(local_file_proxy, encoding="utf8") as f:
+                        self._file_cache[local_file_proxy] = f.read()
+
+                return common_utils.MockRequest(
+                    self._file_cache[local_file_proxy],
+                    status_code=self.forced_status_code,
+                )
+
+        self.mock_requests_get = patch.object(requests, "get", new=mock_request).start()
+        self.mock_requests_post = patch.object(
+            requests, "post", new=mock_request
+        ).start()
+        self.addCleanup(self.mock_requests_get)
+        self.addCleanup(self.mock_requests_post)
 
     async def test_bracket(self):
         mock_channel = mock.Mock(spec=discord.TextChannel)

@@ -1,10 +1,19 @@
 """Tests for liqui/mvp_lookup.py"""
 
+import sys
+import os
+
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
+
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from tests.common.rleb_async_test_case import RLEBAsyncTestCase
-from liqui.mvp_lookup import MVPCandidates, handle_mvp_form_creation, handle_mvp_results_lookup
+
+from liqui.mvp_lookup import (
+    MVPCandidates,
+    handle_mvp_form_creation,
+    handle_mvp_results_lookup,
+)
 import global_settings
 
 
@@ -35,7 +44,7 @@ class TestMVPCandidates(unittest.TestCase):
         self.assertIn("Joyo", repr_str)
 
 
-class TestMVPFormCreation(RLEBAsyncTestCase):
+class TestMVPFormCreation(unittest.IsolatedAsyncioTestCase):
     """Test cases for MVP form creation functionality."""
 
     def setUp(self):
@@ -43,17 +52,15 @@ class TestMVPFormCreation(RLEBAsyncTestCase):
 
         # Mock _get_mvp_candidates
         self.get_candidates_patch = patch(
-            'liqui.mvp_lookup._get_mvp_candidates'
+            "liqui.mvp_lookup._get_mvp_candidates"
         ).start()
 
         # Mock _get_mvp_markdown
-        self.get_markdown_patch = patch(
-            'liqui.mvp_lookup._get_mvp_markdown'
-        ).start()
+        self.get_markdown_patch = patch("liqui.mvp_lookup._get_mvp_markdown").start()
 
         # Mock stdout
         self.print_to_channel_patch = patch(
-            'liqui.mvp_lookup.stdout.print_to_channel'
+            "liqui.mvp_lookup.stdout.print_to_channel"
         ).start()
 
         self.addCleanup(patch.stopall)
@@ -63,13 +70,13 @@ class TestMVPFormCreation(RLEBAsyncTestCase):
         channel = AsyncMock()
         liquipedia_urls = [
             "https://liquipedia.net/rocketleague/RLCS/NA",
-            "https://liquipedia.net/rocketleague/RLCS/EU"
+            "https://liquipedia.net/rocketleague/RLCS/EU",
         ]
 
         # Mock candidate groups
         candidate_groups = [
             MVPCandidates("NA Regional", ["jstn", "Firstkiller", "Daniel"]),
-            MVPCandidates("EU Regional", ["Vatira", "Zen", "Joyo"])
+            MVPCandidates("EU Regional", ["Vatira", "Zen", "Joyo"]),
         ]
         self.get_candidates_patch.return_value = candidate_groups
 
@@ -140,7 +147,7 @@ class TestMVPFormCreation(RLEBAsyncTestCase):
         )
 
 
-class TestMVPResultsLookup(RLEBAsyncTestCase):
+class TestMVPResultsLookup(unittest.IsolatedAsyncioTestCase):
     """Test cases for MVP results lookup functionality."""
 
     def setUp(self):
@@ -148,12 +155,12 @@ class TestMVPResultsLookup(RLEBAsyncTestCase):
 
         # Mock _get_mvp_form_responses
         self.get_responses_patch = patch(
-            'liqui.mvp_lookup._get_mvp_form_responses'
+            "liqui.mvp_lookup._get_mvp_form_responses"
         ).start()
 
         # Mock stdout
         self.print_to_channel_patch = patch(
-            'liqui.mvp_lookup.stdout.print_to_channel'
+            "liqui.mvp_lookup.stdout.print_to_channel"
         ).start()
 
         self.addCleanup(patch.stopall)
@@ -176,7 +183,7 @@ class TestMVPResultsLookup(RLEBAsyncTestCase):
         calls = [str(call) for call in channel.send.call_args_list]
         self.assertTrue(
             any(error_message in str(call) for call in calls),
-            "Error message should be sent to channel"
+            "Error message should be sent to channel",
         )
 
     async def test_handle_mvp_results_lookup_success(self):

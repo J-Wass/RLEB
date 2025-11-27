@@ -8,14 +8,12 @@ import unittest
 import unittest.mock as mock
 from unittest.mock import patch, call
 
-from tests.common.rleb_async_test_case import RLEBAsyncTestCase
-
 import requests
 import discord
 from discord import TextChannel
 
 
-class TestStandardOut(RLEBAsyncTestCase):
+class TestStandardOut(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         await super().asyncSetUp()
 
