@@ -78,7 +78,7 @@ discord_client: Optional[discord.Client] = None
 # Type checking for RedditBridge to avoid circular imports
 if TYPE_CHECKING:
     from reddit_bridge import RedditBridge
-# Reddit bridge reference for direct communication (set by rleb_core on startup)
+# Reddit bridge reference for direct communication (set by discord_bridge on startup)
 reddit_bridge: Optional["RedditBridge"] = None
 
 # Mapping of auto_update_ids to autoupdates.

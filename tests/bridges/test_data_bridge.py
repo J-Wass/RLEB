@@ -136,7 +136,7 @@ class TestData(unittest.TestCase):
     def test_postgres_connection_uses_env_vars(self, mock_connect):
         Data._singleton = None
         data = Data.singleton()
-        data.postgres_connection()
+        data.postgres_connection()  # type: ignore
         mock_connect.assert_called_once_with(
             dbname="test", host="localhost", user="user", port="5432", password="pass"
         )
@@ -149,7 +149,7 @@ class TestData(unittest.TestCase):
         # - Local: uses rleb_secrets if env vars not set
         Data._singleton = None
         data = Data.singleton()
-        data.postgres_connection()
+        data.postgres_connection()  # type: ignore
 
         # Just verify it was called, don't care about specific values
         # since they differ between local (rleb_secrets) and CI (env vars)
@@ -306,8 +306,8 @@ class TestData(unittest.TestCase):
         stat = data.read_user_statistics("user1")
 
         self.assertIsInstance(stat, UserStatistics)
-        self.assertEqual(stat.discord_username, "user1")
-        self.assertEqual(stat.commands_used, 10)
+        self.assertEqual(stat.discord_username, "user1")  # type: ignore
+        self.assertEqual(stat.commands_used, 10)  # type: ignore
 
     @patch("data_bridge.psycopg2.connect")
     @patch.dict(os.environ, {"DATA_MODE": "real"})
@@ -424,7 +424,7 @@ class TestData(unittest.TestCase):
         auto_update = data.read_auto_update_from_id(1)
 
         self.assertIsInstance(auto_update, AutoUpdate)
-        self.assertEqual(auto_update.auto_update_id, 1)
+        self.assertEqual(auto_update.auto_update_id, 1)  # type: ignore
 
     @patch("data_bridge.psycopg2.connect")
     @patch.dict(os.environ, {"DATA_MODE": "real"})

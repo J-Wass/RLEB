@@ -442,34 +442,51 @@ class RedditBridge:
             await asyncio.sleep(10)
 
     async def get_meme(self, meme_subreddit: str):
-        meme_sub = await self.reddit.subreddit(meme_subreddit)
-        if meme_sub.over18:
-            return
+        try:
+            meme_sub = await self.reddit.subreddit(meme_subreddit)
+            await meme_sub.load()
+            if meme_sub.over18:
+                return
 
-        randomizer = random.randint(1, 10)
-        count = 0
+            randomizer = random.randint(1, 10)
+            count = 0
 
-        tries = 0
-        async for meme in meme_sub.top(time_filter="day"):
-            if tries > 3:
-                return None
-            if (
-                meme.over_18
-                or meme.is_video
-                or "gallery" in meme.url
-                or "v.reddit" in meme.url
-            ):
-                tries += 1
-                continue
+            tries = 0
+            async for meme in meme_sub.top(time_filter="day"):
+                if tries > 3:
+                    return None
+                if (
+                    meme.over_18
+                    or meme.is_video
+                    or "gallery" in meme.url
+                    or "v.reddit" in meme.url
+                ):
+                    tries += 1
+                    continue
 
-            # Randomly decide whether or not to take a meme. Makes the algo spicey.
-            if count <= randomizer or tries > 2:
-                count += 1
-                continue
+                # Randomly decide whether or not to take a meme. Makes the algo spicey.
+                if count <= randomizer or tries > 2:
+                    count += 1
+                    continue
 
-            # If meme is suitable and we hit the randomizer, send it.
-            link = meme.url
-            return link
+                # If meme is suitable and we hit the randomizer, send it.
+                link = meme.url
+                return link
+        except prawcore.exceptions.TooManyRequests as e:
+            global_settings.rleb_log_error(f"[REDDIT]: get_meme() -> {str(e)}")
+            await asyncio.sleep(60 * 11)
+        except prawcore.exceptions.Redirect as e:
+            global_settings.rleb_log_error(f"[REDDIT]: get_meme() -> {str(e)}")
+        except prawcore.exceptions.ServerError as e:
+            global_settings.rleb_log_error(f"[REDDIT]: get_meme() -> {str(e)}")
+            await asyncio.sleep(10)  # Reddit server borked, try again
+            pass
+        except prawcore.exceptions.RequestException as e:
+            global_settings.rleb_log_error(f"[REDDIT]: get_meme() -> {str(e)}")
+            await asyncio.sleep(60)  # timeout error, just wait awhile and try again
+        except Exception as e:
+            global_settings.rleb_log_error(f"[REDDIT]: get_meme() - {str(e)}")
+            global_settings.rleb_log_error(traceback.format_exc())
 
     async def get_flair_census(
         self,
@@ -575,12 +592,12 @@ class RedditBridge:
                 global_settings.rleb_log_error(
                     f"[REDDIT]: Submission {submission_id} not found"
                 )
-                return False
+                return True
             if submission.selftext == text:
                 global_settings.rleb_log_info(
                     f"[REDDIT]: Submission {submission_id} is already up to date"
                 )
-                return False
+                return True
             await submission.edit(text)
             return True
         except prawcore.exceptions.TooManyRequests as e:

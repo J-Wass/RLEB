@@ -7,7 +7,7 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 import unittest
 import unittest.mock as mock
 from unittest.mock import patch
-from tests.common.rleb_async_test_case import RLEBAsyncTestCase
+
 
 import json
 import google
@@ -18,7 +18,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
 
-class TestCalendar(RLEBAsyncTestCase):
+class TestCalendar(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         await super().asyncSetUp()
 

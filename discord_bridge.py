@@ -685,13 +685,13 @@ class RLEsportsBot(discord.Client):
 
                         options = auto_update.thread_options
                         tourney_system = auto_update.thread_type
-                        stringified_options = "-".join(
-                            sorted(options.lower().split(","))
-                        )
-                        if stringified_options == "none":
-                            template = tourney_system
-                        else:
+                        if "," in options:
+                            stringified_options = "-".join(
+                                sorted(options.lower().split(","))
+                            )
                             template = f"{tourney_system}-{stringified_options}"
+                        else:
+                            template = tourney_system
 
                         # Run blocking diesel call in thread pool
                         fresh_markdown = await asyncio.to_thread(
@@ -721,6 +721,7 @@ class RLEsportsBot(discord.Client):
                             submission_id=submission_id, text=fresh_markdown
                         )
                         # TODO is this logic correct?
+                        # Future fix, this will resize the dictionary while we are looping.
                         if result is False:
                             del global_settings.auto_updates[auto_update.auto_update_id]
                             Data.singleton().delete_auto_update(auto_update)
@@ -809,6 +810,10 @@ class RLEsportsBot(discord.Client):
             if "!debug" not in discord_message:
                 return
             discord_message = discord_message.replace("!debug ", "")
+        else:
+            # If we are running in production, we can stop processing debug messages.
+            if "!debug" in discord_message:
+                return
 
         if str(message.channel) == "voting":
             global_settings.rleb_log_info(
@@ -1108,13 +1113,15 @@ class RLEsportsBot(discord.Client):
 
             output = "**Found the following scheduled posts on reddit:**\n"
             if scheduled_posts:
-                output += "\n".join(scheduled_posts)
+                for event in scheduled_posts:
+                    output += f"{event}\n"
             else:
                 output += "No scheduled posts found."
 
             output += "\n\n**Found the following events on the weekly sheet:**\n"
             if weekly_events:
-                output += "\n".join(weekly_events)
+                for event in weekly_events:
+                    output += f"{event}\n"
             else:
                 output += "No weekly events found."
 
@@ -1336,9 +1343,7 @@ class RLEsportsBot(discord.Client):
                     "To search on liquipedia, use '!search <thing>'"
                 )
                 return
-            url = "https://liquipedia.net/rocketleague/index.php?search={0}".format(
-                target
-            )
+            url = f"https://liquipedia.net/rocketleague/index.php?search={target}"
             embed = discord.Embed(
                 title=target, url=url, color=random.choice(global_settings.colors)
             )
@@ -1983,7 +1988,7 @@ class RLEsportsBot(discord.Client):
             self.meme_subreddit = subreddit
             result = await self.send_meme(message.channel)
             if result == False:
-                await message.channel("Failed to update mem channel!")
+                await message.channel.send("Failed to update mem channel!")
                 self.meme_subreddit = original_meme_subreddit
 
             await self.add_response(message)
