@@ -1,5 +1,10 @@
 """Tests for liqui/prizepool_lookup.py"""
 
+import sys
+import os
+
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
+
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 from bs4 import BeautifulSoup

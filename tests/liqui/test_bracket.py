@@ -1,6 +1,5 @@
 # coding: utf-8
 
-# Dumb hack to be able to access source code files on both windows and linux
 import discord
 from unittest.mock import patch
 import unittest.mock as mock
@@ -8,7 +7,7 @@ import unittest
 import sys
 import os
 
-sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
 
 
 class TestBracketLookup(unittest.IsolatedAsyncioTestCase):
