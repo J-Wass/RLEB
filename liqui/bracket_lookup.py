@@ -40,7 +40,10 @@ def bracket_names(round):
 
     return output
 
-async def handle_bracket_lookup_date(url: str, channel: discord.channel.TextChannel, date_number: int) -> None:
+
+async def handle_bracket_lookup_date(
+    url: str, channel: discord.channel.TextChannel, date_number: int
+) -> None:
     """Handle bracket lookup message.
 
     Args:
@@ -50,7 +53,9 @@ async def handle_bracket_lookup_date(url: str, channel: discord.channel.TextChan
     """
 
 
-async def handle_bracket_lookup(url: str, channel: discord.channel.TextChannel, day_number: int) -> None:
+async def handle_bracket_lookup(
+    url: str, channel: discord.channel.TextChannel, day_number: int
+) -> None:
     """Handle bracket lookup message.
 
     Args:
@@ -101,13 +106,15 @@ async def handle_bracket_lookup(url: str, channel: discord.channel.TextChannel, 
         ) -> datetime:
             """Returns a UTC datetime off of the time string from liquipedia."""
             # Clean timezone offset.
-            tz = timezone.replace(":","")  
+            tz = timezone.replace(":", "")
             if len(tz) == 4:
                 # Add a padding 0 to the first digit, after the +/-.
-                tz = tz[0] + '0' + tz[1:]
-            
+                tz = tz[0] + "0" + tz[1:]
+
             # Liqui format example: March 26, 2022 - 13:15
-            local_datetime = datetime.strptime(liqui_timestring + tz, "%B %d, %Y - %H:%M%z")
+            local_datetime = datetime.strptime(
+                liqui_timestring + tz, "%B %d, %Y - %H:%M%z"
+            )
             return local_datetime.astimezone(pytz.timezone("Etc/UTC"))
 
         def time_of_day_from_datetime(dt: datetime) -> str:
@@ -191,10 +198,11 @@ async def handle_bracket_lookup(url: str, channel: discord.channel.TextChannel, 
 
             final_markdown += f"\n{match_row}"
 
-
         aliases = Data.singleton().read_all_aliases()
         for long_name, short_name in aliases.items():
-            final_markdown = final_markdown.replace(long_name.replace("_", " "), short_name.replace("_", " "))
+            final_markdown = final_markdown.replace(
+                long_name.replace("_", " "), short_name.replace("_", " ")
+            )
         await stdout.print_to_channel(
             channel, final_markdown, title="Elimination Bracket", force_pastebin=True
         )

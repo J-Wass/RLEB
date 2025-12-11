@@ -3,17 +3,17 @@ import queue
 from threading import Thread
 import time
 import discord
-from data_bridge import Data, Remindme
-from tests.common.rleb_async_test_case import RLEBAsyncTestCase
+from data_bridge import Data, Remindme, DataStub
+import unittest
 from unittest.mock import MagicMock
 import unittest.mock as mock
 import sys
 import os
 
-sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
 
 
-class TestDiscordCommands(RLEBAsyncTestCase):
+class TestDiscordCommands(unittest.IsolatedAsyncioTestCase):
     async def _send_message(self, message: str, from_staff_user: bool = False) -> None:
         """Sends a message to discord chat, triggering bot response.
 
@@ -40,6 +40,10 @@ class TestDiscordCommands(RLEBAsyncTestCase):
 
     async def asyncSetUp(self):
         await super().asyncSetUp()
+
+        self.data_stub = mock.patch(
+            "data_bridge.Data.singleton", return_value=DataStub.singleton()
+        ).start()
 
         # Import discord_bridge after setUp is done so that rleb_settings loads with mocks/patches.
         global global_settings
@@ -74,27 +78,31 @@ class TestDiscordCommands(RLEBAsyncTestCase):
         global_settings.discord_async_interval_seconds = 1
         global_settings.user_names_to_ids = {"test_mod#1": 567}
 
+        # Manually create a mock reddit_bridge, since on_ready() is not called in tests.
+        global_settings.reddit_bridge = mock.AsyncMock()
 
-    @mock.patch("discord_bridge.handle_flair_census")
-    async def test_census(self, mock_rleb_census):
+    async def asyncTearDown(self):
+        """Resets the Data singleton after tests."""
+        from data_bridge import Data
 
+        Data._singleton = None
+        self.data_stub.stop()
+
+    @mock.patch("global_settings.reddit_bridge.get_flair_census")
+    async def test_census(self, mock_get_flair_census):
         # Users can't use census
         await self._send_message("!census 5 ,", from_staff_user=False)
-        mock_rleb_census.assert_not_awaited()
-        mock_rleb_census.reset_mock()
+        mock_get_flair_census.assert_not_awaited()
+        mock_get_flair_census.reset_mock()
 
         # Mod can use census
         await self._send_message("!census 5 ,", from_staff_user=True)
-        mock_rleb_census.assert_awaited_once_with(
-            global_settings.sub, 5, self.mock_channel, ","
-        )
-        mock_rleb_census.reset_mock()
+        mock_get_flair_census.assert_awaited_once_with(5, ",")
+        mock_get_flair_census.reset_mock()
 
         # Census works without optional divider
         await self._send_message("!census 10", from_staff_user=True)
-        mock_rleb_census.assert_awaited_once_with(
-            global_settings.sub, 10, self.mock_channel, ","
-        )
+        mock_get_flair_census.assert_awaited_once_with(10, ",")
 
     async def test_triflairs(self):
         # sending emoji instead of ":flair:"
@@ -245,7 +253,7 @@ class TestDiscordCommands(RLEBAsyncTestCase):
     async def test_bracket(self, mock_handle_bracket_lookup):
         # Happy path.
         await self._send_message("!bracket url 1", from_staff_user=True)
-        mock_handle_bracket_lookup.assert_awaited_with("url", "1")
+        mock_handle_bracket_lookup.assert_awaited_with("url", 1)
         mock_handle_bracket_lookup.reset_mock()
 
         # No url.

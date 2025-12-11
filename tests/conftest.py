@@ -1,6 +1,8 @@
 """Pytest configuration and shared fixtures for faster test execution."""
+
 import pytest
 import os
+
 
 # Disable verbose output by default for speed
 def pytest_configure(config):
@@ -10,7 +12,9 @@ def pytest_configure(config):
     os.environ.setdefault("RUNNING_MODE", "test")
 
     # Disable unnecessary plugins if they slow things down
-    config.option.verbose = 0 if config.option.verbose is None else config.option.verbose
+    config.option.verbose = (
+        0 if config.option.verbose is None else config.option.verbose
+    )
 
 
 # Shared fixtures can go here if needed
