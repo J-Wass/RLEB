@@ -1541,7 +1541,7 @@ class RLEsportsBot(discord.Client):
                     "Couldn't understand that. Expected '!bracket liquipedia-url date-of-the-month'."
                 )
                 return
-            bracket_markdown = await diesel.get_bracket_markdown(url, int(date_number))
+            bracket_markdown = await diesel.get_bracket_markdown_date(url, int(date_number))
             if bracket_markdown != None:
                 await stdout.print_to_channel(
                     message.channel, bracket_markdown, title="Bracket"

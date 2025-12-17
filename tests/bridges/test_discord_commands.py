@@ -249,7 +249,7 @@ class TestDiscordCommands(unittest.IsolatedAsyncioTestCase):
         mock_ask_claude.reset_mock()
         self.mock_channel.reset_mock()
 
-    @mock.patch("discord_bridge.diesel.get_bracket_markdown")
+    @mock.patch("discord_bridge.diesel.get_bracket_markdown_date")
     async def test_bracket(self, mock_handle_bracket_lookup):
         # Happy path.
         await self._send_message("!bracket url 1", from_staff_user=True)
