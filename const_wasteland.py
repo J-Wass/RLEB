@@ -31,8 +31,9 @@ timezone_offsets = {
     # Middle East
     "AST": "+0300",  # Arabia Standard Time
     "IRST": "+0330",
-    "IRDT": "+0430",  # Iran Standard Time / Iran Daylight Time
+    "IRDT": "+0430", # Iran Standard Time / Iran Daylight Time
     "GST": "+0400",  # Gulf Standard Time
+    "PKT": "+0500",  # Pakistan Standard Time
     # Asia-Pacific Time Zones
     "IST": "+0530",  # Indian Standard Time
     "BST": "+0600",  # Bangladesh Standard Time

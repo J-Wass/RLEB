@@ -1,445 +1,384 @@
-# Dumb hack to be able to access source code files on both windows and linux
+import unittest
+from unittest.mock import MagicMock, patch, AsyncMock
 import sys
 import os
-
-sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
-
-import unittest
-import unittest.mock as mock
-from unittest.mock import patch, PropertyMock, MagicMock
-from tests.common.rleb_async_test_case import RLEBAsyncTestCase
-from praw.models import ModmailConversation
-
-from queue import Queue
-import praw
+from datetime import datetime
 import asyncio
-from datetime import datetime, timezone
+
+# Add parent directory to path so we can import modules
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
+
+from reddit_bridge import RedditBridge, multiflair_request_keys
+import global_settings
 
 
-class TestReddit(RLEBAsyncTestCase):
+class TestRedditBridge(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        await super().asyncSetUp()
+        # Mock global settings
+        self.mock_settings = patch("global_settings.rleb_log_info").start()
+        self.mock_error = patch("global_settings.rleb_log_error").start()
 
-        # import rleb_reddit after setUp is done so that rleb_settings loads with mocks/patches
-        global reddit_bridge
-        global global_settings
-        global triflairs
-        import reddit_bridge
-        import global_settings
-        import triflairs
-
-        global_settings.thread_restart_interval_seconds = 0
-
-    async def test_stream_new_submissions(self):
-        mock_submission = mock.Mock(spec=praw.models.Submission)
-        mock_submission.created_utc = datetime.now().timestamp()
-
-        def mock_submissions(pause_after=0):
-            """Mock method for sub.stream.submissions()."""
-            yield mock_submission
-            yield None  # PRAW streams yield None when pause_after is used
-
-        # Mock the new submissions stream
-        mock_sub = patch.object(
-            reddit_bridge.sub.stream, "submissions", new=mock_submissions
+        # Mock the Data singleton used in handle_flair_request
+        self.mock_data_instance = MagicMock()
+        self.mock_singleton = patch(
+            "data_bridge.Data.singleton", return_value=self.mock_data_instance
         ).start()
-        self.addCleanup(mock_sub)
 
-        # Collect items from the async generator
-        submissions = []
-        async for submission in reddit_bridge.stream_new_submissions():
-            submissions.append(submission)
+        # Mock asyncpraw.Reddit
+        self.mock_reddit_cls = patch("reddit_bridge.asyncpraw.Reddit").start()
+        self.mock_reddit = self.mock_reddit_cls.return_value
 
-        self.assertEqual(len(submissions), 1)
-        self.assertEqual(submissions[0], mock_submission)
-
-    async def test_stream_new_submissions_old_submission(self):
-        mock_submission = mock.Mock(spec=praw.models.Submission)
-        # Old submission from 10 minutes ago
-        mock_submission.created_utc = datetime.now().timestamp() - 600
-
-        def mock_submissions(pause_after=0):
-            yield mock_submission
-            yield None
-
-        mock_sub = patch.object(
-            reddit_bridge.sub.stream, "submissions", new=mock_submissions
-        ).start()
-        self.addCleanup(mock_sub)
-
-        # Collect submissions
-        submissions = []
-        async for submission in reddit_bridge.stream_new_submissions():
-            submissions.append(submission)
-
-        # Old submission should be filtered out
-        self.assertEqual(len(submissions), 0)
-
-
-    async def test_stream_verified_comments(self):
-        global_settings.verified_needle = "verified"
-
-        mock_comment = mock.Mock()
-        mock_comment.created_utc = datetime.now().timestamp()
-        mock_comment.author = "test_user"
-
-        def mock_comments(skip_existing=True, pause_after=0):
-            yield mock_comment
-            yield None
-
-        def mock_flair(user):
-            return [{"flair_text": "verified user"}]
-
-        with patch.object(reddit_bridge.sub.stream, "comments", new=mock_comments):
-            # Mock sub.flair as a callable
-            with patch("global_settings.sub") as mock_sub:
-                mock_sub.stream.comments = mock_comments
-                mock_sub.flair = mock.Mock(side_effect=mock_flair)
-                # Update reddit_bridge.sub to use our mock
-                with patch.object(reddit_bridge, "sub", mock_sub):
-                    comments = []
-                    async for comment in reddit_bridge.stream_verified_comments():
-                        comments.append(comment)
-
-                    self.assertEqual(len(comments), 1)
-                    self.assertEqual(comments[0], mock_comment)
-
-    async def test_stream_verified_comments_old_comment(self):
-        mock_comment = mock.Mock()
-        mock_comment.created_utc = datetime.now().timestamp() - 600
-
-        def mock_comments(skip_existing=True, pause_after=0):
-            yield mock_comment
-            yield None
-
-        with patch.object(reddit_bridge.sub.stream, "comments", new=mock_comments):
-            comments = []
-            async for comment in reddit_bridge.stream_verified_comments():
-                comments.append(comment)
-
-            # Old comment should be filtered out
-            self.assertEqual(len(comments), 0)
-
-    async def test_stream_verified_comments_no_verified_flair(self):
-        global_settings.verified_needle = "verified"
-
-        mock_comment = mock.Mock()
-        mock_comment.created_utc = datetime.now().timestamp()
-        mock_comment.author = "test_user"
-
-        def mock_comments(skip_existing=True, pause_after=0):
-            yield mock_comment
-            yield None
-
-        def mock_flair(user):
-            return [{"flair_text": "regular user"}]
-
-        with patch.object(reddit_bridge.sub.stream, "comments", new=mock_comments):
-            # Mock sub.flair as a callable
-            with patch("global_settings.sub") as mock_sub:
-                mock_sub.stream.comments = mock_comments
-                mock_sub.flair = mock.Mock(side_effect=mock_flair)
-                # Update reddit_bridge.sub to use our mock
-                with patch.object(reddit_bridge, "sub", mock_sub):
-                    comments = []
-                    async for comment in reddit_bridge.stream_verified_comments():
-                        comments.append(comment)
-
-                    # Comment without verified flair should be filtered out
-                    self.assertEqual(len(comments), 0)
-
-    async def test_process_inbox(self):
-        mock_inbox_item = mock.Mock(spec=praw.models.Message)
-        mock_inbox_item.subject = "flair request"
-        mock_inbox_item.body = "flair request body"
-        mock_inbox_item.author = "some_user"
-
-        def mock_inbox_stream(pause_after=0):
-            """Mock method for r.inbox.stream()."""
-            yield mock_inbox_item
-            yield None
-
-        # Mock the inbox stream
-        inbox_stream = patch.object(
-            reddit_bridge.r.inbox, "stream", new=mock_inbox_stream
-        ).start()
-        self.addCleanup(inbox_stream)
-
-        # Mock mark_read
-        mark_read = patch.object(reddit_bridge.r.inbox, "mark_read").start()
-        self.addCleanup(mark_read)
-
-        # Mock handle_flair_request to verify it gets called
-        mock_dualflairs = patch.object(reddit_bridge, "handle_flair_request").start()
-        self.addCleanup(mock_dualflairs)
-
-        # Run the process_inbox async function (not a generator)
-        await reddit_bridge.process_inbox()
-
-        mock_dualflairs.assert_called_once_with(
-            global_settings.sub, "some_user", "flair request body"
+        # Create instance of RedditBridge
+        self.bridge = RedditBridge(
+            "client_id", "secret", "agent", "user", "pass", "test_sub"
         )
 
-    async def test_stream_modmail_new_conversation(self):
-        """Test that a new modmail conversation is yielded."""
-        mock_modmail_item = mock.Mock(spec=ModmailConversation)
-        mock_modmail_item.id = "123"
-        mock_modmail_item.last_updated = datetime.now(timezone.utc).isoformat()
-        mock_modmail_item.messages = [mock.Mock(body_markdown="test message")]
-        mock_modmail_item.subject = "test subject"
-        mock_modmail_item.authors = [mock.Mock()]
+        # Mock the subreddit object that gets created in start()
+        self.mock_subreddit = AsyncMock()
+        self.bridge.subreddit = self.mock_subreddit
 
-        # Mock the full conversation returned by sub.modmail()
-        mock_full_convo = mock.Mock()
-        mock_full_convo.read = mock.Mock()
+        # Setup mock streams on the bridge instance directly for testing
+        self.bridge.submission_stream = AsyncMock()
+        self.bridge.comment_stream = AsyncMock()
+        self.bridge.inbox_stream = AsyncMock()
+        self.bridge.modmail_stream = AsyncMock()
+        self.bridge.mod_log = AsyncMock()
 
-        def mock_conversations(state="new"):
-            return [mock_modmail_item]
+        # Reset lists
+        self.bridge.comments = []
+        self.bridge.submissions = []
+        self.bridge.mod_logs = []
+        self.bridge.conversations = []
+        self.bridge.moderators = []
 
-        def mock_modmail_call(convo_id):
-            return mock_full_convo
+    async def asyncTearDown(self):
+        patch.stopall()
 
-        # Create a mock modmail object that has both conversations method and is callable
-        mock_modmail = mock.Mock()
-        mock_modmail.conversations = mock_conversations
-        mock_modmail.side_effect = mock_modmail_call
+    async def test_start(self):
+        """Test that start() initializes the subreddit and streams."""
+        # Mock the reddit.subreddit coroutine
+        self.mock_reddit.subreddit = AsyncMock(return_value=self.mock_subreddit)
 
-        # Create a complete mock sub with modmail set up
-        mock_sub = mock.Mock()
-        mock_sub.modmail = mock_modmail
+        # Mock the stream generators to just be empty async iterators so start() doesn't hang if it iterates
+        self.mock_subreddit.stream.submissions = MagicMock()
+        self.mock_subreddit.stream.comments = MagicMock()
+        self.mock_reddit.inbox.stream = MagicMock()
+        self.mock_subreddit.mod.stream.modmail_conversations = MagicMock()
+        self.mock_subreddit.mod.stream.log = MagicMock()
 
-        with patch.object(reddit_bridge, "sub", mock_sub):
-            modmails = []
-            async for modmail in reddit_bridge.stream_modmail():
-                modmails.append(modmail)
+        # Mock get_moderators since it's called in start
+        self.bridge.get_moderators = AsyncMock()
 
-            self.assertEqual(len(modmails), 1)
-            self.assertEqual(modmails[0].id, "123")
-            mock_full_convo.read.assert_called_once()
+        # We need to prevent the event loop from actually scheduling the infinite tasks
+        with patch("asyncio.get_event_loop") as mock_loop:
+            await self.bridge.start()
 
-    async def test_stream_modmail_old_conversation(self):
-        """Test that old modmail conversations are filtered out."""
-        mock_modmail_item = mock.Mock(spec=ModmailConversation)
-        mock_modmail_item.id = "123"
-        # Old conversation from 10 minutes ago
-        old_time = datetime.now(timezone.utc).timestamp() - 600
-        mock_modmail_item.last_updated = datetime.fromtimestamp(old_time, tz=timezone.utc).isoformat()
-        mock_modmail_item.messages = [1]
-        mock_modmail_item.subject = "test"
+            self.mock_reddit.subreddit.assert_called_with("test_sub")
+            self.mock_subreddit.load.assert_called_once()
 
-        def mock_conversations(state="new"):
-            return [mock_modmail_item]
+            # Verify create_task was called for the 5 loops
+            self.assertEqual(mock_loop.return_value.create_task.call_count, 5)
 
-        with patch.object(reddit_bridge.sub.modmail, "conversations", new=mock_conversations):
-            modmails = []
-            async for modmail in reddit_bridge.stream_modmail():
-                modmails.append(modmail)
+    async def test_stream_new_submissions(self):
+        """Test appending new submissions to the list."""
+        mock_sub = MagicMock()
+        mock_sub.title = "Test Submission"
 
-            # Old modmail should be filtered out
-            self.assertEqual(len(modmails), 0)
+        # Setup the stream to yield one submission.
+        async def mock_stream_gen():
+            yield mock_sub
 
-    async def test_stream_modmail_deduplication(self):
-        """Test that duplicate conversations in same batch are deduplicated based on id and message count."""
-        mock_modmail_item = mock.Mock(spec=ModmailConversation)
-        mock_modmail_item.id = "123"
-        mock_modmail_item.last_updated = datetime.now(timezone.utc).isoformat()
-        mock_modmail_item.messages = [mock.Mock(body_markdown="test message")]
-        mock_modmail_item.subject = "test subject"
-        mock_modmail_item.authors = [mock.Mock()]
+        self.bridge.submission_stream = mock_stream_gen()
 
-        mock_full_convo = mock.Mock()
-        mock_full_convo.read = mock.Mock()
+        # The method is an infinite loop, run it as a task.
+        task = asyncio.create_task(self.bridge.stream_new_submissions())
 
-        def mock_conversations(state="new"):
-            # Return same conversation twice in the same batch
-            return [mock_modmail_item, mock_modmail_item]
+        # Let the task run long enough to process the one item.
+        await asyncio.sleep(0.1)
 
-        def mock_modmail_call(convo_id):
-            return mock_full_convo
+        # The task should have processed the submission and be stuck in a busy loop
+        # because the async generator is exhausted.
+        self.assertEqual(len(self.bridge.submissions), 1)
+        self.assertEqual(self.bridge.submissions[0].title, "Test Submission")
 
-        # Create a mock modmail object that has both conversations method and is callable
-        mock_modmail = mock.Mock()
-        mock_modmail.conversations = mock_conversations
-        mock_modmail.side_effect = mock_modmail_call
+        # Cancel the task to prevent the test from hanging.
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass  # Expected
 
-        # Create a complete mock sub with modmail set up
-        mock_sub = mock.Mock()
-        mock_sub.modmail = mock_modmail
+    async def test_stream_verified_comments(self):
+        """Test filtering of verified comments."""
+        global_settings.verified_needle = "verified"
 
-        with patch.object(reddit_bridge, "sub", mock_sub):
-            modmails = []
-            async for modmail in reddit_bridge.stream_modmail():
-                modmails.append(modmail)
+        # Comment 1: Verified
+        comment_verified = MagicMock()
+        comment_verified.author = "verified_user"
 
-            # Should only yield once despite duplicate
-            self.assertEqual(len(modmails), 1)
+        # Comment 2: Not Verified
+        comment_normie = MagicMock()
+        comment_normie.author = "normie_user"
 
-    async def test_stream_modmail_cache_bounding(self):
-        """Test that the conversation cache is bounded to 100 items, removing oldest 50 within a single batch."""
-        mock_full_convo = mock.Mock()
-        mock_full_convo.read = mock.Mock()
+        # Mock the flair call
+        async def mock_flair_gen(author):
+            if author == "verified_user":
+                yield {"flair_text": "verified pro"}
+            else:
+                yield {"flair_text": "random fan"}
 
-        # Create 150 conversations in a single batch, with the first 50 duplicated at the end
-        # This tests that after hitting 100 items, the oldest 50 are removed from cache
-        def create_conversation(idx):
-            mock_item = mock.Mock(spec=ModmailConversation)
-            mock_item.id = str(idx)
-            mock_item.last_updated = datetime.now(timezone.utc).isoformat()
-            mock_item.messages = [mock.Mock(body_markdown="test")]
-            mock_item.subject = "test"
-            mock_item.authors = [mock.Mock()]
-            return mock_item
+        self.bridge.subreddit.flair = mock_flair_gen  # type: ignore
 
-        # Create 100 unique conversations, then add first 50 again as duplicates
-        conversations = [create_conversation(i) for i in range(100)]
-        # Add first 50 again - they should be yielded since cache was cleared
-        conversations.extend([create_conversation(i) for i in range(50)])
+        async def mock_stream_gen():
+            yield comment_verified
+            yield comment_normie
+            yield None
 
-        def mock_conversations(state="new"):
-            return conversations
+        self.bridge.comment_stream = mock_stream_gen()
 
-        def mock_modmail_call(convo_id):
-            return mock_full_convo
+        task = asyncio.create_task(self.bridge.stream_verified_comments())
 
-        # Create a mock modmail object that has both conversations method and is callable
-        mock_modmail = mock.Mock()
-        mock_modmail.conversations = mock_conversations
-        mock_modmail.side_effect = mock_modmail_call
+        await asyncio.sleep(0.1)
 
-        # Create a complete mock sub with modmail set up
-        mock_sub = mock.Mock()
-        mock_sub.modmail = mock_modmail
+        self.assertEqual(len(self.bridge.comments), 1)
+        self.assertEqual(self.bridge.comments[0].author, "verified_user")
 
-        with patch.object(reddit_bridge, "sub", mock_sub):
-            modmails = []
-            async for modmail in reddit_bridge.stream_modmail():
-                modmails.append(modmail)
+        task.cancel()
 
-            # Should get 100 (first batch) + 50 (re-added after cache clear) = 150
-            # But the first 50 after cache clear will be deduplicated, so 100 total
-            # Actually, after 100 items the cache clears the oldest 50, so items 0-49 can appear again
-            # So we should get all 150: 100 unique + 50 that were cleared from cache
-            self.assertEqual(len(modmails), 150)
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass  # Expected
+
+    async def test_process_inbox_flair_request(self):
+        """Test processing a flair request from inbox."""
+        mock_message = MagicMock()
+        mock_message.subject = (
+            "Flair Request"  # Matches a key in multiflair_request_keys
+        )
+        mock_message.body = ":NRG: :G2:"
+        mock_message.author = "fan_boy"
+
+        async def mock_stream_gen():
+            yield mock_message
+            yield None
+
+        self.bridge.inbox_stream = mock_stream_gen()
+        self.bridge.handle_flair_request = AsyncMock()
+
+        task = asyncio.create_task(self.bridge.process_inbox())
+
+        await asyncio.sleep(0.1)
+
+        # Should verify handle_flair_request was called
+        self.bridge.handle_flair_request.assert_called_once_with(
+            mock_message.author, mock_message.body
+        )
+
+        # Verify message marked as read
+        self.bridge.reddit.inbox.mark_read.assert_called_once()  # type: ignore
+
+        task.cancel()
+
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass  # Expected
 
     async def test_stream_modmail_flair_request(self):
-        """Test that flair requests are handled and archived."""
-        mock_modmail_item = mock.Mock(spec=ModmailConversation)
-        mock_modmail_item.id = "123"
-        mock_modmail_item.last_updated = datetime.now(timezone.utc).isoformat()
-        mock_modmail_item.messages = [mock.Mock(body_markdown="NRG, G2, C9")]
-        mock_modmail_item.subject = "Flair Request"  # This matches multiflair_request_keys
-        mock_modmail_item.authors = [mock.Mock()]
+        """Test modmail stream handling a flair request."""
+        mock_convo = MagicMock()
+        mock_convo.subject = "Triflair Request"
+        mock_convo.id = "123"
+        mock_convo.messages = [MagicMock(body_markdown="body", author="user")]
+        mock_convo.authors = ["user"]
+        mock_convo.load = AsyncMock()
+        mock_convo.reply = AsyncMock()
+        mock_convo.archive = AsyncMock()
 
-        mock_full_convo = mock.Mock()
-        mock_full_convo.read = mock.Mock()
-        mock_full_convo.archive = mock.Mock()
-        mock_full_convo.state = "new"
+        async def mock_stream_gen():
+            yield mock_convo
+            yield None
 
-        def mock_conversations(state="new"):
-            return [mock_modmail_item]
+        self.bridge.modmail_stream = mock_stream_gen()
+        self.bridge.handle_flair_request = AsyncMock(
+            return_value={"Succeeded": True, "Message": "Done"}
+        )
 
-        def mock_modmail_call(convo_id):
-            return mock_full_convo
+        task = asyncio.create_task(self.bridge.stream_modmail())
 
-        mock_handle_flair = patch.object(reddit_bridge, "handle_flair_request").start()
-        self.addCleanup(mock_handle_flair.stop)
+        await asyncio.sleep(0.1)
 
-        # Create a mock modmail object that has both conversations method and is callable
-        mock_modmail = mock.Mock()
-        mock_modmail.conversations = mock_conversations
-        mock_modmail.side_effect = mock_modmail_call
+        self.bridge.handle_flair_request.assert_called_once()
+        mock_convo.reply.assert_called_with("Done")
+        mock_convo.archive.assert_called()
 
-        # Create a complete mock sub with modmail set up
-        mock_sub = mock.Mock()
-        mock_sub.modmail = mock_modmail
+        task.cancel()
 
-        with patch.object(reddit_bridge, "sub", mock_sub):
-            modmails = []
-            async for modmail in reddit_bridge.stream_modmail():
-                modmails.append(modmail)
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass  # Expected
 
-            # Flair requests are not yielded (archived immediately)
-            self.assertEqual(len(modmails), 0)
-            # handle_flair_request should be called
-            mock_handle_flair.assert_called_once()
-            # Conversation should be archived
-            mock_full_convo.archive.assert_called_once()
+    async def test_stream_modmail_removal_reason(self):
+        """Test modmail stream filtering removal reasons."""
+        mock_convo = MagicMock()
+        mock_convo.subject = "Your comment was removed from /r/RocketLeagueEsports"
+        # Only 1 message means it's just the notification, not a reply
+        mock_convo.messages = [MagicMock()]
 
-    async def test_stream_modmail_filter_removal_reasons(self):
-        """Test that single-message removal reason modmails are filtered out."""
-        mock_modmail_item = mock.Mock(spec=ModmailConversation)
-        mock_modmail_item.id = "123"
-        mock_modmail_item.last_updated = datetime.now(timezone.utc).isoformat()
-        mock_modmail_item.messages = [mock.Mock(body_markdown="Your comment was removed")]
-        mock_modmail_item.subject = "Your comment was removed from /r/RocketLeagueEsports"
-        mock_modmail_item.authors = [mock.Mock()]
+        async def mock_stream_gen():
+            yield mock_convo
+            yield None
 
-        def mock_conversations(state="new"):
-            return [mock_modmail_item]
+        self.bridge.modmail_stream = mock_stream_gen()
 
-        with patch.object(reddit_bridge.sub.modmail, "conversations", new=mock_conversations):
-            modmails = []
-            async for modmail in reddit_bridge.stream_modmail():
-                modmails.append(modmail)
+        task = asyncio.create_task(self.bridge.stream_modmail())
 
-            # Single-message removal reasons should be filtered
-            self.assertEqual(len(modmails), 0)
+        await asyncio.sleep(0.1)
 
-    async def test_stream_modmail_allow_removal_reason_replies(self):
-        """Test that replies to removal reasons are not filtered."""
-        mock_modmail_item = mock.Mock(spec=ModmailConversation)
-        mock_modmail_item.id = "123"
-        mock_modmail_item.last_updated = datetime.now(timezone.utc).isoformat()
-        # Multiple messages = reply to removal reason
-        mock_modmail_item.messages = [
-            mock.Mock(body_markdown="Your comment was removed"),
-            mock.Mock(body_markdown="Why was this removed?")
+        # Should NOT be added to conversations list
+        self.assertEqual(len(self.bridge.conversations), 0)
+
+        task.cancel()
+
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass  # Expected
+
+    async def test_handle_flair_request_success(self):
+        """Test the logic for handling a valid flair request."""
+        # Setup Data stub to return allowed flairs
+        self.mock_data_instance.read_triflairs.return_value = [(":NRG:",), (":G2:",)]
+
+        user = MagicMock()
+        user.name = "TestUser"
+        body = "Can I have :NRG: and :G2: please"
+
+        # User is not a moderator
+        self.bridge.moderators = []
+
+        result = await self.bridge.handle_flair_request(user, body)
+
+        self.assertTrue(result["Succeeded"])
+        self.assertIn(":NRG:", result["Message"])
+        self.assertIn(":G2:", result["Message"])
+
+        # Verify set call
+        self.bridge.subreddit.flair.set.assert_called_once()
+        _, kwargs = self.bridge.subreddit.flair.set.call_args
+        self.assertEqual(kwargs["text"], ":NRG: :G2:")
+
+    async def test_handle_flair_request_too_many(self):
+        """Test rejection when too many flairs are requested."""
+        self.mock_data_instance.read_triflairs.return_value = [
+            (":A:",),
+            (":B:",),
+            (":C:",),
+            (":D:",),
         ]
-        mock_modmail_item.subject = "Your comment was removed from /r/RocketLeagueEsports"
-        mock_modmail_item.authors = [mock.Mock()]
+        global_settings.number_of_allowed_flairs = 2
 
-        mock_full_convo = mock.Mock()
-        mock_full_convo.read = mock.Mock()
+        user = MagicMock()
+        user.name = "GreedyUser"
+        body = ":A: :B: :C:"
 
-        def mock_conversations(state="new"):
-            return [mock_modmail_item]
+        result = await self.bridge.handle_flair_request(user, body)
 
-        def mock_modmail_call(convo_id):
-            return mock_full_convo
+        self.assertFalse(result["Succeeded"])
+        self.assertIn("limit is 2", result["Message"])
+        self.bridge.subreddit.flair.set.assert_not_called()
 
-        # Create a mock modmail object that has both conversations method and is callable
-        mock_modmail = mock.Mock()
-        mock_modmail.conversations = mock_conversations
-        mock_modmail.side_effect = mock_modmail_call
+    async def test_handle_flair_request_invalid_flair(self):
+        """Test rejection when requesting an invalid flair."""
+        self.mock_data_instance.read_triflairs.return_value = [(":NRG:",)]
 
-        # Create a complete mock sub with modmail set up
-        mock_sub = mock.Mock()
-        mock_sub.modmail = mock_modmail
+        user = MagicMock()
+        user.name = "ConfusedUser"
+        body = ":NRG: :Invalid:"
 
-        with patch.object(reddit_bridge, "sub", mock_sub):
-            modmails = []
-            async for modmail in reddit_bridge.stream_modmail():
-                modmails.append(modmail)
+        result = await self.bridge.handle_flair_request(user, body)
 
-            # Replies to removal reasons should be yielded
-            self.assertEqual(len(modmails), 1)
-            self.assertEqual(len(modmails[0].messages), 2)
+        self.assertFalse(result["Succeeded"])
+        self.assertIn("not allowed", result["Message"])
+        self.assertIn(":Invalid:", result["Message"])
 
-    async def test_stream_modlog(self):
-        log_allowed = MagicMock(mod="good_mod", action="approvecomment") #This should make it through the stream function
-        log_filtered = MagicMock(mod=global_settings.filtered_mod_log[0], action="approvelink") #This should get denied
-        log_disallowed = MagicMock(mod="bad_mod", action="notanaction") #This should get denied
+    async def test_stream_modlog_appends_log(self):
+        """Test that a valid mod log is appended."""
+        global_settings.filtered_mod_log = ["some_bot"]
+        global_settings.allowed_mod_actions = ["removelink"]
 
+        mock_log = MagicMock()
+        mock_log.mod = "a_moderator"
+        mock_log.action = "removelink"
+        mock_log.id = "1"
 
-        global_settings.mod_log =[log_allowed, log_filtered, log_disallowed, None] #Replace generator with list
+        async def mock_stream_gen():
+            yield mock_log
 
-        modlogs = []
-        async for modlog in reddit_bridge.stream_modlog():
-            modlogs.append(modlog)
+        self.bridge.mod_log = mock_stream_gen()
 
-        self.assertEqual(len(modlogs), 1) #Only one should get through
-        self.assertEqual(modlogs[0], log_allowed) #Validate the item that made it through.
+        task = asyncio.create_task(self.bridge.stream_modlog())
+        await asyncio.sleep(0.1)
 
+        self.assertEqual(len(self.bridge.mod_logs), 1)
+        self.assertEqual(self.bridge.mod_logs[0].id, "1")
 
-if __name__ == "__main__":
-    unittest.main()
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+
+    async def test_stream_modlog_ignores_filtered_mod(self):
+        """Test that a mod log from a filtered mod is ignored."""
+        global_settings.filtered_mod_log = ["filtered_bot"]
+        global_settings.allowed_mod_actions = ["removelink"]
+
+        mock_log = MagicMock()
+        mock_log.mod = "filtered_bot"
+        mock_log.action = "removelink"
+        mock_log.id = "1"
+
+        async def mock_stream_gen():
+            yield mock_log
+
+        self.bridge.mod_log = mock_stream_gen()
+
+        task = asyncio.create_task(self.bridge.stream_modlog())
+        await asyncio.sleep(0.1)
+
+        self.assertEqual(len(self.bridge.mod_logs), 0)
+
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+
+    async def test_stream_modlog_ignores_disallowed_action(self):
+        """Test that a mod log with a disallowed action is ignored."""
+        global_settings.filtered_mod_log = ["some_bot"]
+        global_settings.allowed_mod_actions = ["removelink"]
+
+        mock_log = MagicMock()
+        mock_log.mod = "a_moderator"
+        mock_log.action = "approvelink"
+        mock_log.id = "1"
+
+        async def mock_stream_gen():
+            yield mock_log
+
+        self.bridge.mod_log = mock_stream_gen()
+
+        task = asyncio.create_task(self.bridge.stream_modlog())
+        await asyncio.sleep(0.1)
+
+        self.assertEqual(len(self.bridge.mod_logs), 0)
+
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
