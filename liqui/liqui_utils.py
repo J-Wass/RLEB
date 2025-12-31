@@ -44,7 +44,7 @@ def get_page_html_from_url(liquipedia_url: str) -> str:
     """Accepts a liquipedia_url and returns the html for that page."""
     request = _get_content_api_url_from_liqui_url(liquipedia_url)
     response = requests.get(request, headers=headers)
-    # Uncomment to generate the response text for testing.
+    #Uncomment to generate the response text for testing.
     # with open("new_content.txt", "w") as f:
     #     f.write(response.text)
     if response.status_code >= 300:

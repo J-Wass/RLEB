@@ -57,7 +57,7 @@ async def handle_team_lookup(url, channel):
             players = []
 
             # Iterate each player on the team.
-            player_list = team.select(".teamcard-inner .list td > a")
+            player_list = team.select(".teamcard-inner table[data-toggle-area-content='1'] td > a")
             for p in player_list:
                 players.append(p.text.replace("_", "-"))
                 if len(players) >= 3:
