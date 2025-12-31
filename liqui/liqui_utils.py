@@ -45,8 +45,8 @@ def get_page_html_from_url(liquipedia_url: str) -> str:
     request = _get_content_api_url_from_liqui_url(liquipedia_url)
     response = requests.get(request, headers=headers)
     #Uncomment to generate the response text for testing.
-    with open("new_content.txt", "w") as f:
-        f.write(response.text)
+    # with open("new_content.txt", "w") as f:
+    #     f.write(response.text)
     if response.status_code >= 300:
         raise Exception(response.text)
     response_json = json.loads(response.text)
