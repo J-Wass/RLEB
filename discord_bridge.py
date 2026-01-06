@@ -3,7 +3,7 @@ import pathlib
 import signal
 import discord
 import random
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import time
 import asyncio
 from threading import Lock, Thread
@@ -2002,6 +2002,109 @@ class RLEsportsBot(discord.Client):
             )
             await message.channel.send(message_without_command)
             await self.add_response(message)
+
+        elif discord_message.startswith("!contributions"):
+            tokens = discord_message.split()
+            start_days = 30  # default
+            end_days = 0  # default (until today)
+            try:
+                start_days = int(tokens[1])
+                if len(tokens) >= 3:
+                    end_days = int(tokens[2])
+            except (IndexError, ValueError):
+                await message.channel.send(
+                    "Usage: !contributions [start_days] [end_days]\nExample: !contributions 30 0 (30 days ago until today)\nExample: !contributions 33 3 (33 days ago until 3 days ago)"
+                )
+                return
+
+            # Calculate cutoff times (use UTC to match Discord timestamps)
+            after_time = datetime.now(timezone.utc) - timedelta(days=start_days)
+            before_time = datetime.now(timezone.utc) - timedelta(days=end_days) if end_days > 0 else None
+            global_settings.rleb_log_info(f"[DISCORD] !contributions called for days {start_days} to {end_days}, after: {after_time}, before: {before_time}")
+
+            # Get channels
+            channels_to_check = [
+                discord.utils.get(message.guild.channels, name="voting"),
+                discord.utils.get(message.guild.channels, name="ban-review")
+            ]
+
+            if not all(channels_to_check):
+                await message.channel.send("Could not find voting or ban-review channels")
+                return
+
+            date_range_msg = f"{start_days} days ago to {'today' if end_days == 0 else f'{end_days} days ago'}"
+            status_msg = await message.channel.send(f"Counting contributions from {date_range_msg}...")
+
+            # Track contributions
+            user_contributions = {}
+
+            try:
+                # Process both channels
+                for channel in channels_to_check:
+                    # Set weight: ban-review = 2, voting = 1
+                    weight = 2 if channel.name == "ban-review" else 1
+
+                    global_settings.rleb_log_info(f"[DISCORD] Processing channel: {channel.name} (weight: {weight})")
+                    await status_msg.edit(content=f"Processing #{channel.name}...")
+
+                    message_count = 0
+                    reaction_count = 0
+                    async for msg in channel.history(after=after_time, before=before_time, limit=None):
+                        author = str(msg.author)
+                        user_contributions[author] = user_contributions.get(author, 0) + weight
+                        message_count += 1
+
+                        # Update progress every 5 messages
+                        if message_count % 5 == 0:
+                            global_settings.rleb_log_info(f"[DISCORD] Processed {message_count} messages, {reaction_count} reactions")
+                            await status_msg.edit(content=f"Processing #{channel.name}... ({message_count} msgs, {reaction_count} reactions)")
+
+                        # Fetch all users for each reaction
+                        for reaction in msg.reactions:
+                            users_list = [user async for user in reaction.users()]
+                            for user in users_list:
+                                # Skip bots and the message author (to avoid double counting)
+                                if not user.bot and user != msg.author:
+                                    username = str(user)
+                                    user_contributions[username] = user_contributions.get(username, 0) + weight
+                                    reaction_count += 1
+
+                    global_settings.rleb_log_info(f"[DISCORD] Finished {channel.name}: {message_count} messages, {reaction_count} reactions")
+
+                await status_msg.edit(content="Finalizing results...")
+
+                # Add all Subreddit Moderators to the list (even with 0 contributions)
+                for member in message.guild.members:
+                    if is_staff(member):
+                        username = str(member)
+                        if username not in user_contributions:
+                            user_contributions[username] = 0
+
+                # Sort by contributions
+                sorted_contributions = sorted(user_contributions.items(), key=lambda x: x[1], reverse=True)
+
+                # Calculate total contributions
+                total_contributions = sum(count for _, count in sorted_contributions)
+
+                # Format as CSV with percentages
+                output = "username,contributions,percentage\n"
+                for username, count in sorted_contributions:
+                    if total_contributions > 0:
+                        percentage = (count / total_contributions) * 100
+                        output += f"{username},{count},{percentage:.1f}%\n"
+                    else:
+                        output += f"{username},{count},0.0%\n"
+
+                if len(sorted_contributions) == 0:
+                    output = f"No contributions found in the past {days} days."
+
+                global_settings.rleb_log_info(f"[DISCORD] !contributions complete, {len(sorted_contributions)} users, {total_contributions} total")
+                await status_msg.delete()
+                await message.channel.send(f"```\n{output}```")
+                await self.add_response(message)
+            except Exception as e:
+                await status_msg.edit(content=f"Error: {str(e)}")
+                global_settings.rleb_log_info(f"[DISCORD] Error in !contributions: {str(e)}\n{traceback.format_exc()}")
 
         # !chat command handler
         if discord_message.startswith("!chat"):
