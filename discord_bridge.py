@@ -3,7 +3,7 @@ import pathlib
 import signal
 import discord
 import random
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import time
 import asyncio
 from threading import Lock, Thread
@@ -43,6 +43,12 @@ responses_lock = Lock()
 def is_staff(user: discord.Member) -> bool:
     """Return true if discord user has the Subreddit Moderators role."""
     return "Subreddit Moderators" in map(lambda x: x.name, user.roles)
+
+
+def is_admin(user: discord.Member) -> bool:
+    """Return true if discord user has the Subreddit Admins role."""
+    return "Subreddit Admins" in map(lambda x: x.name, user.roles)
+
 
 
 class RLEsportsBot(discord.Client):
@@ -2002,6 +2008,102 @@ class RLEsportsBot(discord.Client):
             )
             await message.channel.send(message_without_command)
             await self.add_response(message)
+
+        elif discord_message.startswith("!contributions") and is_staff(message.author) and is_admin(message.author):
+            if not global_settings.is_discord_mod(message.author):
+                return
+            tokens = discord_message.split()
+            start_days = 30  # default
+            end_days = 0  # default (until today)
+            try:
+                start_days = int(tokens[1])
+                end_days = int(tokens[2])
+            except (IndexError, ValueError):
+                await message.channel.send(
+                    "Usage: !contributions [start_days_ago] [end_days_ago]\nExample: !contributions 35 5 (35 days ago until 5 days ago)"
+                )
+                return
+
+            # Calculate cutoff times
+            after_time = datetime.now(timezone.utc) - timedelta(days=start_days)
+            before_time = datetime.now(timezone.utc) - timedelta(days=end_days) if end_days > 0 else None
+            global_settings.rleb_log_info(f"[DISCORD] !contributions called for days {start_days} to {end_days}, after: {after_time}, before: {before_time}")
+
+            # Get channels, mapped to contribution weight
+            channels_to_weight = {
+                discord.utils.get(message.guild.channels, name="voting"): 1,
+                discord.utils.get(message.guild.channels, name="ban-review"): 2
+            }
+
+            if not all(channels_to_weight.keys()):
+                await message.channel.send("Could not find voting or ban-review channels")
+                return
+
+            date_range_msg = f"{start_days} days ago to {'today' if end_days == 0 else f'{end_days} days ago'}"
+            status_msg = await message.channel.send(f"Counting contributions from {date_range_msg}...")
+
+            # Track contributions, set everyone to 0
+            user_contributions = {}
+            for member in message.guild.members:
+                if is_staff(member):
+                    user_contributions[str(member)] = 0
+
+            try:
+                for channel, weight in channels_to_weight.items():
+
+                    global_settings.rleb_log_info(f"[DISCORD] Processing channel: {channel.name} (weight: {weight})")
+                    await status_msg.edit(content=f"Processing #{channel.name}...")
+
+                    # iterate channel history, this is a slow process
+                    total_contribs = 0
+                    async for msg in channel.history(after=after_time, before=before_time, limit=None):
+                        
+                        author = str(msg.author)
+                        user_contributions[author] += weight
+
+                        # Fetch all users for each reaction
+                        for reaction in msg.reactions:
+                            users_list = [user async for user in reaction.users()]
+                            for reacting_user in users_list:
+                                # Skip the poster, so we don't double count them
+                                if not reacting_user.bot and reacting_user != msg.author:
+                                    user_contributions[str(reacting_user)] += weight
+                                total_contribs += 1
+
+                        global_settings.rleb_log_info(f"[DISCORD] Processed {total_contribs} contributions")
+                        await status_msg.edit(content=f"Processing #{channel.name}... ({total_contribs} contributions)")
+
+                        total_contribs += 1
+
+                    global_settings.rleb_log_info(f"[DISCORD] Finished {channel.name}: {total_contribs} contributions")
+
+                await status_msg.edit(content="Finalizing results...")
+
+
+
+                # Sort by contributions
+                sorted_contributions = sorted(user_contributions.items(), key=lambda x: x[1], reverse=True)
+                total_contributions = sum(count for _, count in sorted_contributions)
+
+                # Format as CSV with percentages
+                output = "username,contributions,percentage\n"
+                for username, count in sorted_contributions:
+                    if total_contributions > 0:
+                        percentage = (count / total_contributions) * 100
+                        output += f"{username},{count},{percentage:.1f}%\n"
+                    else:
+                        output += f"{username},{count},0.0%\n"
+
+                if len(sorted_contributions) == 0:
+                    output = f"No contributions found in the past {days} days."
+
+                global_settings.rleb_log_info(f"[DISCORD] !contributions complete, {len(sorted_contributions)} users, {total_contributions} total")
+                await status_msg.delete()
+                await message.channel.send(f"```\n{output}```")
+                await self.add_response(message)
+            except Exception as e:
+                await status_msg.edit(content=f"Error: {str(e)}")
+                global_settings.rleb_log_info(f"[DISCORD] Error in !contributions: {str(e)}\n{traceback.format_exc()}")
 
         # !chat command handler
         if discord_message.startswith("!chat"):
