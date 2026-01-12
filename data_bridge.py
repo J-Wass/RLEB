@@ -153,6 +153,9 @@ class DataStub(object):
     def read_logs(self, count: int = 10) -> list[tuple[datetime, str]]:
         return []
 
+    def read_logs_matching(self, search_string: str, count: int = 10) -> list[tuple[datetime, str]]:
+        return []
+
     def add_triflair(self, flair_to_add: str) -> None:
         pass
 
@@ -567,8 +570,20 @@ class Data(DataStub):
         with self.postgres_connection() as db:
             cursor = db.cursor()
             cursor.execute(
-                "SELECT log, log_time FROM public.logs ORDER BY log_time DESC limit %s;",
+                "SELECT log_time, log FROM public.logs ORDER BY log_time DESC limit %s;",
                 (count,),
+            )
+            all_logs = cursor.fetchall()
+            return all_logs  # type: ignore[no-any-return]
+
+    def read_logs_matching(self, search_string: str, count: int = 10) -> list[tuple[datetime, str]]:
+        """Reads logs matching a search string from the database."""
+
+        with self.postgres_connection() as db:
+            cursor = db.cursor()
+            cursor.execute(
+                "SELECT log_time, log FROM public.logs WHERE log ILIKE %s ORDER BY log_time DESC limit %s;",
+                (f"%{search_string}%", count),
             )
             all_logs = cursor.fetchall()
             return all_logs  # type: ignore[no-any-return]
