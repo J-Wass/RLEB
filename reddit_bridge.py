@@ -203,6 +203,7 @@ class RedditBridge:
                     self.submission_stream = self.subreddit.stream.submissions(
                         pause_after=0, skip_existing=True
                     )
+                    self.last_submission = datetime.now()
 
             except prawcore.exceptions.TooManyRequests as e:
                 global_settings.rleb_log_error(
@@ -269,6 +270,7 @@ class RedditBridge:
                     self.comment_stream = self.subreddit.stream.comments(
                         pause_after=0, skip_existing=True
                     )
+                    self.last_comment = datetime.now()
 
             except prawcore.exceptions.TooManyRequests as e:
                 global_settings.rleb_log_error(
@@ -369,6 +371,7 @@ class RedditBridge:
                         pause_after=0,
                         skip_existing=True,
                     )
+                    self.last_modlog = datetime.now()
 
             except prawcore.exceptions.TooManyRequests as e:
                 global_settings.rleb_log_error(f"[REDDIT]: stream_modlog() -> {str(e)}")
@@ -462,6 +465,7 @@ class RedditBridge:
                     self.modmail_stream = self.subreddit.modmail.conversations(
                         state="new"
                     )
+                    self.last_modmail = datetime.now()
 
             except prawcore.exceptions.TooManyRequests as e:
                 global_settings.rleb_log_error(
@@ -723,7 +727,7 @@ class RedditBridge:
             elif len(request_not_allowed) > 0:
                 result["Succeeded"] = False
                 result["Message"] = (
-                    f"The following flairs are not allowed: {','.join(request_not_allowed)}\n\nPlease send a new message after fixing the error."
+                    f"The following flairs are not allowed: {','.join(request_not_allowed)}\n\nPlease send a new message after fixing the error.\n\nPlease note that flairs are case sensitive, so make sure you copy and paste from the wiki."
                 )
             else:
                 rleb_log_info(
