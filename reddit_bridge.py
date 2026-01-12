@@ -439,19 +439,18 @@ class RedditBridge:
 
                     # Filter modmail from removal reasons.
                     # Make sure replies to removal reasons aren't filtered (check if they have a parent).
-                    if (
-                        subject
-                        in {
-                            "Your comment was removed from /r/RocketLeagueEsports",
-                            "Your comment from RocketLeagueEsports was removed",
-                            "Your submission was removed from /r/RocketLeagueEsports",
-                            "Your post from RocketLeagueEsports was removed",
-                        }
-                        and len(conversation.messages) == 1
-                    ):
-                        continue
+                    if subject in {
+                        "Your comment was removed from /r/RocketLeagueEsports",
+                        "Your comment from RocketLeagueEsports was removed",
+                        "Your submission was removed from /r/RocketLeagueEsports",
+                        "Your post from RocketLeagueEsports was removed",
+                    }:
+                        await conversation.load()
+                        if len(conversation.messages) == 1:
+                            continue
 
                     self.conversations.append(conversation)
+
                 if self.last_modmail - datetime.now() > timedelta(hours=1):
                     self.modmail_stream = self.subreddit.modmail.conversations(
                         state="new"
