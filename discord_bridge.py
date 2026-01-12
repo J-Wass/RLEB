@@ -1158,32 +1158,98 @@ class RLEsportsBot(discord.Client):
                 )
                 return
 
+
+
+        elif discord_message.startswith("!logfind") and is_staff(message.author):
+            if not global_settings.is_discord_mod(message.author):
+                return
+
+            # Parse search string and count - supports quoted strings for multi-word searches
+            search_string = None
+            count = 10
+
+            if '"' in discord_message:
+                # Handle quoted string for multi-word search
+                try:
+                    first_quote = discord_message.index('"')
+                    second_quote = discord_message.index('"', first_quote + 1)
+                    search_string = discord_message[first_quote + 1:second_quote]
+
+                    if not search_string:
+                        await message.channel.send(
+                            "Expected `!logfind [string] [number]` or `!logfind \"multi word string\" [number]` to find the last n logs matching the string."
+                        )
+                        return
+
+                    # Look for count after closing quote
+                    remaining = discord_message[second_quote + 1:].strip()
+                    if remaining:
+                        count = abs(int(remaining))
+                except ValueError:
+                    await message.channel.send(
+                        "Expected `!logfind [string] [number]` or `!logfind \"multi word string\" [number]` to find the last n logs matching the string."
+                    )
+                    return
+            else:
+                # Handle single word search (backward compatible)
+                tokens = discord_message.split()
+                if len(tokens) < 2:
+                    await message.channel.send(
+                        "Expected `!logfind [string] [number]` or `!logfind \"multi word string\" [number]` to find the last n logs matching the string."
+                    )
+                    return
+
+                search_string = tokens[1]
+                try:
+                    if len(tokens) >= 3:
+                        count = abs(int(tokens[2]))
+                except Exception:
+                    await message.channel.send(
+                        "Expected `!logfind [string] [number]` or `!logfind \"multi word string\" [number]` to find the last n logs matching the string."
+                    )
+                    return
+
+            # Search in memory logs
+            logs = [log for log in global_settings.memory_log if search_string.lower() in log[1].lower()]
+            logs = logs[(-1 * count):]
+
+            if len(logs) < count:
+                # fill in remaining logs from db.
+                remaining_log_count = count - len(logs)
+                logs.extend(Data.singleton().read_logs_matching(search_string, remaining_log_count))
+
+            try:
+                if logs == None or len(logs) == 0:
+                    await message.channel.send(f"No logs matching '{search_string}' to show.")
+                    return
+                msg = "\n".join([f"{log[0]} - {log[1]}" for log in logs])
+                await stdout.print_to_channel(message.channel, msg, title=f"logs matching '{search_string}'")
+            except discord.HTTPException:
+                global_settings.rleb_log_error(traceback.format_exc())
+                await message.channel.send(
+                    "Couldn't send logs over! (tip: there's a limit to the number of characters that can be sent. Make sure you aren't requesting too many logs. Use '!logfind [string] [n]' or '!logfind \"multi word\" [n]', where n is a small number to avoid the character limit.)"
+                )
+            await self.add_response(message)
+
         elif discord_message.startswith("!logs") and is_staff(message.author):
             if not global_settings.is_discord_mod(message.author):
                 return
 
             tokens = discord_message.split()
-            datasource = "memory"
             count = 10
             try:
-                datasource = str(tokens[1])
-                count = abs(int(tokens[2]))
+                count = abs(int(tokens[1]))
             except Exception:
                 await message.channel.send(
-                    "The first argument should be 'memory' or 'db', and the second argument should be the number of logs to see."
+                    "Expected `!logs [number]` to find the last n logs. Use `!logfind [string] [number]` or `!logfind \"multi word string\" [number]` to find the last n logs matching the string."
                 )
                 return
 
-            logs = None
-            if datasource == "memory":
-                logs = global_settings.memory_log[(-1 * count) :]
-            elif datasource == "db":
-                logs = Data.singleton().read_logs(count)
-            else:
-                await message.channel.send(
-                    "The first argument should be either 'memory' or 'db'."
-                )
-                return
+            logs = global_settings.memory_log[(-1 * count) :]
+            if len(logs) < count:
+                # fill in remaining logs from db.
+                remaining_log_count = count - len(logs)
+                logs.extend(Data.singleton().read_logs(remaining_log_count))
             try:
                 if logs == None or len(logs) == 0:
                     await message.channel.send("No logs to show.")
@@ -1193,7 +1259,7 @@ class RLEsportsBot(discord.Client):
             except discord.HTTPException:
                 global_settings.rleb_log_error(traceback.format_exc())
                 await message.channel.send(
-                    "Couldn't send logs over! (tip: there's a limit to the number of characters that can be sent. Make sure you aren't requesting too many logs. Use '!logs [db/memory] [n]', where n is a small number to avoid the character limit.)"
+                    "Couldn't send logs over! (tip: there's a limit to the number of characters that can be sent. Make sure you aren't requesting too many logs. Use '!logs [n]', where n is a small number to avoid the character limit.)"
                 )
             await self.add_response(message)
 
