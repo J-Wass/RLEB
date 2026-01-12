@@ -333,6 +333,21 @@ MONTHS = [
 ]
 DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
+
+def calculateTime(start: datetime, level=3) -> str:
+    duration = datetime.now() - start
+    seconds = duration.total_seconds()
+    hours = round(seconds // 3600)
+    minutes = round((seconds % 3600) // 60)
+    seconds = round(seconds % 60)
+    if level == 1:
+        return f"{seconds:02d}"
+    elif level == 2:
+        return f"{minutes:02d}:{seconds:02d}"
+    else:
+        return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+
+
 # PASTEBIN
 PASTEBIN_API_KEY = (
     os.environ.get("PASTEBIN_API_KEY") or config["Pastebin"]["PASTEBIN_API_KEY"]

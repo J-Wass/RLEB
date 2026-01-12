@@ -50,7 +50,6 @@ def is_admin(user: discord.Member) -> bool:
     return "Subreddit Admins" in map(lambda x: x.name, user.roles)
 
 
-
 class RLEsportsBot(discord.Client):
     new_post_channel: discord.TextChannel
     modmail_channel: discord.TextChannel
@@ -287,7 +286,7 @@ class RLEsportsBot(discord.Client):
                 )
             except Exception as e:
                 global_settings.rleb_log_error(
-                    "[DISCORD]: Submissions asyncio thread failed - {0}".format(e)
+                    f"[DISCORD]: Submissions asyncio thread failed - {e}, submission ID:{submission.id}"
                 )
                 await self.bot_command_channel.send(  # type: ignore
                     "New Submissions asyncio thread encountered error"
@@ -1158,8 +1157,6 @@ class RLEsportsBot(discord.Client):
                 )
                 return
 
-
-
         elif discord_message.startswith("!logfind") and is_staff(message.author):
             if not global_settings.is_discord_mod(message.author):
                 return
@@ -1173,21 +1170,21 @@ class RLEsportsBot(discord.Client):
                 try:
                     first_quote = discord_message.index('"')
                     second_quote = discord_message.index('"', first_quote + 1)
-                    search_string = discord_message[first_quote + 1:second_quote]
+                    search_string = discord_message[first_quote + 1 : second_quote]
 
                     if not search_string:
                         await message.channel.send(
-                            "Expected `!logfind [string] [number]` or `!logfind \"multi word string\" [number]` to find the last n logs matching the string."
+                            'Expected `!logfind [string] [number]` or `!logfind "multi word string" [number]` to find the last n logs matching the string.'
                         )
                         return
 
                     # Look for count after closing quote
-                    remaining = discord_message[second_quote + 1:].strip()
+                    remaining = discord_message[second_quote + 1 :].strip()
                     if remaining:
                         count = abs(int(remaining))
                 except ValueError:
                     await message.channel.send(
-                        "Expected `!logfind [string] [number]` or `!logfind \"multi word string\" [number]` to find the last n logs matching the string."
+                        'Expected `!logfind [string] [number]` or `!logfind "multi word string" [number]` to find the last n logs matching the string.'
                     )
                     return
             else:
@@ -1195,7 +1192,7 @@ class RLEsportsBot(discord.Client):
                 tokens = discord_message.split()
                 if len(tokens) < 2:
                     await message.channel.send(
-                        "Expected `!logfind [string] [number]` or `!logfind \"multi word string\" [number]` to find the last n logs matching the string."
+                        'Expected `!logfind [string] [number]` or `!logfind "multi word string" [number]` to find the last n logs matching the string.'
                     )
                     return
 
@@ -1205,25 +1202,37 @@ class RLEsportsBot(discord.Client):
                         count = abs(int(tokens[2]))
                 except Exception:
                     await message.channel.send(
-                        "Expected `!logfind [string] [number]` or `!logfind \"multi word string\" [number]` to find the last n logs matching the string."
+                        'Expected `!logfind [string] [number]` or `!logfind "multi word string" [number]` to find the last n logs matching the string.'
                     )
                     return
 
             # Search in memory logs
-            logs = [log for log in global_settings.memory_log if search_string.lower() in log[1].lower()]
-            logs = logs[(-1 * count):]
+            logs = [
+                log
+                for log in global_settings.memory_log
+                if search_string.lower() in log[1].lower()
+            ]
+            logs = logs[(-1 * count) :]
 
             if len(logs) < count:
                 # fill in remaining logs from db.
                 remaining_log_count = count - len(logs)
-                logs.extend(Data.singleton().read_logs_matching(search_string, remaining_log_count))
+                logs.extend(
+                    Data.singleton().read_logs_matching(
+                        search_string, remaining_log_count
+                    )
+                )
 
             try:
                 if logs == None or len(logs) == 0:
-                    await message.channel.send(f"No logs matching '{search_string}' to show.")
+                    await message.channel.send(
+                        f"No logs matching '{search_string}' to show."
+                    )
                     return
                 msg = "\n".join([f"{log[0]} - {log[1]}" for log in logs])
-                await stdout.print_to_channel(message.channel, msg, title=f"logs matching '{search_string}'")
+                await stdout.print_to_channel(
+                    message.channel, msg, title=f"logs matching '{search_string}'"
+                )
             except discord.HTTPException:
                 global_settings.rleb_log_error(traceback.format_exc())
                 await message.channel.send(
@@ -1241,7 +1250,7 @@ class RLEsportsBot(discord.Client):
                 count = abs(int(tokens[1]))
             except Exception:
                 await message.channel.send(
-                    "Expected `!logs [number]` to find the last n logs. Use `!logfind [string] [number]` or `!logfind \"multi word string\" [number]` to find the last n logs matching the string."
+                    'Expected `!logs [number]` to find the last n logs. Use `!logfind [string] [number]` or `!logfind "multi word string" [number]` to find the last n logs matching the string.'
                 )
                 return
 
@@ -1392,6 +1401,22 @@ class RLEsportsBot(discord.Client):
                 for k, v in global_settings.asyncio_threads_heartbeats.items()
             ]
             await message.channel.send(f"**Asyncio heartbeats:** {asyncio_heartbeat}")
+
+            try:
+                await message.channel.send(
+                    f"Last Modmail: {global_settings.calculateTime(global_settings.reddit_bridge.last_modmail)}"  # type: ignore
+                )
+                await message.channel.send(
+                    f"Last ModLog: {global_settings.calculateTime(global_settings.reddit_bridge.last_modlog)}"  # type: ignore
+                )
+                await message.channel.send(
+                    f"Last Submission: {global_settings.calculateTime(global_settings.reddit_bridge.last_submission)}"  # type: ignore
+                )
+                await message.channel.send(
+                    f"Last Comment: {global_settings.calculateTime(global_settings.reddit_bridge.last_comment)}"  # type: ignore
+                )
+            except:
+                pass
 
             await self.add_response(message)
 
@@ -1613,7 +1638,9 @@ class RLEsportsBot(discord.Client):
                     "Couldn't understand that. Expected '!bracket liquipedia-url date-of-the-month'."
                 )
                 return
-            bracket_markdown = await diesel.get_bracket_markdown_date(url, int(date_number))
+            bracket_markdown = await diesel.get_bracket_markdown_date(
+                url, int(date_number)
+            )
             if bracket_markdown != None:
                 await stdout.print_to_channel(
                     message.channel, bracket_markdown, title="Bracket"
@@ -2075,7 +2102,11 @@ class RLEsportsBot(discord.Client):
             await message.channel.send(message_without_command)
             await self.add_response(message)
 
-        elif discord_message.startswith("!contributions") and is_staff(message.author) and is_admin(message.author):
+        elif (
+            discord_message.startswith("!contributions")
+            and is_staff(message.author)
+            and is_admin(message.author)
+        ):
             if not global_settings.is_discord_mod(message.author):
                 return
             tokens = discord_message.split()
@@ -2092,21 +2123,31 @@ class RLEsportsBot(discord.Client):
 
             # Calculate cutoff times
             after_time = datetime.now(timezone.utc) - timedelta(days=start_days)
-            before_time = datetime.now(timezone.utc) - timedelta(days=end_days) if end_days > 0 else None
-            global_settings.rleb_log_info(f"[DISCORD] !contributions called for days {start_days} to {end_days}, after: {after_time}, before: {before_time}")
+            before_time = (
+                datetime.now(timezone.utc) - timedelta(days=end_days)
+                if end_days > 0
+                else None
+            )
+            global_settings.rleb_log_info(
+                f"[DISCORD] !contributions called for days {start_days} to {end_days}, after: {after_time}, before: {before_time}"
+            )
 
             # Get channels, mapped to contribution weight
             channels_to_weight = {
                 discord.utils.get(message.guild.channels, name="voting"): 1,
-                discord.utils.get(message.guild.channels, name="ban-review"): 2
+                discord.utils.get(message.guild.channels, name="ban-review"): 2,
             }
 
             if not all(channels_to_weight.keys()):
-                await message.channel.send("Could not find voting or ban-review channels")
+                await message.channel.send(
+                    "Could not find voting or ban-review channels"
+                )
                 return
 
             date_range_msg = f"{start_days} days ago to {'today' if end_days == 0 else f'{end_days} days ago'}"
-            status_msg = await message.channel.send(f"Counting contributions from {date_range_msg}...")
+            status_msg = await message.channel.send(
+                f"Counting contributions from {date_range_msg}..."
+            )
 
             # Track contributions, set everyone to 0
             user_contributions = {}
@@ -2116,14 +2157,16 @@ class RLEsportsBot(discord.Client):
 
             try:
                 for channel, weight in channels_to_weight.items():
-
-                    global_settings.rleb_log_info(f"[DISCORD] Processing channel: {channel.name} (weight: {weight})")
+                    global_settings.rleb_log_info(
+                        f"[DISCORD] Processing channel: {channel.name} (weight: {weight})"
+                    )
                     await status_msg.edit(content=f"Processing #{channel.name}...")
 
                     # iterate channel history, this is a slow process
                     total_contribs = 0
-                    async for msg in channel.history(after=after_time, before=before_time, limit=None):
-                        
+                    async for msg in channel.history(
+                        after=after_time, before=before_time, limit=None
+                    ):
                         author = str(msg.author)
                         user_contributions[author] += weight
 
@@ -2132,23 +2175,32 @@ class RLEsportsBot(discord.Client):
                             users_list = [user async for user in reaction.users()]
                             for reacting_user in users_list:
                                 # Skip the poster, so we don't double count them
-                                if not reacting_user.bot and reacting_user != msg.author:
+                                if (
+                                    not reacting_user.bot
+                                    and reacting_user != msg.author
+                                ):
                                     user_contributions[str(reacting_user)] += weight
                                 total_contribs += 1
 
-                        global_settings.rleb_log_info(f"[DISCORD] Processed {total_contribs} contributions")
-                        await status_msg.edit(content=f"Processing #{channel.name}... ({total_contribs} contributions)")
+                        global_settings.rleb_log_info(
+                            f"[DISCORD] Processed {total_contribs} contributions"
+                        )
+                        await status_msg.edit(
+                            content=f"Processing #{channel.name}... ({total_contribs} contributions)"
+                        )
 
                         total_contribs += 1
 
-                    global_settings.rleb_log_info(f"[DISCORD] Finished {channel.name}: {total_contribs} contributions")
+                    global_settings.rleb_log_info(
+                        f"[DISCORD] Finished {channel.name}: {total_contribs} contributions"
+                    )
 
                 await status_msg.edit(content="Finalizing results...")
 
-
-
                 # Sort by contributions
-                sorted_contributions = sorted(user_contributions.items(), key=lambda x: x[1], reverse=True)
+                sorted_contributions = sorted(
+                    user_contributions.items(), key=lambda x: x[1], reverse=True
+                )
                 total_contributions = sum(count for _, count in sorted_contributions)
 
                 # Format as CSV with percentages
@@ -2161,15 +2213,19 @@ class RLEsportsBot(discord.Client):
                         output += f"{username},{count},0.0%\n"
 
                 if len(sorted_contributions) == 0:
-                    output = f"No contributions found in the past {days} days."
+                    output = f"No contributions found in the past {start_days - end_days} days."
 
-                global_settings.rleb_log_info(f"[DISCORD] !contributions complete, {len(sorted_contributions)} users, {total_contributions} total")
+                global_settings.rleb_log_info(
+                    f"[DISCORD] !contributions complete, {len(sorted_contributions)} users, {total_contributions} total"
+                )
                 await status_msg.delete()
                 await message.channel.send(f"```\n{output}```")
                 await self.add_response(message)
             except Exception as e:
                 await status_msg.edit(content=f"Error: {str(e)}")
-                global_settings.rleb_log_info(f"[DISCORD] Error in !contributions: {str(e)}\n{traceback.format_exc()}")
+                global_settings.rleb_log_info(
+                    f"[DISCORD] Error in !contributions: {str(e)}\n{traceback.format_exc()}"
+                )
 
         # !chat command handler
         if discord_message.startswith("!chat"):
