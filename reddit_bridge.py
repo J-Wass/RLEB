@@ -65,20 +65,27 @@ class RedditBridge:
             pause_after=0,
             skip_existing=True,
         )
+        self.last_modlog = datetime.now()
+
         # Streams all new submissions from the subreddit.
         self.submission_stream = self.subreddit.stream.submissions(
             pause_after=0, skip_existing=True
         )
+        self.last_submission = datetime.now()
+
         # Streams all new comments from the subreddit
         self.comment_stream = self.subreddit.stream.comments(
             pause_after=0, skip_existing=True
         )
+        self.last_comment = datetime.now()
+
         # Streams all new inbox messages
         self.inbox_stream = self.reddit.inbox.stream(pause_after=0, skip_existing=True)
         # Streams all new modmail entries
         self.modmail_stream = self.subreddit.mod.stream.modmail_conversations(
             pause_after=0, skip_existing=True
         )
+        self.last_modmail = datetime.now()
 
         self.comments = []
         self.submissions = []

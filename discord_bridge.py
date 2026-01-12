@@ -1157,8 +1157,6 @@ class RLEsportsBot(discord.Client):
                 )
                 return
 
-
-
         elif discord_message.startswith("!logfind") and is_staff(message.author):
             if not global_settings.is_discord_mod(message.author):
                 return
@@ -1172,21 +1170,21 @@ class RLEsportsBot(discord.Client):
                 try:
                     first_quote = discord_message.index('"')
                     second_quote = discord_message.index('"', first_quote + 1)
-                    search_string = discord_message[first_quote + 1:second_quote]
+                    search_string = discord_message[first_quote + 1 : second_quote]
 
                     if not search_string:
                         await message.channel.send(
-                            "Expected `!logfind [string] [number]` or `!logfind \"multi word string\" [number]` to find the last n logs matching the string."
+                            'Expected `!logfind [string] [number]` or `!logfind "multi word string" [number]` to find the last n logs matching the string.'
                         )
                         return
 
                     # Look for count after closing quote
-                    remaining = discord_message[second_quote + 1:].strip()
+                    remaining = discord_message[second_quote + 1 :].strip()
                     if remaining:
                         count = abs(int(remaining))
                 except ValueError:
                     await message.channel.send(
-                        "Expected `!logfind [string] [number]` or `!logfind \"multi word string\" [number]` to find the last n logs matching the string."
+                        'Expected `!logfind [string] [number]` or `!logfind "multi word string" [number]` to find the last n logs matching the string.'
                     )
                     return
             else:
@@ -1194,7 +1192,7 @@ class RLEsportsBot(discord.Client):
                 tokens = discord_message.split()
                 if len(tokens) < 2:
                     await message.channel.send(
-                        "Expected `!logfind [string] [number]` or `!logfind \"multi word string\" [number]` to find the last n logs matching the string."
+                        'Expected `!logfind [string] [number]` or `!logfind "multi word string" [number]` to find the last n logs matching the string.'
                     )
                     return
 
@@ -1204,25 +1202,37 @@ class RLEsportsBot(discord.Client):
                         count = abs(int(tokens[2]))
                 except Exception:
                     await message.channel.send(
-                        "Expected `!logfind [string] [number]` or `!logfind \"multi word string\" [number]` to find the last n logs matching the string."
+                        'Expected `!logfind [string] [number]` or `!logfind "multi word string" [number]` to find the last n logs matching the string.'
                     )
                     return
 
             # Search in memory logs
-            logs = [log for log in global_settings.memory_log if search_string.lower() in log[1].lower()]
-            logs = logs[(-1 * count):]
+            logs = [
+                log
+                for log in global_settings.memory_log
+                if search_string.lower() in log[1].lower()
+            ]
+            logs = logs[(-1 * count) :]
 
             if len(logs) < count:
                 # fill in remaining logs from db.
                 remaining_log_count = count - len(logs)
-                logs.extend(Data.singleton().read_logs_matching(search_string, remaining_log_count))
+                logs.extend(
+                    Data.singleton().read_logs_matching(
+                        search_string, remaining_log_count
+                    )
+                )
 
             try:
                 if logs == None or len(logs) == 0:
-                    await message.channel.send(f"No logs matching '{search_string}' to show.")
+                    await message.channel.send(
+                        f"No logs matching '{search_string}' to show."
+                    )
                     return
                 msg = "\n".join([f"{log[0]} - {log[1]}" for log in logs])
-                await stdout.print_to_channel(message.channel, msg, title=f"logs matching '{search_string}'")
+                await stdout.print_to_channel(
+                    message.channel, msg, title=f"logs matching '{search_string}'"
+                )
             except discord.HTTPException:
                 global_settings.rleb_log_error(traceback.format_exc())
                 await message.channel.send(
@@ -1240,7 +1250,7 @@ class RLEsportsBot(discord.Client):
                 count = abs(int(tokens[1]))
             except Exception:
                 await message.channel.send(
-                    "Expected `!logs [number]` to find the last n logs. Use `!logfind [string] [number]` or `!logfind \"multi word string\" [number]` to find the last n logs matching the string."
+                    'Expected `!logs [number]` to find the last n logs. Use `!logfind [string] [number]` or `!logfind "multi word string" [number]` to find the last n logs matching the string.'
                 )
                 return
 
@@ -1391,6 +1401,22 @@ class RLEsportsBot(discord.Client):
                 for k, v in global_settings.asyncio_threads_heartbeats.items()
             ]
             await message.channel.send(f"**Asyncio heartbeats:** {asyncio_heartbeat}")
+
+            try:
+                await message.channel.send(
+                    f"Last Modmail: {global_settings.calculateTime(global_settings.reddit_bridge.last_modmail)}"  # type: ignore
+                )
+                await message.channel.send(
+                    f"Last ModLog: {global_settings.calculateTime(global_settings.reddit_bridge.last_modlog)}"  # type: ignore
+                )
+                await message.channel.send(
+                    f"Last Submission: {global_settings.calculateTime(global_settings.reddit_bridge.last_submission)}"  # type: ignore
+                )
+                await message.channel.send(
+                    f"Last Comment: {global_settings.calculateTime(global_settings.reddit_bridge.last_comment)}"  # type: ignore
+                )
+            except:
+                pass
 
             await self.add_response(message)
 
@@ -2187,7 +2213,7 @@ class RLEsportsBot(discord.Client):
                         output += f"{username},{count},0.0%\n"
 
                 if len(sorted_contributions) == 0:
-                    output = f"No contributions found in the past {days} days."
+                    output = f"No contributions found in the past {start_days - end_days} days."
 
                 global_settings.rleb_log_info(
                     f"[DISCORD] !contributions complete, {len(sorted_contributions)} users, {total_contributions} total"
