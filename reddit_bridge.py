@@ -5,7 +5,7 @@ import traceback
 import random
 import re
 from data_bridge import Data
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 import global_settings
 from global_settings import rleb_log_info
@@ -173,13 +173,29 @@ class RedditBridge:
 
     async def stream_new_submissions(self):
         """Stream subreddit submissions. Will add new submissions to self.submissions list."""
+        self.last_submission = datetime.now()
         while True:
             try:
                 # This will check for any new submissions and add them to self.submissions
                 async for submission in self.submission_stream:
                     if submission is None:
                         break
+                    if submission.author.name is None:
+                        break
+                    # Sometimes, submission stream gives us old posts. Only accept posts that are within 5m of now.
+                    submission_datetime = datetime.fromtimestamp(submission.created_utc)
+                    if (
+                        abs((datetime.now() - submission_datetime).total_seconds())
+                        > 60 * 5
+                    ):
+                        continue
                     self.submissions.append(submission)
+                    self.last_submission = datetime.now()
+
+                if self.last_submission - datetime.now() > timedelta(hours=1):
+                    self.submission_stream = self.subreddit.stream.submissions(
+                        pause_after=0, skip_existing=True
+                    )
 
             except prawcore.exceptions.TooManyRequests as e:
                 global_settings.rleb_log_error(
@@ -214,11 +230,20 @@ class RedditBridge:
 
     async def stream_verified_comments(self):
         """Stream verified comments. Updates self.comments when a new verified comment is found."""
+        self.last_comment = datetime.now()
         while True:
             try:
                 async for comment in self.comment_stream:
                     if comment is None:
                         break
+                    # check if it arrived in the last 5 mins.
+                    submission_datetime = datetime.fromtimestamp(comment.created_utc)
+                    if (
+                        abs((datetime.now() - submission_datetime).total_seconds())
+                        > 60 * 5
+                    ):
+                        continue
+                    self.last_comment = datetime.now()
 
                     async for flair in self.subreddit.flair(comment.author):
                         if (
@@ -233,6 +258,10 @@ class RedditBridge:
                         ):
                             self.comments.append(comment)
                             break
+                if self.last_comment - datetime.now() > timedelta(hours=1):
+                    self.comment_stream = self.subreddit.stream.comments(
+                        pause_after=0, skip_existing=True
+                    )
 
             except prawcore.exceptions.TooManyRequests as e:
                 global_settings.rleb_log_error(
@@ -311,11 +340,13 @@ class RedditBridge:
 
     async def stream_modlog(self):
         """Stream mod log entries. Async generator that yields modlog entries."""
+        self.last_modlog = datetime.now()
         while True:
             try:
                 async for log in self.mod_log:
                     if log is None:
                         break
+                    self.last_modlog = datetime.now()
                     # only accept logs that have an appropriate mod & action
                     if log.mod != None and (
                         log.mod in global_settings.filtered_mod_log
@@ -326,6 +357,11 @@ class RedditBridge:
                     ):
                         continue
                     self.mod_logs.append(log)
+                if self.last_modlog - datetime.now() > timedelta(hours=1):
+                    self.mod_log = self.subreddit.mod.stream.log(
+                        pause_after=0,
+                        skip_existing=True,
+                    )
 
             except prawcore.exceptions.TooManyRequests as e:
                 global_settings.rleb_log_error(f"[REDDIT]: stream_modlog() -> {str(e)}")
@@ -357,12 +393,14 @@ class RedditBridge:
     # TODO refactor
     async def stream_modmail(self):
         """Stream modmail conversations. Async generator that yields modmail conversations."""
+        self.last_modmail = datetime.now()
         while True:
             try:
                 # Within-batch deduplication (only for this single batch)
                 async for conversation in self.modmail_stream:
                     if conversation == None:
                         break
+                    self.last_modmail = datetime.now()
 
                     global_settings.rleb_log_info(
                         f"[REDDIT]: Modmail - {conversation.id}"
@@ -414,6 +452,11 @@ class RedditBridge:
                         continue
 
                     self.conversations.append(conversation)
+                if self.last_modmail - datetime.now() > timedelta(hours=1):
+                    self.modmail_stream = self.subreddit.modmail.conversations(
+                        state="new"
+                    )
+
             except prawcore.exceptions.TooManyRequests as e:
                 global_settings.rleb_log_error(
                     f"[REDDIT]: stream_modmail() -> {str(e)}"

@@ -50,7 +50,6 @@ def is_admin(user: discord.Member) -> bool:
     return "Subreddit Admins" in map(lambda x: x.name, user.roles)
 
 
-
 class RLEsportsBot(discord.Client):
     new_post_channel: discord.TextChannel
     modmail_channel: discord.TextChannel
@@ -287,7 +286,7 @@ class RLEsportsBot(discord.Client):
                 )
             except Exception as e:
                 global_settings.rleb_log_error(
-                    "[DISCORD]: Submissions asyncio thread failed - {0}".format(e)
+                    f"[DISCORD]: Submissions asyncio thread failed - {e}, submission ID:{submission.id}"
                 )
                 await self.bot_command_channel.send(  # type: ignore
                     "New Submissions asyncio thread encountered error"
@@ -1547,7 +1546,9 @@ class RLEsportsBot(discord.Client):
                     "Couldn't understand that. Expected '!bracket liquipedia-url date-of-the-month'."
                 )
                 return
-            bracket_markdown = await diesel.get_bracket_markdown_date(url, int(date_number))
+            bracket_markdown = await diesel.get_bracket_markdown_date(
+                url, int(date_number)
+            )
             if bracket_markdown != None:
                 await stdout.print_to_channel(
                     message.channel, bracket_markdown, title="Bracket"
@@ -2009,7 +2010,11 @@ class RLEsportsBot(discord.Client):
             await message.channel.send(message_without_command)
             await self.add_response(message)
 
-        elif discord_message.startswith("!contributions") and is_staff(message.author) and is_admin(message.author):
+        elif (
+            discord_message.startswith("!contributions")
+            and is_staff(message.author)
+            and is_admin(message.author)
+        ):
             if not global_settings.is_discord_mod(message.author):
                 return
             tokens = discord_message.split()
@@ -2026,21 +2031,31 @@ class RLEsportsBot(discord.Client):
 
             # Calculate cutoff times
             after_time = datetime.now(timezone.utc) - timedelta(days=start_days)
-            before_time = datetime.now(timezone.utc) - timedelta(days=end_days) if end_days > 0 else None
-            global_settings.rleb_log_info(f"[DISCORD] !contributions called for days {start_days} to {end_days}, after: {after_time}, before: {before_time}")
+            before_time = (
+                datetime.now(timezone.utc) - timedelta(days=end_days)
+                if end_days > 0
+                else None
+            )
+            global_settings.rleb_log_info(
+                f"[DISCORD] !contributions called for days {start_days} to {end_days}, after: {after_time}, before: {before_time}"
+            )
 
             # Get channels, mapped to contribution weight
             channels_to_weight = {
                 discord.utils.get(message.guild.channels, name="voting"): 1,
-                discord.utils.get(message.guild.channels, name="ban-review"): 2
+                discord.utils.get(message.guild.channels, name="ban-review"): 2,
             }
 
             if not all(channels_to_weight.keys()):
-                await message.channel.send("Could not find voting or ban-review channels")
+                await message.channel.send(
+                    "Could not find voting or ban-review channels"
+                )
                 return
 
             date_range_msg = f"{start_days} days ago to {'today' if end_days == 0 else f'{end_days} days ago'}"
-            status_msg = await message.channel.send(f"Counting contributions from {date_range_msg}...")
+            status_msg = await message.channel.send(
+                f"Counting contributions from {date_range_msg}..."
+            )
 
             # Track contributions, set everyone to 0
             user_contributions = {}
@@ -2050,14 +2065,16 @@ class RLEsportsBot(discord.Client):
 
             try:
                 for channel, weight in channels_to_weight.items():
-
-                    global_settings.rleb_log_info(f"[DISCORD] Processing channel: {channel.name} (weight: {weight})")
+                    global_settings.rleb_log_info(
+                        f"[DISCORD] Processing channel: {channel.name} (weight: {weight})"
+                    )
                     await status_msg.edit(content=f"Processing #{channel.name}...")
 
                     # iterate channel history, this is a slow process
                     total_contribs = 0
-                    async for msg in channel.history(after=after_time, before=before_time, limit=None):
-                        
+                    async for msg in channel.history(
+                        after=after_time, before=before_time, limit=None
+                    ):
                         author = str(msg.author)
                         user_contributions[author] += weight
 
@@ -2066,23 +2083,32 @@ class RLEsportsBot(discord.Client):
                             users_list = [user async for user in reaction.users()]
                             for reacting_user in users_list:
                                 # Skip the poster, so we don't double count them
-                                if not reacting_user.bot and reacting_user != msg.author:
+                                if (
+                                    not reacting_user.bot
+                                    and reacting_user != msg.author
+                                ):
                                     user_contributions[str(reacting_user)] += weight
                                 total_contribs += 1
 
-                        global_settings.rleb_log_info(f"[DISCORD] Processed {total_contribs} contributions")
-                        await status_msg.edit(content=f"Processing #{channel.name}... ({total_contribs} contributions)")
+                        global_settings.rleb_log_info(
+                            f"[DISCORD] Processed {total_contribs} contributions"
+                        )
+                        await status_msg.edit(
+                            content=f"Processing #{channel.name}... ({total_contribs} contributions)"
+                        )
 
                         total_contribs += 1
 
-                    global_settings.rleb_log_info(f"[DISCORD] Finished {channel.name}: {total_contribs} contributions")
+                    global_settings.rleb_log_info(
+                        f"[DISCORD] Finished {channel.name}: {total_contribs} contributions"
+                    )
 
                 await status_msg.edit(content="Finalizing results...")
 
-
-
                 # Sort by contributions
-                sorted_contributions = sorted(user_contributions.items(), key=lambda x: x[1], reverse=True)
+                sorted_contributions = sorted(
+                    user_contributions.items(), key=lambda x: x[1], reverse=True
+                )
                 total_contributions = sum(count for _, count in sorted_contributions)
 
                 # Format as CSV with percentages
@@ -2097,13 +2123,17 @@ class RLEsportsBot(discord.Client):
                 if len(sorted_contributions) == 0:
                     output = f"No contributions found in the past {days} days."
 
-                global_settings.rleb_log_info(f"[DISCORD] !contributions complete, {len(sorted_contributions)} users, {total_contributions} total")
+                global_settings.rleb_log_info(
+                    f"[DISCORD] !contributions complete, {len(sorted_contributions)} users, {total_contributions} total"
+                )
                 await status_msg.delete()
                 await message.channel.send(f"```\n{output}```")
                 await self.add_response(message)
             except Exception as e:
                 await status_msg.edit(content=f"Error: {str(e)}")
-                global_settings.rleb_log_info(f"[DISCORD] Error in !contributions: {str(e)}\n{traceback.format_exc()}")
+                global_settings.rleb_log_info(
+                    f"[DISCORD] Error in !contributions: {str(e)}\n{traceback.format_exc()}"
+                )
 
         # !chat command handler
         if discord_message.startswith("!chat"):
