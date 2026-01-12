@@ -83,6 +83,8 @@ class TestRedditBridge(unittest.IsolatedAsyncioTestCase):
         """Test appending new submissions to the list."""
         mock_sub = MagicMock()
         mock_sub.title = "Test Submission"
+        mock_sub.author.name = "Test User"
+        mock_sub.created_utc = datetime.now().timestamp()
 
         # Setup the stream to yield one submission.
         async def mock_stream_gen():
@@ -115,10 +117,12 @@ class TestRedditBridge(unittest.IsolatedAsyncioTestCase):
         # Comment 1: Verified
         comment_verified = MagicMock()
         comment_verified.author = "verified_user"
+        comment_verified.created_utc = datetime.now().timestamp()
 
         # Comment 2: Not Verified
         comment_normie = MagicMock()
         comment_normie.author = "normie_user"
+        comment_normie.created_utc = datetime.now().timestamp()
 
         # Mock the flair call
         async def mock_flair_gen(author):
