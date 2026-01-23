@@ -407,7 +407,9 @@ class RedditBridge:
         while True:
             try:
                 # Within-batch deduplication (only for this single batch)
-                async for conversation in self.modmail_stream:
+                async for conversation in self.subreddit.modmail.conversations(
+                    state="new"
+                ):
                     if conversation == None:
                         break
                     self.last_modmail = datetime.now()
@@ -458,14 +460,15 @@ class RedditBridge:
                         await conversation.load()
                         if len(conversation.messages) == 1:
                             continue
+                    # if we have already marked the message as read, we can skip it in the future.
+                    if conversation.last_unread == None:
+                        continue
 
-                    self.conversations.append(conversation)
-
-                if self.last_modmail - datetime.now() > timedelta(hours=1):
-                    self.modmail_stream = self.subreddit.modmail.conversations(
-                        state="new"
+                    global_settings.rleb_log_info(
+                        f"[REDDIT]: Modmail - {conversation.id} adding to queue."
                     )
-                    self.last_modmail = datetime.now()
+                    self.conversations.append(conversation)
+                    await conversation.read()
 
             except prawcore.exceptions.TooManyRequests as e:
                 global_settings.rleb_log_error(
@@ -679,6 +682,7 @@ class RedditBridge:
             body (str): Text of user-sent message.
         """
         # mods can set it to anything so they can add text such as "moderator" to flair
+
         if user.name in list(map(lambda x: x.name, self.moderators)):
             await self.subreddit.flair.set(user, text=body, css_class="")
             rleb_log_info(
