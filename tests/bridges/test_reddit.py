@@ -14,6 +14,9 @@ import global_settings
 
 class TestRedditBridge(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
+        # Clear error log queue before each test
+        global_settings.error_log_queue.clear()
+
         # Mock global settings
         self.mock_settings = patch("global_settings.rleb_log_info").start()
         self.mock_error = patch("global_settings.rleb_log_error").start()
@@ -204,7 +207,8 @@ class TestRedditBridge(unittest.IsolatedAsyncioTestCase):
             yield mock_convo
             yield None
 
-        self.bridge.modmail_stream = mock_stream_gen()
+        # Mock the subreddit.modmail.conversations method since that's what stream_modmail uses
+        self.bridge.subreddit.modmail.conversations = MagicMock(return_value=mock_stream_gen())
         self.bridge.handle_flair_request = AsyncMock(
             return_value={"Succeeded": True, "Message": "Done"}
         )
@@ -230,12 +234,14 @@ class TestRedditBridge(unittest.IsolatedAsyncioTestCase):
         mock_convo.subject = "Your comment was removed from /r/RocketLeagueEsports"
         # Only 1 message means it's just the notification, not a reply
         mock_convo.messages = [MagicMock()]
+        mock_convo.load = AsyncMock()
 
         async def mock_stream_gen():
             yield mock_convo
             yield None
 
-        self.bridge.modmail_stream = mock_stream_gen()
+        # Mock the subreddit.modmail.conversations method since that's what stream_modmail uses
+        self.bridge.subreddit.modmail.conversations = MagicMock(return_value=mock_stream_gen())
 
         task = asyncio.create_task(self.bridge.stream_modmail())
 
