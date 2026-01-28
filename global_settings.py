@@ -200,6 +200,10 @@ MODERATION_CHANNEL_ID = int(
     os.environ.get("MODERATION_CHANNEL_ID")
     or config["Discord"]["MODERATION_CHANNEL_ID"]  # type: ignore
 )
+BOT_LOGS_CHANNEL_ID = int(
+    os.environ.get("BOT_LOGS_CHANNEL_ID")
+    or config["Discord"]["BOT_LOGS_CHANNEL_ID"]  # type: ignore
+)
 
 verified_needle = "verified"
 
@@ -212,6 +216,7 @@ if RUNNING_MODE == "local":
     MODLOG_CHANNEL_ID = BOT_COMMANDS_CHANNEL_ID
     MODERATION_CHANNEL_ID = BOT_COMMANDS_CHANNEL_ID
     ROSTER_NEWS_CHANNEL_ID = BOT_COMMANDS_CHANNEL_ID
+    #BOT_LOGS_CHANNEL_ID = BOT_COMMANDS_CHANNEL_ID
 
 
 colors = [
@@ -295,6 +300,9 @@ def flush_memory_log() -> None:
 # list of tuples (datetime, message)
 memory_log: list[tuple[datetime, str]] = []
 
+# Queue for error messages to send to Discord #bot-logs channel
+error_log_queue: list[str] = []
+
 
 def _rleb_log(message: str, should_flush: bool = False) -> None:
     """Log a message to memory. If `should_flush` is True or memory is too full, the logs will be sent to db."""
@@ -314,6 +322,8 @@ def rleb_log_info(message: str, should_flush: bool = False) -> None:
 def rleb_log_error(message: str) -> None:
     """Log an error message."""
     _rleb_log("ERROR: {0}".format(message), should_flush=True)
+    # Queue error for Discord #bot-logs channel
+    error_log_queue.append(message)
 
 
 # DATES

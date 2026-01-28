@@ -32,6 +32,7 @@ jobs:
       THREAD_CREATION_CHANNEL_ID : 8
       VERIFIED_COMMENTS_CHANNEL_ID : 9
       MODERATION_CHANNEL_ID : 10
+      BOT_LOGS_CHANNEL_ID: 11
       developer_name : 'fake_name'
       developer_discriminator : 'fake_discriminator'
       VERIFIED_MODERATORS : "[]"
