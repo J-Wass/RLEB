@@ -60,6 +60,7 @@ class RLEsportsBot(discord.Client):
     modlog_channel: discord.TextChannel
     thread_creation_channel: discord.TextChannel
     moderation_channel: discord.TextChannel
+    bot_logs_channel: discord.TextChannel
 
     def __init__(self):
         """Initialize a new instance of RLEsportsBot."""
@@ -179,6 +180,14 @@ class RLEsportsBot(discord.Client):
             "Modmail channel is not messageable or not found!"
         )
 
+        self.bot_logs_channel = self.get_channel(
+            global_settings.BOT_LOGS_CHANNEL_ID
+        )  # type: ignore
+
+        assert isinstance(self.bot_logs_channel, discord.abc.Messageable), (
+            "Bot logs channel is not messageable or not found!"
+        )
+
         # Now that channels are initialized, create background tasks
         self.loop.create_task(self.check_new_submissions())
         self.loop.create_task(self.check_new_modfeed())
@@ -187,6 +196,7 @@ class RLEsportsBot(discord.Client):
         self.loop.create_task(self.process_reddit_inbox())
         self.loop.create_task(self.auto_update_threads())
         self.loop.create_task(self.check_remindmes())
+        self.loop.create_task(self.process_error_log_queue())
 
         # Create asyncio tasks for health monitoring and task alerts
         if global_settings.health_enabled:
@@ -668,6 +678,31 @@ class RLEsportsBot(discord.Client):
                 global_settings.last_datetime_crashed["asyncio"] = datetime.now()
 
             await asyncio.sleep(60)  # Check every 60 seconds
+
+    async def process_error_log_queue(self):
+        """Process error log queue and send errors to #bot-logs channel."""
+        await asyncio.sleep(10)
+        while True:
+            try:
+                # Process all queued error messages
+                while global_settings.error_log_queue:
+                    try:
+                        error_message = global_settings.error_log_queue.pop(0)
+                        await self.bot_logs_channel.send(error_message)
+                    except IndexError:
+                        # Queue is empty (race condition with another check)
+                        break
+                    except Exception as e:
+                        global_settings.rleb_log_info(
+                            f"[ERROR_LOGGER]: Failed to send error to Discord: {e}"
+                        )
+            except Exception as e:
+                # Don't use rleb_log_error here to avoid infinite loop
+                print(f"[ERROR_LOGGER]: Error log queue processing failed - {e}")
+                print(traceback.format_exc())
+                await asyncio.sleep(60)  # backoff
+
+            await asyncio.sleep(10)  # Check every 10 seconds
 
     async def auto_update_threads(self):
         """Auto-update Reddit threads with fresh Liquipedia data."""
@@ -2100,6 +2135,7 @@ class RLEsportsBot(discord.Client):
                 f"[DISCORD] Echoing {message_without_command}"
             )
             await message.channel.send(message_without_command)
+            global_settings.error_log_queue.append(f"[DISCORD] Echoing {message_without_command}")
             await self.add_response(message)
 
         elif (
