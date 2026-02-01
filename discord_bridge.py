@@ -2206,16 +2206,21 @@ class RLEsportsBot(discord.Client):
                         author = str(msg.author)
                         user_contributions[author] += weight
 
+                        msg_users = {author}
+                        """Keeps track of users that have interacted with the message."""
+
                         # Fetch all users for each reaction
                         for reaction in msg.reactions:
                             users_list = [user async for user in reaction.users()]
                             for reacting_user in users_list:
                                 # Skip the poster, so we don't double count them
+                                curr_user = str(reacting_user)
                                 if (
                                     not reacting_user.bot
-                                    and reacting_user != msg.author
+                                    and curr_user not in msg_users
                                 ):
-                                    user_contributions[str(reacting_user)] += weight
+                                    msg_users.add(curr_user)
+                                    user_contributions[curr_user] += weight
                                 total_contribs += 1
 
                         global_settings.rleb_log_info(
