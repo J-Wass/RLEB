@@ -2156,6 +2156,13 @@ class RLEsportsBot(discord.Client):
                     "Usage: !contributions [start_days_ago] [end_days_ago]\nExample: !contributions 35 5 (35 days ago until 5 days ago)"
                 )
                 return
+            
+        
+            if end_days > start_days:
+                await message.channel.send(
+                    "Usage: !contributions [start_days_ago] [end_days_ago]\n `start_days_ago` should be a bigger number (longer time ago) than `end_days_ago` "
+                )
+                return
 
             # Calculate cutoff times
             after_time = datetime.now(timezone.utc) - timedelta(days=start_days)
