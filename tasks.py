@@ -493,15 +493,13 @@ async def task_alert_check(thread_creation_channel, client):
                         task.event_seconds_since_epoch - time.time() + 60 * 60
                     )
 
-                    # Uncomment this once confident that the timing is correct.
                     if updater != "" and updater != "No one needed":
-                        update_reminder = Data.singleton().write_remindme(
+                        Data.singleton().write_remindme(
                             user=updater,
-                            message=f"**{task.event_name}** is starting now.",
+                            message=f"**{task.event_name}** is starting now. Don't forget to set the post flair to LIVE.",
                             elapsed_time=time_until_alert,
                             channel_id=global_settings.SCHEDULE_CHAT_CHANNEL_ID,
                         )
-                        # Remindme will be picked up by the check_remindmes() polling loop
 
                     message = random.choice(global_settings.success_emojis)
                     message += f" Task is scheduled: **{task.event_name}** by {task.event_creator}.\nhttps://sh.reddit.com/mod/RocketLeagueEsports/scheduledposts/"
