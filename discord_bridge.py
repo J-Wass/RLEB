@@ -649,6 +649,12 @@ class RLEsportsBot(discord.Client):
                         try:
                             channel = self.get_channel(remindme.channel_id)  # type: ignore
                             if not channel:
+                                # Channel not in cache, try fetching via API
+                                try:
+                                    channel = await self.fetch_channel(remindme.channel_id)  # type: ignore
+                                except Exception:
+                                    channel = None
+                            if not channel:
                                 global_settings.rleb_log_info(
                                     f"[REMINDME]: Channel {remindme.channel_id} not found for reminder {remindme.remindme_id}, using fallback channel"
                                 )

@@ -586,6 +586,11 @@ class TestData(unittest.TestCase):
 
         self.assertEqual(len(remindmes), 2)
         self.assertIsInstance(remindmes[0], Remindme)
+        self.assertEqual(remindmes[0].remindme_id, 1)
+        self.assertEqual(remindmes[0].discord_username, "user1")
+        self.assertEqual(remindmes[0].message, "msg1")
+        self.assertEqual(remindmes[0].trigger_timestamp, 12345)
+        self.assertEqual(remindmes[0].channel_id, 1500)
 
     @patch("data_bridge.psycopg2.connect")
     @patch.dict(os.environ, {"DATA_MODE": "real"})

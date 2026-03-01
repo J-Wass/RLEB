@@ -502,11 +502,11 @@ class Data(DataStub):
         """Returns all remindmes stored in the db."""
         with self.postgres_connection() as db:
             cursor = db.cursor()
-            cursor.execute("""SELECT * FROM public.remindme""")
+            cursor.execute("""SELECT remindme_id, discord_username, remindme_message, trigger_timestamp, channel_id FROM public.remindme""")
             remindmes = []
             for r in list(cursor.fetchall()):
                 # Unpack the sql columns into the Remindme object.
-                remindmes.append(Remindme(r[0], r[1], r[2], r[4], r[3]))
+                remindmes.append(Remindme(int(r[0]), r[1], r[2], int(r[3]), int(r[4])))
             return remindmes
 
     def write_already_warned_scheduled_post(
