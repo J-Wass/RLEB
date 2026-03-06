@@ -133,17 +133,26 @@ def get_tasks(warning_callback=None) -> list[Task]:
     sheet = service.spreadsheets()
 
     # Shnag the range from 5-11, which includes event time and updaters/creators
-    try:
-        sheet_json = (
-            sheet.values()
-            .get(
-                spreadsheetId=global_settings.SHEETS_ID,
-                range=global_settings.weekly_schedule_sheets_range,
+    sheet_json = None
+    last_error = None
+    for attempt in range(5):
+        try:
+            sheet_json = (
+                sheet.values()
+                .get(
+                    spreadsheetId=global_settings.SHEETS_ID,
+                    range=global_settings.weekly_schedule_sheets_range,
+                )
+                .execute()
             )
-            .execute()
-        )
-    except Exception as e:
-        global_settings.rleb_log_error(f"Failed to fetch current week in sheet {e}.")
+            break
+        except Exception as e:
+            last_error = e
+            if attempt < 4:
+                time.sleep(2 ** attempt)
+
+    if sheet_json is None:
+        global_settings.rleb_log_error(f"Failed to fetch current week in sheet {last_error}.")
         return []
 
     values = sheet_json["values"]
@@ -422,7 +431,7 @@ async def task_alert_check(thread_creation_channel, client):
                     ),
                     return_exceptions=True,
                 ),
-                timeout=20.0,
+                timeout=90.0,
             )
 
             # Check if either task raised an exception
