@@ -153,7 +153,9 @@ class DataStub(object):
     def read_logs(self, count: int = 10) -> list[tuple[datetime, str]]:
         return []
 
-    def read_logs_matching(self, search_string: str, count: int = 10) -> list[tuple[datetime, str]]:
+    def read_logs_matching(
+        self, search_string: str, count: int = 10
+    ) -> list[tuple[datetime, str]]:
         return []
 
     def add_triflair(self, flair_to_add: str) -> None:
@@ -502,7 +504,9 @@ class Data(DataStub):
         """Returns all remindmes stored in the db."""
         with self.postgres_connection() as db:
             cursor = db.cursor()
-            cursor.execute("""SELECT remindme_id, discord_username, remindme_message, trigger_timestamp, channel_id FROM public.remindme""")
+            cursor.execute(
+                """SELECT remindme_id, discord_username, remindme_message, trigger_timestamp, channel_id FROM public.remindme"""
+            )
             remindmes = []
             for r in list(cursor.fetchall()):
                 # Unpack the sql columns into the Remindme object.
@@ -576,7 +580,9 @@ class Data(DataStub):
             all_logs = cursor.fetchall()
             return all_logs  # type: ignore[no-any-return]
 
-    def read_logs_matching(self, search_string: str, count: int = 10) -> list[tuple[datetime, str]]:
+    def read_logs_matching(
+        self, search_string: str, count: int = 10
+    ) -> list[tuple[datetime, str]]:
         """Reads logs matching a search string from the database."""
 
         with self.postgres_connection() as db:

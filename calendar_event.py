@@ -36,9 +36,11 @@ BOTTOM_SECTION = """
 
 Events prefixed with ⚽ will have an **Event Thread** posted by mods.  Anyone can [**create an Event Thread**](https://www.reddit.com/r/RocketLeagueEsports/wiki/event_threads) or **Match Threads** for unmarked events. Follow the link to learn more.
 
-# Sidebar Schedule
+# Google Calendar
 
-If you are on the official **Reddit App**, you will find the schedule under the "**About**" tab. If you are browsing the **Desktop** version,  you can find the schedule on the sidebar of the [**sh.reddit**](https://sh.reddit.com/r/RocketLeagueEsports/) version of this subreddit. Alternatively you can use our [**Google Calendar**](https://www.reddit.com/r/RocketLeagueEsports/wiki/calendar) which is used to feed the schedule.
+The mods of [**r/RocketLeagueEsports**](https://www.reddit.com/r/RocketLeagueEsports) maintain a public Google Calendar (link below) which is used to create these weekly schedule threads.
+
+[Read more about how to use our Google Calendar.](https://sh.reddit.com/r/RocketLeagueEsports/wiki/calendar/?utm_source=reddit&utm_medium=usertext&utm_name=RocketLeagueEsports#button#calendar)
 
 # Moderator Applications
 
