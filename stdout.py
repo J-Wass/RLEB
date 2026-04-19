@@ -1,3 +1,5 @@
+import asyncio
+
 import requests
 import random
 import traceback
@@ -49,15 +51,42 @@ async def create_paste(content, title=None):
         return response.text
 
 
+async def _send_marshalled_text(content: str, channel: discord.channel.TextChannel, escape_markdown: bool = True) -> None:
+    """Sends text 5 lines at a time with a small sleep to keep rate limits low."""
+    # Escape stars so they survive forwarding to Reddit. Skip when content is Discord-only.
+    if escape_markdown:
+        content = content.replace("*", "\*")
+
+    # Marshall the text out, 5 lines at a time. Discord cuts the message off at some char limit.
+    formatted_text_rows = content.split("\n")
+
+    async def _send_rows(rows: list[str]) -> None:
+        formatted_text_row_message = await channel.send(
+            "\n".join(rows), embed=None
+        )
+        await formatted_text_row_message.edit(
+            suppress=True
+        )  # remove those annoying embeds
+        await asyncio.sleep(0.1)
+        
+    
+    while len(formatted_text_rows) > 5:
+        await _send_rows(formatted_text_rows[:5])
+        formatted_text_rows = formatted_text_rows[5:]
+    await _send_rows(formatted_text_rows)
+
+
 async def print_to_channel(
     channel: discord.channel.TextChannel,
     content: str,
     title: str = None,
     force_pastebin: bool = False,
+    force_discord: bool = False,
     use_hook: bool = True,
+    escape_markdown: bool = True,
 ) -> None:
     """Prints |content| in the discord |channel|. If |content| is long, it will write to pastebin or paste.ee.
-    In dire cases, |content| will be marshalled out, line by line to discord to avoid the char limit.
+    In cases where pastebin cannot be used, |content| will be marshalled out, line by line to discord to avoid the char limit.
 
     Args:
         channel (discord.channel.TextChannel): Discord channel to print a message in.
@@ -69,6 +98,8 @@ async def print_to_channel(
     if content is None:
         await channel.send("Something went wrong :(", embed=None)
         return
+    
+    # small messages can just be sent
     if (
         len(content) < 250
         and global_settings.enable_direct_channel_messages
@@ -77,7 +108,13 @@ async def print_to_channel(
         message = await channel.send(content, embed=None)
         await message.edit(suppress=True)
         return
+    
+    # force discord means we marshall out and send
+    if force_discord:
+        await _send_marshalled_text(content, channel, escape_markdown=escape_markdown)
+        return
 
+    # attempt pastebin, fallback to marshalled text
     try:
         response = await create_paste(content, title=title)
         hook = random.choice(global_settings.hooks)
@@ -92,20 +129,5 @@ async def print_to_channel(
         global_settings.rleb_log_error(traceback.format_exc())
         global_settings.rleb_log_error(e)
 
-        # Discord will bold text if it uses *'s. Escape the stars so they can make it all the way to reddit.
-        content = content.replace("*", "\*")
-
-        # Marshall the text out, 5 lines at a time. Discord cuts the message off at some char limit.
-        formatted_text_rows = content.split("\n")
-        while len(formatted_text_rows) > 5:
-            formatted_text_row_message = await channel.send(
-                "\n".join(formatted_text_rows[:5]), embed=None
-            )
-            await formatted_text_row_message.edit(
-                suppress=True
-            )  # remove those annoying embeds
-            formatted_text_rows = formatted_text_rows[5:]
-        formatted_text_message = await channel.send(
-            "\n".join(formatted_text_rows), embed=None
-        )
-        await formatted_text_message.edit(suppress=True)  # remove those annoying embeds
+        # we failed to create a pastebin, just send out marshalled text
+        await _send_marshalled_text(content, channel, escape_markdown=escape_markdown)

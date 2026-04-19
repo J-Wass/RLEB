@@ -20,7 +20,8 @@ from global_settings import user_names_to_ids
 from liqui.team_lookup import handle_team_lookup
 from liqui.group_lookup import handle_group_lookup
 from calendar_event import handle_calendar_lookup
-from tasks import handle_task_lookup, get_scheduled_posts, get_weekly_events
+from tasks import handle_task_lookup, get_scheduled_posts, get_weekly_events, get_tasks
+from weekly_status import build_weekly_status
 from liqui.swiss_lookup import handle_swiss_lookup
 from liqui.bracket_lookup import handle_bracket_lookup
 from liqui.mvp_lookup import (
@@ -1154,25 +1155,11 @@ class RLEsportsBot(discord.Client):
             if not global_settings.is_discord_mod(message.author):
                 return
 
+            tasks = get_tasks()
             scheduled_posts = await get_scheduled_posts()
-            weekly_events = get_weekly_events()
-
-            output = "**Found the following scheduled posts on reddit:**\n"
-            if scheduled_posts:
-                for event in scheduled_posts:
-                    output += f"{event}\n"
-            else:
-                output += "No scheduled posts found."
-
-            output += "\n\n**Found the following events on the weekly sheet:**\n"
-            if weekly_events:
-                for event in weekly_events:
-                    output += f"{event}\n"
-            else:
-                output += "No weekly events found."
-
+            output = build_weekly_status(tasks, scheduled_posts)
             await stdout.print_to_channel(
-                message.channel, output, title="Weekly Schedule", use_hook=False
+                message.channel, output, force_discord=True, use_hook=False, escape_markdown=False
             )
             await self.add_response(message)
 

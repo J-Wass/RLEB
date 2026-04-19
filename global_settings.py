@@ -154,7 +154,7 @@ GOOGLE_CREDENTIALS_JSON = (
 SHEETS_ID = os.environ.get("SHEETS_ID") or config["Google"]["SHEETS_ID"]
 
 weekly_schedule_sheets_range = (
-    "Current Week!5:11" if RUNNING_MODE == "production" else "Bot Development!5:11"
+    "Current Week!5:11" if RUNNING_MODE == "production" else "Dev!5:11"
 )
 
 # DISCORD

@@ -377,6 +377,7 @@ def get_weekly_events() -> list[Event]:
 
 async def task_alert_check(thread_creation_channel, client):
     """Check for missing scheduled posts and send alerts."""
+    from weekly_status import build_weekly_status
 
     # List of scheduled post ids that weren't misformatted and already warned.
     one_week_ago_seconds_since_epoch = datetime.now().timestamp() - 7 * 86400
@@ -420,11 +421,12 @@ async def task_alert_check(thread_creation_channel, client):
             last_emptied_already_late_posts = datetime.now().timestamp()
             already_warned_late_posts = []
 
-        # Fetch both weekly events and scheduled posts concurrently with timeout
+        # Fetch weekly events, all tasks, and scheduled posts concurrently with timeout
         try:
-            tasks, new_scheduled_posts = await asyncio.wait_for(
+            tasks, all_tasks, new_scheduled_posts = await asyncio.wait_for(
                 asyncio.gather(
                     asyncio.to_thread(get_weekly_events),
+                    asyncio.to_thread(get_tasks),
                     get_scheduled_posts(
                         already_warned_scheduled_posts,
                         thread_creation_channel=thread_creation_channel,
@@ -440,6 +442,11 @@ async def task_alert_check(thread_creation_channel, client):
                     f"TASK CHECK: Error fetching weekly events: {tasks}"
                 )
                 tasks = None
+            if isinstance(all_tasks, BaseException):
+                global_settings.rleb_log_error(
+                    f"TASK CHECK: Error fetching all tasks: {all_tasks}"
+                )
+                all_tasks = None
             if isinstance(new_scheduled_posts, BaseException):
                 global_settings.rleb_log_error(
                     f"TASK CHECK: Error fetching scheduled posts: {new_scheduled_posts}"
@@ -461,7 +468,7 @@ async def task_alert_check(thread_creation_channel, client):
             )
 
         # If the data was unobtainable, wait 5m and try again.
-        if tasks == None or new_scheduled_posts == None:
+        if tasks == None or all_tasks == None or new_scheduled_posts == None:
             global_settings.rleb_log_info(
                 f"TASK CHECK: Skipping null posts. tasks={tasks}, schedule posts={new_scheduled_posts}."
             )
@@ -512,6 +519,7 @@ async def task_alert_check(thread_creation_channel, client):
 
                     message = random.choice(global_settings.success_emojis)
                     message += f" Task is scheduled: **{task.event_name}** by {task.event_creator}.\nhttps://sh.reddit.com/mod/RocketLeagueEsports/scheduledposts/"
+                    message += f"\n\n{build_weekly_status(all_tasks, new_scheduled_posts)}"
                     await thread_creation_channel.send(message)
                     already_confirmed_scheduled_posts.append(scheduled_post.id)
                     Data.singleton().write_already_warned_confirmed_post(
@@ -553,7 +561,9 @@ async def task_alert_check(thread_creation_channel, client):
                     global_settings.rleb_log_info(
                         f"TASK CHECK: Creating #thread-creation late thread warning: {message}"
                     )
-                    await thread_creation_channel.send(message)
+                    await thread_creation_channel.send(
+                        message + f"\n\n{build_weekly_status(all_tasks, new_scheduled_posts)}"
+                    )
 
                 # Warn in DMs everytime.
                 message += (
