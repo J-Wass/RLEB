@@ -1762,8 +1762,7 @@ class RLEsportsBot(discord.Client):
                     for auto_update in sorted(
                         auto_updates, key=lambda x: x.seconds_since_epoch
                     ):
-                        seconds_ago = time.time() - auto_update.seconds_since_epoch
-                        hours_ago = round(seconds_ago / 3600, 1)
+                        started_ts = int(auto_update.seconds_since_epoch)
                         reddit_url = auto_update.reddit_url.split("reddit.com/")[-1]
                         embed = discord.Embed(
                             title=reddit_url,
@@ -1773,7 +1772,7 @@ class RLEsportsBot(discord.Client):
                         embed.set_author(
                             name=f"Auto Update ID - {auto_update.auto_update_id}"
                         )
-                        embed.description = f"Started {hours_ago} hours ago"
+                        embed.description = f"Started <t:{started_ts}:R>"
                         await message.channel.send(embed=embed)
 
                     await message.channel.send(
@@ -2004,13 +2003,10 @@ class RLEsportsBot(discord.Client):
                 remindmes: list[Remindme] = Data.singleton().read_remindmes()
                 output = ""
                 for remindme in remindmes:
-                    total_seconds_left = remindme.trigger_timestamp - time.time()
-                    minutes_left = int((total_seconds_left % 3600) / 60)
-                    hours_left = int(total_seconds_left / 3600)
+                    remind_ts = int(remindme.trigger_timestamp)
                     msg = remindme.message[:15] + "..."
                     author = remindme.discord_username
-                    # * `[ID 502]` In T-3 hours and 12 minutes: `"test..."` for `voice123`
-                    output += f"* `[ID {remindme.remindme_id}]` in {hours_left} hour(s) {minutes_left} minute(s): `{msg}` for {author}.\n"
+                    output += f"* `[ID {remindme.remindme_id}]` <t:{remind_ts}:R> (<t:{remind_ts}:F>): `{msg}` for {author}.\n"
                 if len(remindmes) == 0:
                     output = "No reminders are set. Use `!remindme [time] [msg]` to schedule one. Example times: `5h`, `80s`, `1d`, `2w`, `8m`.\n"
                 output += "Use `!remindme delete [id]` to cancel a reminder."

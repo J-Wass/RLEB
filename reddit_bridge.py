@@ -160,10 +160,7 @@ class RedditBridge:
                 f"[REDDIT]: get_modqueue_count() -> {str(e)}"
             )
             await asyncio.sleep(60 * 11)
-        except prawcore.exceptions.ServerError as e:
-            global_settings.rleb_log_error(
-                f"[REDDIT]: get_modqueue_count() -> {str(e)}"
-            )
+        except prawcore.exceptions.ServerError:
             await asyncio.sleep(10)  # Reddit server borked, try again
             pass
         except prawcore.exceptions.RequestException as e:
@@ -219,15 +216,11 @@ class RedditBridge:
                         f"[REDDIT]: stream_new_submissions() -> {str(e)}"
                     )
                 await asyncio.sleep(60 * 11 * (2 ** (rate_limit_errors - 1)))
-            except prawcore.exceptions.ServerError as e:
+            except prawcore.exceptions.ServerError:
                 server_error_count = min(server_error_count + 1, 3)
                 self.submission_stream = self.subreddit.stream.submissions(
                     pause_after=0, skip_existing=True
                 )
-                if server_error_count >= 3:
-                    global_settings.rleb_log_error(
-                        f"[REDDIT]: stream_new_submissions() -> {str(e)}"
-                    )
                 await asyncio.sleep(10 * (2 ** (server_error_count - 1)))  # Reddit server borked, try again
                 pass
             except prawcore.exceptions.RequestException as e:
@@ -299,15 +292,11 @@ class RedditBridge:
                         f"[REDDIT]: stream_verified_comments() -> {str(e)}"
                     )
                 await asyncio.sleep(60 * 11 * (2 ** (rate_limit_errors - 1)))
-            except prawcore.exceptions.ServerError as e:
+            except prawcore.exceptions.ServerError:
                 server_error_count = min(server_error_count + 1, 3)
                 self.comment_stream = self.subreddit.stream.comments(
                     pause_after=0, skip_existing=True
                 )
-                if server_error_count >= 3:
-                    global_settings.rleb_log_error(
-                        f"[REDDIT]: stream_verified_comments() -> {str(e)}"
-                    )
                 await asyncio.sleep(10 * (2 ** (server_error_count - 1)))  # Reddit server borked, try again
                 pass
             except prawcore.exceptions.RequestException as e:
@@ -360,13 +349,11 @@ class RedditBridge:
                 if rate_limit_errors >= 3:
                     global_settings.rleb_log_error(f"[REDDIT]: process_inbox() -> {str(e)}")
                 await asyncio.sleep(60 * 11 * (2 ** (rate_limit_errors - 1)))
-            except prawcore.exceptions.ServerError as e:
+            except prawcore.exceptions.ServerError:
                 server_error_count = min(server_error_count + 1, 3)
                 self.inbox_stream = self.reddit.inbox.stream(
                     pause_after=0, skip_existing=True
                 )
-                if server_error_count >= 3:
-                    global_settings.rleb_log_error(f"[REDDIT]: process_inbox() -> {str(e)}")
                 await asyncio.sleep(10 * (2 ** (server_error_count - 1)))  # Reddit server borked, try again
                 pass
             except prawcore.exceptions.RequestException as e:
@@ -424,14 +411,12 @@ class RedditBridge:
                 if rate_limit_errors >= 3:
                     global_settings.rleb_log_error(f"[REDDIT]: stream_modlog() -> {str(e)}")
                 await asyncio.sleep(60 * 11 * (2 ** (rate_limit_errors - 1)))
-            except prawcore.exceptions.ServerError as e:
+            except prawcore.exceptions.ServerError:
                 server_error_count = min(server_error_count + 1, 3)
                 self.mod_log = self.subreddit.mod.stream.log(
                     pause_after=0,
                     skip_existing=True,
                 )
-                if server_error_count >= 3:
-                    global_settings.rleb_log_error(f"[REDDIT]: stream_modlog() -> {str(e)}")
                 await asyncio.sleep(10 * (2 ** (server_error_count - 1)))  # Reddit server borked, try again
                 pass
             except prawcore.exceptions.RequestException as e:
@@ -536,13 +521,9 @@ class RedditBridge:
                         f"[REDDIT]: stream_modmail() -> {str(e)}"
                     )
                 await asyncio.sleep(60 * 11 * (2 ** (rate_limit_errors - 1)))
-            except prawcore.exceptions.ServerError as e:
+            except prawcore.exceptions.ServerError:
                 server_error_count = min(server_error_count + 1, 3)
                 self.modmail_stream = self.subreddit.modmail.conversations(state="new")
-                if server_error_count >= 3:
-                    global_settings.rleb_log_error(
-                        f"[REDDIT]: stream_modmail() -> {str(e)}"
-                    )
                 await asyncio.sleep(10 * (2 ** (server_error_count - 1)))  # Reddit server borked, try again
                 pass
             except prawcore.exceptions.RequestException as e:
@@ -602,8 +583,7 @@ class RedditBridge:
             await asyncio.sleep(60 * 11)
         except prawcore.exceptions.Redirect as e:
             global_settings.rleb_log_error(f"[REDDIT]: get_meme() -> {str(e)}")
-        except prawcore.exceptions.ServerError as e:
-            global_settings.rleb_log_error(f"[REDDIT]: get_meme() -> {str(e)}")
+        except prawcore.exceptions.ServerError:
             await asyncio.sleep(10)  # Reddit server borked, try again
             pass
         except prawcore.exceptions.RequestException as e:
@@ -728,8 +708,7 @@ class RedditBridge:
         except prawcore.exceptions.TooManyRequests as e:
             global_settings.rleb_log_error(f"[REDDIT]: update_submission() -> {str(e)}")
             await asyncio.sleep(60 * 11)
-        except prawcore.exceptions.ServerError as e:
-            global_settings.rleb_log_error(f"[REDDIT]: update_submission() -> {str(e)}")
+        except prawcore.exceptions.ServerError:
             await asyncio.sleep(10)  # Reddit server borked, try again
             pass
         except prawcore.exceptions.RequestException as e:
@@ -817,10 +796,7 @@ class RedditBridge:
                     await asyncio.sleep(60 * 11)
                     result["Succeeded"] = False
                     result["Message"] = "Reddit Error"
-                except prawcore.exceptions.ServerError as e:
-                    global_settings.rleb_log_error(
-                        f"[REDDIT]: get_from_modlog() -> {str(e)}"
-                    )
+                except prawcore.exceptions.ServerError:
                     await asyncio.sleep(10)
                     result["Succeeded"] = False
                     result["Message"] = "Reddit Error"
@@ -863,8 +839,7 @@ class RedditBridge:
         except prawcore.exceptions.TooManyRequests as e:
             global_settings.rleb_log_error(f"[REDDIT]: get_from_modlog() -> {str(e)}")
             await asyncio.sleep(60 * 11)
-        except prawcore.exceptions.ServerError as e:
-            global_settings.rleb_log_error(f"[REDDIT]: get_from_modlog() -> {str(e)}")
+        except prawcore.exceptions.ServerError:
             await asyncio.sleep(10)  # Reddit server borked, try again
             pass
         except prawcore.exceptions.RequestException as e:
