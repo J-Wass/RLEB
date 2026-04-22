@@ -45,7 +45,15 @@ class Task:
         output = f"**{self.event_name}** ({self.event_day} {self.event_date})\n"
         if self.event_sticky:
             output += f"📌 Sticky: **{self.event_sticky}**\n"
-        output += f"✏️ Creator/Scheduler ({self.event_schedule_time} UTC): **{self.event_creator}**\n"
+        try:
+            time_string = self.event_schedule_time.replace("Schedule ", "")
+            task_datetime = datetime.strptime(
+                f"{self.event_date} {time_string} +0000", "%Y-%m-%d %H:%M %z"
+            ).replace(tzinfo=pytz.UTC)
+            schedule_display = f"<t:{int(task_datetime.timestamp())}:F>"
+        except Exception:
+            schedule_display = f"{self.event_schedule_time} UTC"
+        output += f"✏️ Creator/Scheduler ({schedule_display}): **{self.event_creator}**\n"
         output += f"🚔 Updaters/Monitors: **{self.event_updater1}**, **{self.event_updater2}**\n"
         output += f"\n-----------------------------------------------------------\n\n"
         return output

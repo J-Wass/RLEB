@@ -26,7 +26,7 @@ def build_weekly_status(tasks: list[Task], scheduled_posts: list[Event]) -> str:
                 matching = [p for p in scheduled_posts if int(p.event_seconds_since_epoch) == timestamp]
                 if matching:
                     matched_post_ids.add(matching[0].id)  # type: ignore[arg-type]
-                    lines.append(f"✅ **{task.event_name}** | <t:{timestamp}:F> | Prepared By: {matching[0].event_creator}")
+                    lines.append(f"✅ **{task.event_name}** | <t:{timestamp}:F> | Prepared By: {task.event_creator}")
                 else:
                     lines.append(f"❌ **{task.event_name}** | <t:{timestamp}:F> | Assigned To: {task.event_creator}")
             except Exception:
