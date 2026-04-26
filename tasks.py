@@ -3,6 +3,7 @@ import json
 import random
 import asyncio
 import time
+from typing import Callable, Optional
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 import discord
@@ -21,15 +22,15 @@ class Task:
 
     def __init__(
         self,
-        event_name,
-        event_creator,
-        event_updater1,
-        event_updater2,
-        event_day,
-        event_date,
-        event_schedule_time,
-        event_sticky=None,
-    ):
+        event_name: str,
+        event_creator: str,
+        event_updater1: str,
+        event_updater2: str,
+        event_day: str,
+        event_date: str,
+        event_schedule_time: str,
+        event_sticky: Optional[str] = None,
+    ) -> None:
         """Initialize a new task."""
         self.event_name = event_name
         self.event_creator = event_creator
@@ -40,7 +41,7 @@ class Task:
         self.event_schedule_time = event_schedule_time
         self.event_sticky = event_sticky
 
-    def pretty_print(self):
+    def pretty_print(self) -> str:
         """Returns a human-readable string which represents this task."""
         output = f"**{self.event_name}** ({self.event_day} {self.event_date})\n"
         if self.event_sticky:
@@ -58,7 +59,7 @@ class Task:
         output += f"\n-----------------------------------------------------------\n\n"
         return output
 
-    def contains_user(self, user):
+    def contains_user(self, user: str) -> bool:
         """Returns true if user is involved in this task."""
         return (
             user.lower() == self.event_creator.lower()
@@ -130,7 +131,7 @@ async def broadcast_tasks(
         await send_tasks(u, tasks, client, channel)
 
 
-def get_tasks(warning_callback=None) -> list[Task]:
+def get_tasks(warning_callback: Optional[Callable[[str], None]] = None) -> list[Task]:
     """Gets all tasks from the Spreadsheet tab named "Current Week"."""
     SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
     credential_info = json.loads(global_settings.GOOGLE_CREDENTIALS_JSON)
@@ -264,12 +265,12 @@ class Event:
 
     def __init__(
         self,
-        event_name,
-        event_creator,
-        event_updater,
-        event_seconds_since_epoch,
-        id=None,
-    ):
+        event_name: str,
+        event_creator: str,
+        event_updater: str,
+        event_seconds_since_epoch: float,
+        id: Optional[str] = None,
+    ) -> None:
         """Initialize a new task."""
 
         # Human-readable name of event.
@@ -287,14 +288,14 @@ class Event:
         # Id of the event, if any exists.
         self.id = id
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.event_name} ({self.event_creator}) @ {self.event_seconds_since_epoch}"
 
 
 async def get_scheduled_posts(
     already_warned_scheduled_posts: list[int] = [],
     days_ago: int = 5,
-    thread_creation_channel=None,
+    thread_creation_channel: Optional[discord.TextChannel] = None,
 ) -> list[Event]:
     """Returns a list of scheduled posts from the sub starting `days_ago`, ignoring posts already in already_warned_scheduled_posts."""
     scheduled_posts = []
@@ -382,7 +383,7 @@ def get_weekly_events() -> list[Event]:
     return weekly_events
 
 
-async def task_alert_check(thread_creation_channel, client):
+async def task_alert_check(thread_creation_channel: discord.TextChannel, client: discord.Client) -> None:
     """Check for missing scheduled posts and send alerts."""
     from weekly_status import build_weekly_status
 
@@ -515,7 +516,7 @@ async def task_alert_check(thread_creation_channel, client):
                     message = random.choice(global_settings.success_emojis)
                     message += f" Task is scheduled: **{task.event_name}** by {task.event_creator}.\nhttps://sh.reddit.com/mod/RocketLeagueEsports/scheduledposts/"
                     message += f"\n\n{build_weekly_status(all_tasks, new_scheduled_posts)}"
-                    await thread_creation_channel.send(message)
+                    await stdout.print_to_channel(thread_creation_channel, content=message, force_discord=True, escape_markdown=False)
                     already_confirmed_scheduled_posts.append(scheduled_post.id)
                     Data.singleton().write_already_warned_confirmed_post(
                         scheduled_post.id, int(datetime.now().timestamp())

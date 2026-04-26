@@ -80,7 +80,7 @@ class TestTasks(unittest.IsolatedAsyncioTestCase):
 
         event1_discord_markup = "**cool event** (Tuesday 2021-06-01)\n✏️ Creator/Scheduler (Schedule UTC): **hawkkn#0408**\n🚔 Updaters/Monitors: **ds0308#9530**, **voices#6380**\n\n-----------------------------------------------------------\n\n"
         event2_discord_markup = "**Weekly Points Standings** (Monday 2021-05-03)\n📌 Sticky: **No sticky**\n✏️ Creator/Scheduler (Post 16:00 UTC): **voices#6380**\n🚔 Updaters/Monitors: **No one needed**, **No one needed**\n\n-----------------------------------------------------------\n\n"
-        event3_discord_markup = "**Weekly Schedule/Ask Questions** (Monday 2021-05-03)\n📌 Sticky: **First sticky**\n✏️ Creator/Scheduler (Schedule 10:00 UTC): **hawkkn#0408**\n🚔 Updaters/Monitors: **No one needed**, **No one needed**\n\n-----------------------------------------------------------\n\n"
+        event3_discord_markup = "**Weekly Schedule/Ask Questions** (Monday 2021-05-03)\n📌 Sticky: **First sticky**\n✏️ Creator/Scheduler (<t:1620036000:F>): **hawkkn#0408**\n🚔 Updaters/Monitors: **No one needed**, **No one needed**\n\n-----------------------------------------------------------\n\n"
         mock_channel.send.assert_has_awaits(
             [
                 call(event1_discord_markup),
@@ -124,7 +124,7 @@ class TestTasks(unittest.IsolatedAsyncioTestCase):
         greeting = "Incoming!\n\n"
         event1_discord_markup = "**cool event** (Tuesday 2021-06-01)\n✏️ Creator/Scheduler (Schedule UTC): **hawkkn#0408**\n🚔 Updaters/Monitors: **ds0308#9530**, **voices#6380**\n\n-----------------------------------------------------------\n\n"
         event2_discord_markup = "**Weekly Points Standings** (Monday 2021-05-03)\n📌 Sticky: **No sticky**\n✏️ Creator/Scheduler (Post 16:00 UTC): **voices#6380**\n🚔 Updaters/Monitors: **No one needed**, **No one needed**\n\n-----------------------------------------------------------\n\n"
-        event3_discord_markup = "**Weekly Schedule/Ask Questions** (Monday 2021-05-03)\n📌 Sticky: **First sticky**\n✏️ Creator/Scheduler (Schedule 10:00 UTC): **hawkkn#0408**\n🚔 Updaters/Monitors: **No one needed**, **No one needed**\n\n-----------------------------------------------------------\n\n"
+        event3_discord_markup = "**Weekly Schedule/Ask Questions** (Monday 2021-05-03)\n📌 Sticky: **First sticky**\n✏️ Creator/Scheduler (<t:1620036000:F>): **hawkkn#0408**\n🚔 Updaters/Monitors: **No one needed**, **No one needed**\n\n-----------------------------------------------------------\n\n"
         mock_voices.send.assert_awaited_once_with(
             greeting + event1_discord_markup + event2_discord_markup
         )

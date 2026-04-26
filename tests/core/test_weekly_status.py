@@ -33,7 +33,7 @@ class TestBuildWeeklyStatus(unittest.TestCase):
         self.assertIn("✅", result)
         self.assertIn("Weekly Thread", result)
         self.assertIn(f"<t:{ts}:F>", result)
-        self.assertIn("Prepared By: bob", result)
+        self.assertIn("Prepared By: alice", result)
 
     def test_missing_task_shows_needs_and_assigned_mod(self) -> None:
         ts = _ts("2026-04-22", "10:00")
