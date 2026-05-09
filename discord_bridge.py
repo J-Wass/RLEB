@@ -37,6 +37,11 @@ from liqui.diesel import (
     handle_schedule_lookup,
 )
 from liqui.prizepool_lookup import handle_prizepool_lookup
+from liqui.reddit_markdown import teams as rm_teams
+from liqui.reddit_markdown import groups as rm_groups
+from liqui.reddit_markdown import swiss as rm_swiss
+from liqui.reddit_markdown import prizepool as rm_prizepool
+from liqui.reddit_markdown._utils import url_to_page_name as rm_url_to_page
 
 responses_lock = Lock()
 
@@ -1490,7 +1495,13 @@ class RLEsportsBot(discord.Client):
                     "Couldn't understand that. Expected '!teams liquipedia-url'."
                 )
                 return
-            seconds = await handle_team_lookup(url, message.channel)
+            try:
+                page = rm_url_to_page(url)
+                markdown = rm_teams.build_teams_markdown(page)
+                await stdout.print_to_channel(message.channel, markdown, title="Teams")
+            except Exception as e:
+                global_settings.rleb_log_info(f"[DISCORD]: DB API teams failed ({e}), falling back.")
+                await handle_team_lookup(url, message.channel)
             await self.add_response(message)
 
         elif discord_message.startswith("!alias") and is_staff(message.author):
@@ -1586,7 +1597,13 @@ class RLEsportsBot(discord.Client):
                     "Couldn't understand that. Expected '!swiss liquipedia-url'."
                 )
                 return
-            seconds = await handle_swiss_lookup(url, message.channel)
+            try:
+                page = rm_url_to_page(url)
+                markdown = rm_swiss.build_swiss_markdown(page)
+                await stdout.print_to_channel(message.channel, markdown, title="Swiss")
+            except Exception as e:
+                global_settings.rleb_log_info(f"[DISCORD]: DB API swiss failed ({e}), falling back.")
+                await handle_swiss_lookup(url, message.channel)
             await self.add_response(message)
 
         elif (
@@ -1866,7 +1883,13 @@ class RLEsportsBot(discord.Client):
                     "Couldn't understand that. Expected '!groups liquipedia-url'."
                 )
                 return
-            seconds = await handle_group_lookup(url, message.channel)
+            try:
+                page = rm_url_to_page(url)
+                markdown = rm_groups.build_groups_markdown(page)
+                await stdout.print_to_channel(message.channel, markdown, title="Groups")
+            except Exception as e:
+                global_settings.rleb_log_info(f"[DISCORD]: DB API groups failed ({e}), falling back.")
+                await handle_group_lookup(url, message.channel)
             await self.add_response(message)
 
         elif discord_message.startswith("!schedule") and is_staff(message.author):
@@ -1907,7 +1930,13 @@ class RLEsportsBot(discord.Client):
                     "Couldn't understand that. Expected '!prizepool liquipedia-url'."
                 )
                 return
-            seconds = await handle_prizepool_lookup(url, message.channel)
+            try:
+                page = rm_url_to_page(url)
+                markdown = rm_prizepool.build_prizepool_markdown(page)
+                await stdout.print_to_channel(message.channel, markdown, title="Prizepool")
+            except Exception as e:
+                global_settings.rleb_log_info(f"[DISCORD]: DB API prizepool failed ({e}), falling back.")
+                await handle_prizepool_lookup(url, message.channel)
             await self.add_response(message)
 
         elif discord_message.startswith("!mvp") and is_staff(message.author):

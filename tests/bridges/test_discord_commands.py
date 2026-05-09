@@ -394,3 +394,67 @@ class TestDiscordCommands(unittest.IsolatedAsyncioTestCase):
         await self._send_message("!events sheets 4", from_staff_user=False)
         self.mock_channel.send.assert_not_awaited()
         mock_handle_calendar_lookup.assert_not_awaited()
+
+    # ------------------------------------------------------------------
+    # DB API primary path tests (valid Liquipedia URL → new markdown module)
+    # ------------------------------------------------------------------
+
+    VALID_URL = "https://liquipedia.net/rocketleague/RLCS/2025/World_Championship"
+
+    @mock.patch("discord_bridge.stdout.print_to_channel")
+    @mock.patch("discord_bridge.rm_teams.build_teams_markdown", return_value="**Teams**")
+    async def test_teams_db_api_success(self, mock_build, mock_print):
+        await self._send_message(f"!teams {self.VALID_URL}", from_staff_user=True)
+        mock_build.assert_called_once_with("RLCS/2025/World_Championship")
+        mock_print.assert_awaited_once()
+        args = mock_print.call_args
+        self.assertEqual(args[1].get("title") or args[0][2], "Teams")
+
+    @mock.patch("discord_bridge.handle_team_lookup")
+    @mock.patch("discord_bridge.rm_teams.build_teams_markdown", side_effect=Exception("API down"))
+    async def test_teams_db_api_fallback(self, mock_build, mock_fallback):
+        await self._send_message(f"!teams {self.VALID_URL}", from_staff_user=True)
+        mock_build.assert_called_once()
+        mock_fallback.assert_awaited_once_with(self.VALID_URL, self.mock_channel)
+
+    @mock.patch("discord_bridge.stdout.print_to_channel")
+    @mock.patch("discord_bridge.rm_swiss.build_swiss_markdown", return_value="**Swiss**")
+    async def test_swiss_db_api_success(self, mock_build, mock_print):
+        await self._send_message(f"!swiss {self.VALID_URL}", from_staff_user=True)
+        mock_build.assert_called_once_with("RLCS/2025/World_Championship")
+        mock_print.assert_awaited_once()
+
+    @mock.patch("discord_bridge.handle_swiss_lookup")
+    @mock.patch("discord_bridge.rm_swiss.build_swiss_markdown", side_effect=Exception("API down"))
+    async def test_swiss_db_api_fallback(self, mock_build, mock_fallback):
+        await self._send_message(f"!swiss {self.VALID_URL}", from_staff_user=True)
+        mock_build.assert_called_once()
+        mock_fallback.assert_awaited_once_with(self.VALID_URL, self.mock_channel)
+
+    @mock.patch("discord_bridge.stdout.print_to_channel")
+    @mock.patch("discord_bridge.rm_groups.build_groups_markdown", return_value="**Groups**")
+    async def test_groups_db_api_success(self, mock_build, mock_print):
+        await self._send_message(f"!groups {self.VALID_URL}", from_staff_user=True)
+        mock_build.assert_called_once_with("RLCS/2025/World_Championship")
+        mock_print.assert_awaited_once()
+
+    @mock.patch("discord_bridge.handle_group_lookup")
+    @mock.patch("discord_bridge.rm_groups.build_groups_markdown", side_effect=Exception("API down"))
+    async def test_groups_db_api_fallback(self, mock_build, mock_fallback):
+        await self._send_message(f"!groups {self.VALID_URL}", from_staff_user=True)
+        mock_build.assert_called_once()
+        mock_fallback.assert_awaited_once_with(self.VALID_URL, self.mock_channel)
+
+    @mock.patch("discord_bridge.stdout.print_to_channel")
+    @mock.patch("discord_bridge.rm_prizepool.build_prizepool_markdown", return_value="**Prizepool**")
+    async def test_prizepool_db_api_success(self, mock_build, mock_print):
+        await self._send_message(f"!prizepool {self.VALID_URL}", from_staff_user=True)
+        mock_build.assert_called_once_with("RLCS/2025/World_Championship")
+        mock_print.assert_awaited_once()
+
+    @mock.patch("discord_bridge.handle_prizepool_lookup")
+    @mock.patch("discord_bridge.rm_prizepool.build_prizepool_markdown", side_effect=Exception("API down"))
+    async def test_prizepool_db_api_fallback(self, mock_build, mock_fallback):
+        await self._send_message(f"!prizepool {self.VALID_URL}", from_staff_user=True)
+        mock_build.assert_called_once()
+        mock_fallback.assert_awaited_once_with(self.VALID_URL, self.mock_channel)
