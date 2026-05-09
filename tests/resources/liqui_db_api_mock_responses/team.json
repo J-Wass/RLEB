@@ -1,0 +1,50 @@
+{
+  "result": [
+    {
+      "pageid": 105187,
+      "pagename": "Team_Falcons",
+      "namespace": 0,
+      "objectname": "105187_team_Team Falcons",
+      "name": "Team Falcons",
+      "locations": {
+        "region1": "MENA"
+      },
+      "region": "MENA",
+      "logo": "Team Falcons 2022 full lightmode.png",
+      "logourl": "https://liquipedia.net/commons/images/thumb/e/e9/Team_Falcons_2022_full_lightmode.png/400px-Team_Falcons_2022_full_lightmode.png",
+      "logodark": "Team Falcons 2022 full darkmode.png",
+      "logodarkurl": "https://liquipedia.net/commons/images/thumb/3/32/Team_Falcons_2022_full_darkmode.png/400px-Team_Falcons_2022_full_darkmode.png",
+      "textlesslogourl": "https://liquipedia.net/commons/images/thumb/8/83/Team_Falcons_2022_allmode.png/330px-Team_Falcons_2022_allmode.png",
+      "textlesslogodarkurl": "https://liquipedia.net/commons/images/thumb/8/83/Team_Falcons_2022_allmode.png/330px-Team_Falcons_2022_allmode.png",
+      "status": "active",
+      "createdate": "2021-03-19",
+      "disbanddate": "0000-01-01",
+      "earnings": 1905253,
+      "earningsbyyear": {
+        "2024": 424208,
+        "2021": 22171,
+        "2025": 509212,
+        "2022": 426143,
+        "2026": 78000,
+        "2023": 445519
+      },
+      "template": "team falcons",
+      "links": {
+        "tiktok": "https://tiktok.com/@falcons.esports",
+        "instagram": "https://www.instagram.com/teamfalconsgg",
+        "instagram2": "https://www.instagram.com/falconsesportsgg",
+        "twitch": "https://www.twitch.tv/TeamFalconsGG",
+        "twitter": "https://twitter.com/TeamFalconsGG",
+        "home": "http://www.falcons.sa",
+        "twitter2": "https://twitter.com/FalconsEsport",
+        "facebook": "https://facebook.com/teamfalcongg",
+        "youtube": "https://www.youtube.com/@TeamFalconsGG"
+      },
+      "extradata": {
+        "tier": "",
+        "rating": 2970.0427291175874
+      },
+      "wiki": "rocketleague"
+    }
+  ]
+}

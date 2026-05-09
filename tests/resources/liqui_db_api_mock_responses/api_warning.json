@@ -1,0 +1,18 @@
+{
+  "result": [
+    {
+      "pageid": 169234,
+      "pagename": "Esports_Nations_Cup/2026",
+      "namespace": 0,
+      "objectname": "169234_match_warn",
+      "match2id": "WARN_0001",
+      "match2bracketid": "WARN",
+      "finished": 1,
+      "date": "2026-11-05 14:00:00",
+      "parent": "Esports_Nations_Cup/2026",
+      "tournament": "Esports Nations Cup 2026",
+      "wiki": "rocketleague"
+    }
+  ],
+  "warning": ["Page struggled to load: Esports_Nations_Cup/2026/Group_Stage"]
+}

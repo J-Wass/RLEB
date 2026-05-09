@@ -1,0 +1,31 @@
+{
+  "result": [
+    {
+      "pageid": 1,
+      "pagename": "Test/Tournament",
+      "namespace": 0,
+      "objectname": "1_standingsTable_0",
+      "parent": "Test/Tournament",
+      "standingsindex": 0,
+      "title": "Swiss Stage",
+      "tournament": "Test Tournament",
+      "section": "Swiss Stage",
+      "type": "swiss",
+      "matches": [
+        "TestGroup_0001",
+        "TestGroup_0002",
+        "TestGroup_0003",
+        "TestGroup_0004",
+        "TestGroup_0005",
+        "TestGroup_0006"
+      ],
+      "config": {
+        "winpoints": 3,
+        "drawpoints": 1,
+        "losspoints": 0
+      },
+      "extradata": {},
+      "wiki": "rocketleague"
+    }
+  ]
+}

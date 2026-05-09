@@ -1,0 +1,50 @@
+{
+  "result": [
+    {
+      "pageid": 171458,
+      "pagename": "Esports_Nations_Cup",
+      "namespace": 0,
+      "objectname": "171458_series_Esports Nations Cup 2026",
+      "name": "Esports Nations Cup 2026",
+      "abbreviation": "",
+      "image": "Esports Nations Cup lightmode.png",
+      "imageurl": "https://liquipedia.net/commons/images/thumb/7/76/Esports_Nations_Cup_lightmode.png/400px-Esports_Nations_Cup_lightmode.png",
+      "imagedark": "Esports Nations Cup darkmode.png",
+      "imagedarkurl": "https://liquipedia.net/commons/images/thumb/3/3f/Esports_Nations_Cup_darkmode.png/400px-Esports_Nations_Cup_darkmode.png",
+      "icon": "Esports Nations Cup icon lightmode.png",
+      "iconurl": "https://liquipedia.net/commons/images/thumb/d/dc/Esports_Nations_Cup_icon_lightmode.png/400px-Esports_Nations_Cup_icon_lightmode.png",
+      "icondark": "Esports Nations Cup icon darkmode.png",
+      "icondarkurl": "https://liquipedia.net/commons/images/thumb/0/02/Esports_Nations_Cup_icon_darkmode.png/400px-Esports_Nations_Cup_icon_darkmode.png",
+      "game": "",
+      "type": "",
+      "organizers": {
+        "organizer2": "ESL",
+        "organizer1": "Esports World Cup Foundation"
+      },
+      "locations": {
+        "country1": "sa",
+        "city1": "Riyadh",
+        "region1": "Middle East"
+      },
+      "prizepool": 1320000,
+      "liquipediatier": "1",
+      "liquipediatiertype": "",
+      "publishertier": "",
+      "launcheddate": "0000-01-01",
+      "defunctdate": "0000-01-01",
+      "defunctfate": "",
+      "links": {
+        "tiktok": "https://tiktok.com/@enc_en",
+        "instagram": "https://www.instagram.com/enc_en",
+        "home": "https://esportsnationscup.com/en/competitions/2026/rocket-league",
+        "twitch": "https://www.twitch.tv/enc_en",
+        "facebook": "https://facebook.com/EsportsNationsCup",
+        "weibo": "https://weibo.com/7924870125",
+        "youtube": "https://www.youtube.com/channel/UCChLuScKhRrPv2uYN8mXWXA",
+        "twitter": "https://twitter.com/ENC_EN"
+      },
+      "extradata": null,
+      "wiki": "rocketleague"
+    }
+  ]
+}

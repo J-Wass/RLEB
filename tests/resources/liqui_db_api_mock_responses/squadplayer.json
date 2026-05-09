@@ -1,0 +1,40 @@
+{
+  "result": [
+    {
+      "pageid": 169234,
+      "pagename": "Esports_Nations_Cup/2026",
+      "namespace": 0,
+      "objectname": "169234_squadplayer_France_Vatira",
+      "parent": "Esports_Nations_Cup/2026",
+      "id": "Vatira",
+      "link": "Vatira",
+      "name": "Axel Touret",
+      "nationality": "France",
+      "position": "player",
+      "role": "player",
+      "team": "France",
+      "teamtemplate": "france rocketleague",
+      "faction": "France",
+      "extradata": {"isSubstitute": false},
+      "wiki": "rocketleague"
+    },
+    {
+      "pageid": 169234,
+      "pagename": "Esports_Nations_Cup/2026",
+      "namespace": 0,
+      "objectname": "169234_squadplayer_France_Seikoo",
+      "parent": "Esports_Nations_Cup/2026",
+      "id": "Seikoo",
+      "link": "Seikoo",
+      "name": "Joris Kerkhof",
+      "nationality": "Netherlands",
+      "position": "player",
+      "role": "player",
+      "team": "France",
+      "teamtemplate": "france rocketleague",
+      "faction": "France",
+      "extradata": {"isSubstitute": false},
+      "wiki": "rocketleague"
+    }
+  ]
+}

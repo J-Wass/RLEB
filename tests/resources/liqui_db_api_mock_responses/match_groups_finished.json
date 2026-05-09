@@ -1,0 +1,262 @@
+{
+  "result": [
+    {
+      "pageid": 1,
+      "pagename": "Test/Tournament",
+      "namespace": 0,
+      "objectname": "1_TestGroup_0001",
+      "match2id": "TestGroup_0001",
+      "match2bracketid": "TestGroup",
+      "finished": 1,
+      "winner": "1",
+      "date": "2026-01-01 12:00:00",
+      "parent": "Test/Tournament",
+      "tournament": "Test Tournament",
+      "section": "Group Stage",
+      "match2bracketdata": {
+        "inheritedheader": "Round 1",
+        "type": "matchlist"
+      },
+      "match2opponents": [
+        {
+          "id": 1,
+          "name": "Alpha",
+          "template": "alpha",
+          "score": 3,
+          "status": "W",
+          "placement": 1,
+          "match2players": [],
+          "extradata": []
+        },
+        {
+          "id": 2,
+          "name": "Beta",
+          "template": "beta",
+          "score": 1,
+          "status": "L",
+          "placement": 2,
+          "match2players": [],
+          "extradata": []
+        }
+      ],
+      "match2games": [],
+      "extradata": {},
+      "wiki": "rocketleague"
+    },
+    {
+      "pageid": 1,
+      "pagename": "Test/Tournament",
+      "namespace": 0,
+      "objectname": "1_TestGroup_0002",
+      "match2id": "TestGroup_0002",
+      "match2bracketid": "TestGroup",
+      "finished": 1,
+      "winner": "1",
+      "date": "2026-01-01 12:00:00",
+      "parent": "Test/Tournament",
+      "tournament": "Test Tournament",
+      "section": "Group Stage",
+      "match2bracketdata": {
+        "inheritedheader": "Round 1",
+        "type": "matchlist"
+      },
+      "match2opponents": [
+        {
+          "id": 1,
+          "name": "Gamma",
+          "template": "gamma",
+          "score": 3,
+          "status": "W",
+          "placement": 1,
+          "match2players": [],
+          "extradata": []
+        },
+        {
+          "id": 2,
+          "name": "Delta",
+          "template": "delta",
+          "score": 0,
+          "status": "L",
+          "placement": 2,
+          "match2players": [],
+          "extradata": []
+        }
+      ],
+      "match2games": [],
+      "extradata": {},
+      "wiki": "rocketleague"
+    },
+    {
+      "pageid": 1,
+      "pagename": "Test/Tournament",
+      "namespace": 0,
+      "objectname": "1_TestGroup_0003",
+      "match2id": "TestGroup_0003",
+      "match2bracketid": "TestGroup",
+      "finished": 1,
+      "winner": "1",
+      "date": "2026-01-01 12:00:00",
+      "parent": "Test/Tournament",
+      "tournament": "Test Tournament",
+      "section": "Group Stage",
+      "match2bracketdata": {
+        "inheritedheader": "Round 2",
+        "type": "matchlist"
+      },
+      "match2opponents": [
+        {
+          "id": 1,
+          "name": "Alpha",
+          "template": "alpha",
+          "score": 3,
+          "status": "W",
+          "placement": 1,
+          "match2players": [],
+          "extradata": []
+        },
+        {
+          "id": 2,
+          "name": "Gamma",
+          "template": "gamma",
+          "score": 2,
+          "status": "L",
+          "placement": 2,
+          "match2players": [],
+          "extradata": []
+        }
+      ],
+      "match2games": [],
+      "extradata": {},
+      "wiki": "rocketleague"
+    },
+    {
+      "pageid": 1,
+      "pagename": "Test/Tournament",
+      "namespace": 0,
+      "objectname": "1_TestGroup_0004",
+      "match2id": "TestGroup_0004",
+      "match2bracketid": "TestGroup",
+      "finished": 1,
+      "winner": "1",
+      "date": "2026-01-01 12:00:00",
+      "parent": "Test/Tournament",
+      "tournament": "Test Tournament",
+      "section": "Group Stage",
+      "match2bracketdata": {
+        "inheritedheader": "Round 2",
+        "type": "matchlist"
+      },
+      "match2opponents": [
+        {
+          "id": 1,
+          "name": "Beta",
+          "template": "beta",
+          "score": 3,
+          "status": "W",
+          "placement": 1,
+          "match2players": [],
+          "extradata": []
+        },
+        {
+          "id": 2,
+          "name": "Delta",
+          "template": "delta",
+          "score": 1,
+          "status": "L",
+          "placement": 2,
+          "match2players": [],
+          "extradata": []
+        }
+      ],
+      "match2games": [],
+      "extradata": {},
+      "wiki": "rocketleague"
+    },
+    {
+      "pageid": 1,
+      "pagename": "Test/Tournament",
+      "namespace": 0,
+      "objectname": "1_TestGroup_0005",
+      "match2id": "TestGroup_0005",
+      "match2bracketid": "TestGroup",
+      "finished": 1,
+      "winner": "1",
+      "date": "2026-01-01 12:00:00",
+      "parent": "Test/Tournament",
+      "tournament": "Test Tournament",
+      "section": "Group Stage",
+      "match2bracketdata": {
+        "inheritedheader": "Round 3",
+        "type": "matchlist"
+      },
+      "match2opponents": [
+        {
+          "id": 1,
+          "name": "Alpha",
+          "template": "alpha",
+          "score": 3,
+          "status": "W",
+          "placement": 1,
+          "match2players": [],
+          "extradata": []
+        },
+        {
+          "id": 2,
+          "name": "Delta",
+          "template": "delta",
+          "score": 0,
+          "status": "L",
+          "placement": 2,
+          "match2players": [],
+          "extradata": []
+        }
+      ],
+      "match2games": [],
+      "extradata": {},
+      "wiki": "rocketleague"
+    },
+    {
+      "pageid": 1,
+      "pagename": "Test/Tournament",
+      "namespace": 0,
+      "objectname": "1_TestGroup_0006",
+      "match2id": "TestGroup_0006",
+      "match2bracketid": "TestGroup",
+      "finished": 1,
+      "winner": "2",
+      "date": "2026-01-01 12:00:00",
+      "parent": "Test/Tournament",
+      "tournament": "Test Tournament",
+      "section": "Group Stage",
+      "match2bracketdata": {
+        "inheritedheader": "Round 3",
+        "type": "matchlist"
+      },
+      "match2opponents": [
+        {
+          "id": 1,
+          "name": "Gamma",
+          "template": "gamma",
+          "score": 1,
+          "status": "L",
+          "placement": 2,
+          "match2players": [],
+          "extradata": []
+        },
+        {
+          "id": 2,
+          "name": "Beta",
+          "template": "beta",
+          "score": 3,
+          "status": "W",
+          "placement": 1,
+          "match2players": [],
+          "extradata": []
+        }
+      ],
+      "match2games": [],
+      "extradata": {},
+      "wiki": "rocketleague"
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "result": [
+    {
+      "pageid": 1,
+      "pagename": "Test/Tournament",
+      "namespace": 0,
+      "objectname": "1_p1",
+      "parent": "Test/Tournament",
+      "id": "Player1",
+      "link": "Player1",
+      "name": "Player One",
+      "nationality": "France",
+      "position": "player",
+      "role": "player",
+      "team": "Alpha",
+      "teamtemplate": "alpha",
+      "faction": "Alpha",
+      "extradata": {},
+      "wiki": "rocketleague"
+    },
+    {
+      "pageid": 1,
+      "pagename": "Test/Tournament",
+      "namespace": 0,
+      "objectname": "1_p2",
+      "parent": "Test/Tournament",
+      "id": "Player2",
+      "link": "Player2",
+      "name": "Player Two",
+      "nationality": "France",
+      "position": "player",
+      "role": "player",
+      "team": "Alpha",
+      "teamtemplate": "alpha",
+      "faction": "Alpha",
+      "extradata": {},
+      "wiki": "rocketleague"
+    },
+    {
+      "pageid": 1,
+      "pagename": "Test/Tournament",
+      "namespace": 0,
+      "objectname": "1_p3",
+      "parent": "Test/Tournament",
+      "id": "Player3",
+      "link": "Player3",
+      "name": "Player Three",
+      "nationality": "Germany",
+      "position": "player",
+      "role": "player",
+      "team": "Beta",
+      "teamtemplate": "beta",
+      "faction": "Beta",
+      "extradata": {},
+      "wiki": "rocketleague"
+    }
+  ]
+}

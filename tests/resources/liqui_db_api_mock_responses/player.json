@@ -1,0 +1,54 @@
+{
+  "result": [
+    {
+      "pageid": 104921,
+      "pagename": "Vatira",
+      "namespace": 0,
+      "objectname": "104921_player_Vatira",
+      "id": "Vatira",
+      "alternateid": "vatigoat<br>vati.<br>vatiroi",
+      "name": "Axel Touret",
+      "localizedname": "",
+      "type": "player",
+      "nationality": "France",
+      "nationality2": "",
+      "nationality3": "",
+      "region": "Europe",
+      "birthdate": "2006-05-14",
+      "deathdate": "0000-01-01",
+      "teampagename": "Karmine_Corp",
+      "teamtemplate": "karmine corp 2024",
+      "links": {
+        "tiktok": "https://tiktok.com/@vatirarl",
+        "instagram": "https://www.instagram.com/vatira__",
+        "youtube": "https://www.youtube.com/@VatiraRL",
+        "twitch": "https://www.twitch.tv/vatira_",
+        "twitter": "https://twitter.com/Vatira5",
+        "discord": "https://discord.gg/p8CF9BFUA7",
+        "steam64ID": "https://steamcommunity.com/profiles/76561198960239428",
+        "blasttv": "https://blast.tv/rl/player/f7933072/vatira",
+        "snapchat": "https://www.snapchat.com/add/vatira5"
+      },
+      "status": "Active",
+      "earnings": 713169,
+      "earningsbyyear": {
+        "2024": 84304,
+        "2021": 8864,
+        "2025": 258075,
+        "2022": 156703,
+        "2026": 26800,
+        "2023": 178347,
+        "2020": 77
+      },
+      "extradata": {
+        "role": "player",
+        "birthmonthandday": "05-14",
+        "roles": {
+          "1": "player"
+        },
+        "banned": ""
+      },
+      "wiki": "rocketleague"
+    }
+  ]
+}
