@@ -31,11 +31,11 @@ from liqui.mvp_lookup import (
 from liqui.diesel import (
     handle_makethread_lookup,
     handle_stream_lookup,
-    handle_broadcast_lookup,
     healthcheck,
     handle_coverage_lookup,
     handle_schedule_lookup,
 )
+from liqui.broadcast_lookup import handle_broadcast_lookup
 from liqui.prizepool_lookup import handle_prizepool_lookup
 
 responses_lock = Lock()

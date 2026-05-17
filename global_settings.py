@@ -379,3 +379,7 @@ PASTEEE_APP_KEY = (
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY") or config.get(
     "LLM", "ANTHROPIC_API_KEY", fallback="None"
 )
+
+LIQUIPEDIA_API_KEY = os.environ.get("LIQUIPEDIA_API_KEY") or config.get(
+    "Liquipedia", "LIQUIPEDIA_API_KEY", fallback=""
+)
