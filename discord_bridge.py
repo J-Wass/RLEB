@@ -181,9 +181,7 @@ class RLEsportsBot(discord.Client):
             "Modmail channel is not messageable or not found!"
         )
 
-        self.bot_logs_channel = self.get_channel(
-            global_settings.BOT_LOGS_CHANNEL_ID
-        )  # type: ignore
+        self.bot_logs_channel = self.get_channel(global_settings.BOT_LOGS_CHANNEL_ID)  # type: ignore
 
         assert isinstance(self.bot_logs_channel, discord.abc.Messageable), (
             "Bot logs channel is not messageable or not found!"
@@ -566,6 +564,21 @@ class RLEsportsBot(discord.Client):
 
                 if should_alert:
                     alert_message = f"⚠️ **Modqueue Alert**: The modqueue is getting large! ({modqueue_count} items waiting in queue). Please review https://www.reddit.com/mod/queue"
+
+                    if hasattr(self.moderation_channel, "guild"):
+                        target_role = self.moderation_channel.guild.get_role(
+                            1465484624678617269
+                        )
+                        if target_role:
+                            online_pings = [
+                                member.mention
+                                for member in target_role.members
+                                if member.status != discord.Status.offline
+                            ]
+                            print(online_pings)
+                            if online_pings:
+                                alert_message += "\n" + " ".join(online_pings)
+
                     await self.moderation_channel.send(alert_message)
                     self.last_modqueue_alert_time = datetime.now()
                     # Reset congrats flag so we can congratulate when it gets cleared
@@ -652,7 +665,9 @@ class RLEsportsBot(discord.Client):
                             if not channel:
                                 # Channel not in cache, try fetching via API
                                 try:
-                                    channel = await self.fetch_channel(remindme.channel_id)  # type: ignore
+                                    channel = await self.fetch_channel(
+                                        remindme.channel_id
+                                    )  # type: ignore
                                 except Exception:
                                     channel = None
                             if not channel:
@@ -1159,7 +1174,11 @@ class RLEsportsBot(discord.Client):
             scheduled_posts = await get_scheduled_posts()
             output = build_weekly_status(tasks, scheduled_posts)
             await stdout.print_to_channel(
-                message.channel, output, force_discord=True, use_hook=False, escape_markdown=False
+                message.channel,
+                output,
+                force_discord=True,
+                use_hook=False,
+                escape_markdown=False,
             )
             await self.add_response(message)
 
@@ -2124,7 +2143,9 @@ class RLEsportsBot(discord.Client):
                 f"[DISCORD] Echoing {message_without_command}"
             )
             await message.channel.send(message_without_command)
-            global_settings.error_log_queue.append(f"[DISCORD] Echoing {message_without_command}")
+            global_settings.error_log_queue.append(
+                f"[DISCORD] Echoing {message_without_command}"
+            )
             await self.add_response(message)
 
         elif (
@@ -2145,8 +2166,7 @@ class RLEsportsBot(discord.Client):
                     "Usage: !contributions [start_days_ago] [end_days_ago]\nExample: !contributions 35 5 (35 days ago until 5 days ago)"
                 )
                 return
-            
-        
+
             if end_days > start_days:
                 await message.channel.send(
                     "Usage: !contributions [start_days_ago] [end_days_ago]\n `start_days_ago` should be a bigger number (longer time ago) than `end_days_ago` "
@@ -2211,10 +2231,7 @@ class RLEsportsBot(discord.Client):
                             for reacting_user in users_list:
                                 # Skip the poster, so we don't double count them
                                 curr_user = str(reacting_user)
-                                if (
-                                    not reacting_user.bot
-                                    and curr_user not in msg_users
-                                ):
+                                if not reacting_user.bot and curr_user not in msg_users:
                                     msg_users.add(curr_user)
                                     user_contributions[curr_user] += weight
                                 total_contribs += 1
