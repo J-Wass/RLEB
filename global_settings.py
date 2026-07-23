@@ -203,6 +203,10 @@ MODERATION_CHANNEL_ID = int(
 BOT_LOGS_CHANNEL_ID = int(
     os.environ.get("BOT_LOGS_CHANNEL_ID") or config["Discord"]["BOT_LOGS_CHANNEL_ID"]  # type: ignore
 )
+MODQUE_PING_ROLE_ID = int(
+    os.environ.get("MODQUE_PING_ROLE_ID")
+    or config.get("Discord", "MODQUE_PING_ROLE_ID", fallback=1465484624678617269)  # type: ignore
+)
 
 verified_needle = "verified"
 

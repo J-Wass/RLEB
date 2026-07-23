@@ -564,6 +564,21 @@ class RLEsportsBot(discord.Client):
 
                 if should_alert:
                     alert_message = f"⚠️ **Modqueue Alert**: The modqueue is getting large! ({modqueue_count} items waiting in queue). Please review https://www.reddit.com/mod/queue"
+
+                    if hasattr(self.moderation_channel, "guild"):
+                        target_role = self.moderation_channel.guild.get_role(
+                            1465484624678617269
+                        )
+                        if target_role:
+                            online_pings = [
+                                member.mention
+                                for member in target_role.members
+                                if member.status != discord.Status.offline
+                            ]
+                            print(online_pings)
+                            if online_pings:
+                                alert_message += "\n" + " ".join(online_pings)
+
                     await self.moderation_channel.send(alert_message)
                     self.last_modqueue_alert_time = datetime.now()
                     # Reset congrats flag so we can congratulate when it gets cleared
