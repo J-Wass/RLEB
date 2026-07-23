@@ -1,5 +1,17 @@
 {
-
     "python.testing.pytestEnabled": false,
-    "python.testing.unittestEnabled": true
+    "python.testing.unittestEnabled": true,
+    "python-envs.defaultEnvManager": "ms-python.python:conda",
+    "python-envs.defaultPackageManager": "ms-python.python:conda",
+    "python.analysis.languageServerMode": "default",
+    "editor.semanticTokenColorCustomizations": {
+        "enabled": true,
+        "rules": {
+            "namespace": "#4EC9B0",
+            "module": "#4EC9B0",
+            "variable": "#9CDCFE",
+            "parameter": "#9CDCFE",
+            "property": "#9CDCFE"
+        }
+    }
 }

@@ -201,8 +201,7 @@ MODERATION_CHANNEL_ID = int(
     or config["Discord"]["MODERATION_CHANNEL_ID"]  # type: ignore
 )
 BOT_LOGS_CHANNEL_ID = int(
-    os.environ.get("BOT_LOGS_CHANNEL_ID")
-    or config["Discord"]["BOT_LOGS_CHANNEL_ID"]  # type: ignore
+    os.environ.get("BOT_LOGS_CHANNEL_ID") or config["Discord"]["BOT_LOGS_CHANNEL_ID"]  # type: ignore
 )
 
 verified_needle = "verified"
@@ -216,7 +215,7 @@ if RUNNING_MODE == "local":
     MODLOG_CHANNEL_ID = BOT_COMMANDS_CHANNEL_ID
     MODERATION_CHANNEL_ID = BOT_COMMANDS_CHANNEL_ID
     ROSTER_NEWS_CHANNEL_ID = BOT_COMMANDS_CHANNEL_ID
-    #BOT_LOGS_CHANNEL_ID = BOT_COMMANDS_CHANNEL_ID
+    # BOT_LOGS_CHANNEL_ID = BOT_COMMANDS_CHANNEL_ID
 
 
 colors = [
