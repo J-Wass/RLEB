@@ -392,3 +392,17 @@ class TestRedditBridge(unittest.IsolatedAsyncioTestCase):
             await task
         except asyncio.CancelledError:
             pass
+
+    async def test_get_modqueue_count(self):
+        """Test getting the modqueue count from subreddit mod queue stream."""
+        mock_item1 = MagicMock()
+        mock_item2 = MagicMock()
+
+        async def mock_modqueue_gen():
+            yield mock_item1
+            yield mock_item2
+
+        self.mock_subreddit.mod.modqueue = mock_modqueue_gen
+        count = await self.bridge.get_modqueue_count()
+        self.assertEqual(count, 2)
+

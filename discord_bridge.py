@@ -1,3 +1,4 @@
+import global_settings
 import os
 import pathlib
 import signal
@@ -171,7 +172,7 @@ class RLEsportsBot(discord.Client):
 
         assert isinstance(self.thread_creation_channel, discord.abc.Messageable), (
             "Modmail channel is not messageable or not found!"
-        )
+        )  # type: ignore
 
         self.moderation_channel = self.get_channel(
             global_settings.MODERATION_CHANNEL_ID
@@ -295,7 +296,7 @@ class RLEsportsBot(discord.Client):
                 )
             except Exception as e:
                 global_settings.rleb_log_error(
-                    f"[DISCORD]: Submissions asyncio thread failed - {e}, submission ID:{submission.id}"
+                    f"[DISCORD]: Submissions asyncio thread failed - {e}, submission ID:{submission.id}"  # type: ignore
                 )
                 await self.bot_command_channel.send(  # type: ignore
                     "New Submissions asyncio thread encountered error"
@@ -544,7 +545,6 @@ class RLEsportsBot(discord.Client):
                 global_settings.rleb_log_info(
                     f"[DISCORD]: Modqueue check - {modqueue_count} items in queue"
                 )
-
                 # Check if we should alert
                 should_alert = False
                 if modqueue_count >= global_settings.MODQUEUE_ALERT_THRESHOLD:
@@ -563,11 +563,11 @@ class RLEsportsBot(discord.Client):
                             should_alert = True
 
                 if should_alert:
-                    alert_message = f"⚠️ **Modqueue Alert**: The modqueue is getting large! ({modqueue_count} items waiting in queue). Please review https://www.reddit.com/mod/queue"
+                    alert_message = f"⚠️ **Modqueue Alert**: The modqueue is getting large! ({modqueue_count} items waiting in queue). Please review https://www.reddit.com/mod/queue. <@&{global_settings.MODQUEUE_OFFLINE_PING_ROLE_ID}>"
 
                     if hasattr(self.moderation_channel, "guild"):
                         target_role = self.moderation_channel.guild.get_role(
-                            1465484624678617269
+                            global_settings.MODQUEUE_PING_ROLE_ID
                         )
                         if target_role:
                             online_pings = [
