@@ -1353,6 +1353,32 @@ class RLEsportsBot(discord.Client):
             # Last resort: terminate the process so Docker will restart the container
             os._exit(0)  # hard exit, no atexit handlers
 
+        elif discord_message.startswith("!mc on") and is_staff(message.author):
+            if not global_settings.is_discord_mod(message.author):
+                return
+
+            await message.channel.send("Starting the Minecraft server…")
+            global_settings.rleb_log_info("Starting Minecraft server.", should_flush=True)
+
+            flag = pathlib.Path("/app/data/minecraft_on.flag")
+            try:
+                flag.write_text(f"ts={time.time()}\n")
+            except Exception as e:
+                await message.channel.send(f"Minecraft start trigger failed: {e}")
+
+        elif discord_message.startswith("!mc off") and is_staff(message.author):
+            if not global_settings.is_discord_mod(message.author):
+                return
+
+            await message.channel.send("Stopping the Minecraft server…")
+            global_settings.rleb_log_info("Stopping Minecraft server.", should_flush=True)
+
+            flag = pathlib.Path("/app/data/minecraft_off.flag")
+            try:
+                flag.write_text(f"ts={time.time()}\n")
+            except Exception as e:
+                await message.channel.send(f"Minecraft stop trigger failed: {e}")
+
         elif discord_message == "!status" and is_staff(message.author):
             if not global_settings.is_discord_mod(message.author):
                 return
