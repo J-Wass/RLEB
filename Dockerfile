@@ -1,5 +1,5 @@
 # rleb/Dockerfile
-FROM python:3.11.2-bookworm
+FROM python:3.11-bookworm
 
 # Set environment variables to avoid issues with locales
 ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
