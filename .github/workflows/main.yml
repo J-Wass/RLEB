@@ -33,6 +33,7 @@ jobs:
       VERIFIED_COMMENTS_CHANNEL_ID : 9
       MODERATION_CHANNEL_ID : 10
       BOT_LOGS_CHANNEL_ID: 11
+      MODQUEUE_CHANNEL_ID: 12
       developer_name : 'fake_name'
       developer_discriminator : 'fake_discriminator'
       VERIFIED_MODERATORS : "[]"
