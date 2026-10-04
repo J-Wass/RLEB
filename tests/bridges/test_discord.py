@@ -45,6 +45,7 @@ class TestDiscord(unittest.IsolatedAsyncioTestCase):
         self.discord_client.modlog_channel = mock.AsyncMock()
         self.discord_client.bot_command_channel = mock.AsyncMock()
         self.discord_client.moderation_channel = mock.AsyncMock()
+        self.discord_client.modqueue_channel = mock.AsyncMock()
         self.discord_client.get_channel = MagicMock(
             return_value=self.discord_client.bot_command_channel
         )
@@ -288,7 +289,7 @@ class TestDiscord(unittest.IsolatedAsyncioTestCase):
         global_settings.reddit_bridge.get_modqueue_count = mock_get_modqueue_count
         self.discord_client.last_modqueue_alert_time = None
 
-        # Setup mock role & members on moderation_channel.guild
+        # Setup mock role & members on modqueue_channel.guild
         mock_guild = MagicMock()
         mock_role = MagicMock()
         mock_online_member = MagicMock()
@@ -296,12 +297,13 @@ class TestDiscord(unittest.IsolatedAsyncioTestCase):
         mock_online_member.mention = "<@12345>"
         mock_role.members = [mock_online_member]
         mock_guild.get_role.return_value = mock_role
-        self.discord_client.moderation_channel.guild = mock_guild
+        self.discord_client.modqueue_channel.guild = mock_guild
 
         await self.discord_client.check_modqueue_length()
 
-        self.discord_client.moderation_channel.send.assert_awaited_once()
-        sent_message = self.discord_client.moderation_channel.send.call_args[0][0]
+        self.discord_client.modqueue_channel.send.assert_awaited_once()
+        self.discord_client.moderation_channel.send.assert_not_awaited()
+        sent_message = self.discord_client.modqueue_channel.send.call_args[0][0]
         self.assertIn(
             f"<@&{global_settings.MODQUEUE_OFFLINE_PING_ROLE_ID}>", sent_message
         )
@@ -321,8 +323,8 @@ class TestDiscord(unittest.IsolatedAsyncioTestCase):
 
         await self.discord_client.check_modqueue_length()
 
-        self.discord_client.moderation_channel.send.assert_awaited_once()
-        sent_message = self.discord_client.moderation_channel.send.call_args[0][0]
+        self.discord_client.modqueue_channel.send.assert_awaited_once()
+        sent_message = self.discord_client.modqueue_channel.send.call_args[0][0]
         self.assertIn("The modqueue has been cleared!", sent_message)
         self.assertTrue(self.discord_client.modqueue_congrats_sent)
 
@@ -338,7 +340,7 @@ class TestDiscord(unittest.IsolatedAsyncioTestCase):
 
         await self.discord_client.check_modqueue_length()
 
-        self.discord_client.moderation_channel.send.assert_not_awaited()
+        self.discord_client.modqueue_channel.send.assert_not_awaited()
 
 
 if __name__ == "__main__":
