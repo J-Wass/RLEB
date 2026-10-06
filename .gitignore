@@ -17,4 +17,4 @@ rleb_secrets.ini
 .coverage
 venv
 rleb_secrets.*
-.vscode
+.vscode/
