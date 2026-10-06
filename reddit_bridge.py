@@ -458,10 +458,6 @@ class RedditBridge:
                         break
                     self.last_modmail = datetime.now()
 
-                    global_settings.rleb_log_info(
-                        f"[REDDIT]: Modmail - {conversation.id}"
-                    )
-
                     # Handle multiflairs from subreddit.
                     subject = conversation.subject
                     if subject.lower().replace(" ", "") in multiflair_request_keys:

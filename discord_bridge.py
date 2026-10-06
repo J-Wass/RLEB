@@ -62,6 +62,7 @@ class RLEsportsBot(discord.Client):
     modlog_channel: discord.TextChannel
     thread_creation_channel: discord.TextChannel
     moderation_channel: discord.TextChannel
+    modqueue_channel: discord.TextChannel
     bot_logs_channel: discord.TextChannel
 
     def __init__(self):
@@ -180,6 +181,14 @@ class RLEsportsBot(discord.Client):
 
         assert isinstance(self.moderation_channel, discord.abc.Messageable), (
             "Modmail channel is not messageable or not found!"
+        )
+
+        self.modqueue_channel = self.get_channel(
+            global_settings.MODQUEUE_CHANNEL_ID
+        )  # type: ignore
+
+        assert isinstance(self.modqueue_channel, discord.abc.Messageable), (
+            "Modqueue channel is not messageable or not found!"
         )
 
         self.bot_logs_channel = self.get_channel(global_settings.BOT_LOGS_CHANNEL_ID)  # type: ignore
@@ -565,8 +574,8 @@ class RLEsportsBot(discord.Client):
                 if should_alert:
                     alert_message = f"⚠️ **Modqueue Alert**: The modqueue is getting large! ({modqueue_count} items waiting in queue). Please review https://www.reddit.com/mod/queue. <@&{global_settings.MODQUEUE_OFFLINE_PING_ROLE_ID}>"
 
-                    if hasattr(self.moderation_channel, "guild"):
-                        target_role = self.moderation_channel.guild.get_role(
+                    if hasattr(self.modqueue_channel, "guild"):
+                        target_role = self.modqueue_channel.guild.get_role(
                             global_settings.MODQUEUE_PING_ROLE_ID
                         )
                         if target_role:
@@ -579,7 +588,7 @@ class RLEsportsBot(discord.Client):
                             if online_pings:
                                 alert_message += "\n" + " ".join(online_pings)
 
-                    await self.moderation_channel.send(alert_message)
+                    await self.modqueue_channel.send(alert_message)
                     self.last_modqueue_alert_time = datetime.now()
                     # Reset congrats flag so we can congratulate when it gets cleared
                     self.modqueue_congrats_sent = False
@@ -593,7 +602,7 @@ class RLEsportsBot(discord.Client):
                     congrats_message = (
                         f"{emoji}{emoji}{emoji} The modqueue has been cleared!"
                     )
-                    await self.moderation_channel.send(congrats_message)
+                    await self.modqueue_channel.send(congrats_message)
                     self.modqueue_congrats_sent = True
                     global_settings.rleb_log_info(
                         "[DISCORD]: Modqueue congrats message sent - queue is empty"
@@ -1352,6 +1361,32 @@ class RLEsportsBot(discord.Client):
 
             # Last resort: terminate the process so Docker will restart the container
             os._exit(0)  # hard exit, no atexit handlers
+
+        elif discord_message.startswith("!mc on") and is_staff(message.author):
+            if not global_settings.is_discord_mod(message.author):
+                return
+
+            await message.channel.send("Starting the Minecraft server…")
+            global_settings.rleb_log_info("Starting Minecraft server.", should_flush=True)
+
+            flag = pathlib.Path("/app/data/minecraft_on.flag")
+            try:
+                flag.write_text(f"ts={time.time()}\n")
+            except Exception as e:
+                await message.channel.send(f"Minecraft start trigger failed: {e}")
+
+        elif discord_message.startswith("!mc off") and is_staff(message.author):
+            if not global_settings.is_discord_mod(message.author):
+                return
+
+            await message.channel.send("Stopping the Minecraft server…")
+            global_settings.rleb_log_info("Stopping Minecraft server.", should_flush=True)
+
+            flag = pathlib.Path("/app/data/minecraft_off.flag")
+            try:
+                flag.write_text(f"ts={time.time()}\n")
+            except Exception as e:
+                await message.channel.send(f"Minecraft stop trigger failed: {e}")
 
         elif discord_message == "!status" and is_staff(message.author):
             if not global_settings.is_discord_mod(message.author):
