@@ -1,7 +1,0 @@
-{
-    "python.testing.pytestEnabled": false,
-    "python.testing.unittestEnabled": true,
-    "python.languageServer": "None",
-    "python-envs.defaultEnvManager": "ms-python.python:conda",
-    "python-envs.defaultPackageManager": "ms-python.python:conda"
-}
