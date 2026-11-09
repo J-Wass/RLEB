@@ -148,5 +148,38 @@ class TestCalendarNoMarkup(unittest.IsolatedAsyncioTestCase):
             )
 
 
+class TestCalendarEventDescriptionLink(unittest.TestCase):
+    """Calendar event descriptions can arrive as HTML; the link should always be a plain URL."""
+
+    def setUp(self):
+        global calendar_event
+        import calendar_event
+
+    def make_event(self, description):
+        return calendar_event.CalendarEvent(
+            "RLCS Club Championship: MENA Kickoff Open - GSL Stage",
+            "2026-11-12T11:00:00-05:00",
+            "Twitch.tv/RocketLeagueMENA",
+            description,
+        )
+
+    def test_plain_description(self):
+        event = self.make_event("https://blast.tv/rl/tournaments/mena")
+        self.assertEqual(event.link, "https://blast.tv/rl/tournaments/mena")
+        self.assertEqual(event.bracket_link, "https://blast.tv/rl/tournaments/mena#Results")
+
+    def test_paragraph_wrapped_description(self):
+        event = self.make_event("<p>https://blast.tv/rl/tournaments/mena</p>")
+        self.assertEqual(event.link, "https://blast.tv/rl/tournaments/mena")
+        self.assertEqual(event.bracket_link, "https://blast.tv/rl/tournaments/mena#Results")
+
+    def test_anchor_description(self):
+        event = self.make_event(
+            '<p><a href="https://www.google.com/url?q=https://liquipedia.net/x">https://liquipedia.net/x</a></p>'
+        )
+        self.assertEqual(event.link, "https://liquipedia.net/x")
+        self.assertEqual(event.bracket_link, "https://liquipedia.net/x#Results")
+
+
 if __name__ == "__main__":
     unittest.main()
