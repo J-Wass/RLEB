@@ -547,7 +547,7 @@ async def task_alert_check(thread_creation_channel: discord.TextChannel, client:
             # Only warn about events that are 2 hours late or are due in 8 hours
             if (seconds_remaining < 60 * 60 * 8) and (seconds_remaining > -60 * 60 * 2):
                 due_ts = int(unscheduled_task.event_seconds_since_epoch)
-                message = f"WARNING: {unscheduled_task.event_name} was not scheduled correctly!\n\n"
+                message = f"❌ **WARNING: {unscheduled_task.event_name} was not scheduled correctly!**\n\n"
                 message += f"Scheduled for <t:{due_ts}:F> (<t:{due_ts}:R>).\n\nScheduled posts: https://sh.reddit.com/mod/RocketLeagueEsports/scheduledposts/"
                 global_settings.rleb_log_info(
                     f"TASK CHECK: Thread is due in {seconds_remaining}s: {message}"
@@ -558,9 +558,7 @@ async def task_alert_check(thread_creation_channel: discord.TextChannel, client:
                     global_settings.rleb_log_info(
                         f"TASK CHECK: Creating #thread-creation late thread warning: {message}"
                     )
-                    await thread_creation_channel.send(
-                        message + f"\n\n{build_weekly_status(all_tasks, new_scheduled_posts)}"
-                    )
+                    await thread_creation_channel.send(message)
 
                 # Warn in DMs everytime.
                 message += (
