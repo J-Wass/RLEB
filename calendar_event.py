@@ -229,6 +229,10 @@ async def handle_calendar_lookup(
                 timeMin=start_date.astimezone().isoformat(),
                 timeMax=end_date.astimezone().isoformat(),
                 orderBy="updated",
+                # Expand recurring events into their individual occurrences so each
+                # one has its real start time, and so deleted occurrences (which
+                # come back as "cancelled" stubs with no start/summary) are excluded.
+                singleEvents=True,
             )
             .execute()
         )
@@ -238,6 +242,8 @@ async def handle_calendar_lookup(
 
         event_items = upcoming_events["items"]
         for event_item in event_items:
+            if event_item.get("status") == "cancelled":
+                continue
             rawtext = event_item["summary"] if "summary" in event_item else ""
             is_start_time_available = ("start" in event_item) and (
                 "dateTime" in event_item["start"]
