@@ -242,9 +242,16 @@ async def handle_calendar_lookup(
             is_start_time_available = ("start" in event_item) and (
                 "dateTime" in event_item["start"]
             )
-            start_timestamp = (
-                event_item["start"]["dateTime"] if (is_start_time_available) else ""
-            )
+            if not is_start_time_available:
+                # All-day events only have start.date (no time), so they can't be
+                # placed in the schedule table. Skip them instead of crashing.
+                await channel.send(
+                    'Warning: "{0}" has no start time (all-day event?), skipping it.'.format(
+                        rawtext
+                    )
+                )
+                continue
+            start_timestamp = event_item["start"]["dateTime"]
             stream = "None"
             if "location" in event_item:
                 stream = event_item["location"]
